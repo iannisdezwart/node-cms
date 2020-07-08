@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Admin Panel</title>
+		<link rel="stylesheet" href="/css/admin-panel.css">
+		<script src="https://cdn.tiny.cloud/1/35gu00zgn9zvj801hpmer2vfc7f2ga6dv076567qd0oprm61/tinymce/5/tinymce.min.js" referrerpolicy="origin"></script>
+		<script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
+		<script src="/admin-panel/js/query-selector.js" charset="utf-8"></script>
+		<script src="/admin-panel/js/request.js" charset="utf-8"></script>
+		<script src="/admin-panel/js/admin-panel-login.js" charset="utf-8"></script>
+	</head>
+	<body>
+		<div class="app full">
+			<div class="header">
+				<ul>
+					<li><a class="logo" href="/admin-panel/">NodeCMS</a></li>
+				</ul>
+			</div>
+	
+			<div class="login-container">
+				<div class="login">
+					<h1>Log in</h1>
+					<input type="text" id="username" placeholder="username">
+					<input type="password" id="password" placeholder="password">
+					<button class="small" id="login" onclick="login()">Log in</button>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>
