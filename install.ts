@@ -24,11 +24,17 @@
 import * as fs from 'fs'
 import * as qcd from 'queued-copy-dir'
 import { db } from 'node-json-database'
+import { resolve as resolvePath } from 'path'
 
-const args = process.argv.slice(2)
-const workingDirectory = args[0]
+// Go to the project root
 
-process.chdir(workingDirectory)
+const cwd = resolvePath(process.cwd())
+
+if (cwd.endsWith('/node_modules/@iannisz/node-cms')) {
+	// Go from ./project/node_modules/@iannisz/node-cms to ./project
+
+	process.chdir('./../../../')
+}
 
 /*
 	1.1 Recursive rimraf

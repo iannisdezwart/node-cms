@@ -46,9 +46,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var fs = require("fs");
 var qcd = require("queued-copy-dir");
 var node_json_database_1 = require("node-json-database");
-var args = process.argv.slice(2);
-var workingDirectory = args[0];
-process.chdir(workingDirectory);
+var path_1 = require("path");
+// Go to the project root
+var cwd = path_1.resolve(process.cwd());
+if (cwd.endsWith('/node_modules/@iannisz/node-cms')) {
+    // Go from ./project/node_modules/@iannisz/node-cms to ./project
+    process.chdir('./../../../');
+}
 /*
     1.1 Recursive rimraf
 */

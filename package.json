@@ -1,10 +1,10 @@
 {
   "name": "@iannisz/node-cms",
-  "version": "0.0.16",
+  "version": "0.0.17",
   "description": "Node CMS",
   "main": "index.js",
   "scripts": {
-    "install": "node install.js $PWD"
+    "install": "node install.js"
   },
   "keywords": [],
   "author": "Iannis de Zwart",
