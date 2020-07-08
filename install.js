@@ -46,6 +46,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var fs = require("fs");
 var qcd = require("queued-copy-dir");
 var node_json_database_1 = require("node-json-database");
+var args = process.argv.slice(2);
+var workingDirectory = args[0];
+process.chdir(workingDirectory);
 /*
     1.1 Recursive rimraf
 */

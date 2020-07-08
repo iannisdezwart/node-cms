@@ -25,6 +25,11 @@ import * as fs from 'fs'
 import * as qcd from 'queued-copy-dir'
 import { db } from 'node-json-database'
 
+const args = process.argv.slice(2)
+const workingDirectory = args[0]
+
+process.chdir(workingDirectory)
+
 /*
 	1.1 Recursive rimraf
 */
