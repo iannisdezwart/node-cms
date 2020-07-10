@@ -143,11 +143,7 @@ if (!fs.existsSync('root/content')) {
 	fs.mkdirSync('root/content')
 }
 
-// Overwrite ./private-workers directory
-
-if (fs.existsSync('private-workers')) {
-	rimraf('private-workers')
-}
+// Overwrite ./private-workers directory contents
 
 qcd.sync(__dirname + '/static/private-workers', 'private-workers')
 
