@@ -6,7 +6,7 @@ const request = (
 	body: Object = {},
 	files: File[] = []
 ): Promise<string> => {
-	return new Promise((resolve, reject) => {
+	return new Promise(async (resolve, reject) => {
 		const req = new XMLHttpRequest()
 		
 		req.onreadystatechange = () => {
@@ -21,19 +21,33 @@ const request = (
 
 		req.open(method, url)
 
-		const formData = new FormData()
+		const start = Date.now()
 
-		if (body != undefined) {
-			formData.append('body', JSON.stringify(body))
+		const stringifiedBody = JSON.stringify(body)
+
+		let res = stringToArrayBuffer(stringifiedBody)
+
+		for (let i = 0; i < files.length; i++) {
+			const file = files[i]
+			const data = await file.arrayBuffer()
+
+			// Todo: optimise memory complexity, concatenating each file is heavy
+	
+			res = concatArrayBuffers(res, stringToArrayBuffer(
+				`\n--------------------file\n ${ JSON.stringify({
+					name: file.name,
+					lastModified: file.lastModified,
+					size: file.size,
+					type: file.type
+				}) }\n`
+			))
+
+			res = concatArrayBuffers(res, data)
 		}
 
-		if (files != undefined) {
-			for (let file of files) {
-				formData.append(file.name, file)
-			}
-		}
+		console.log('prepared request in ' + (Date.now() - start) + 'ms')
 
-		req.send(formData)
+		req.send(res)
 	})
 }
 
@@ -50,4 +64,24 @@ const handleRequestError = (err: { status: number, response: string }) => {
 
 		notification('Session', `status code: ${ err.status }, body: <code>${ err.response }</code>`)
 	}
+}
+
+const stringToArrayBuffer = (str: string) => {
+	const buffer = new ArrayBuffer(str.length)
+	const view = new Uint8Array(buffer)
+
+	for (let i = 0; i < str.length; i++) {
+		view[i] = str.charCodeAt(i)
+	}
+
+	return buffer
+}
+
+const concatArrayBuffers = (ab1: ArrayBuffer, ab2: ArrayBuffer) => {
+	const out = new Uint8Array(ab1.byteLength + ab2.byteLength)
+
+	out.set(new Uint8Array(ab1), 0)
+	out.set(new Uint8Array(ab2), ab1.byteLength)
+
+	return out.buffer
 }
