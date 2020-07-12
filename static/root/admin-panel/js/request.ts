@@ -23,31 +23,42 @@ const request = (
 
 		const start = Date.now()
 
-		const stringifiedBody = JSON.stringify(body)
+		const stream = new ReadableStream<Uint8Array>({
+			start(controller) {
+				const stringifiedBody = JSON.stringify(body)
 
-		let res = stringToArrayBuffer(stringifiedBody)
+				controller.enqueue(stringToUint8Array(stringifiedBody))
 
-		for (let i = 0; i < files.length; i++) {
-			const file = files[i]
-			const data = await file.arrayBuffer()
+				for (let file of files) {
+					controller.enqueue(stringToUint8Array(
+						`\n--------------------file\n${ JSON.stringify({
+							name: file.name,
+							lastModified: file.lastModified,
+							size: file.size,
+							type: file.type
+						}) }\n`
+					))
 
-			// Todo: optimise memory complexity, concatenating each file is heavy
-	
-			res = concatArrayBuffers(res, stringToArrayBuffer(
-				`\n--------------------file\n ${ JSON.stringify({
-					name: file.name,
-					lastModified: file.lastModified,
-					size: file.size,
-					type: file.type
-				}) }\n`
-			))
+					const fileStream = file.stream()
+					const reader =  fileStream.getReader()
 
-			res = concatArrayBuffers(res, data)
-		}
+					const enqueueNextChunk = async () => {
+						const chunk = await reader.read()
+
+						if (!chunk.done) {
+							controller.enqueue(chunk.value)
+							enqueueNextChunk()
+						}
+					}
+
+					enqueueNextChunk()
+				}
+			}
+		})
 
 		console.log('prepared request in ' + (Date.now() - start) + 'ms')
 
-		req.send(res)
+		req.send(stream)
 	})
 }
 
@@ -66,22 +77,12 @@ const handleRequestError = (err: { status: number, response: string }) => {
 	}
 }
 
-const stringToArrayBuffer = (str: string) => {
-	const buffer = new ArrayBuffer(str.length)
-	const view = new Uint8Array(buffer)
+const stringToUint8Array = (str: string) => {
+	const arr = new Uint8Array(str.length)
 
 	for (let i = 0; i < str.length; i++) {
-		view[i] = str.charCodeAt(i)
+		arr[i] = str.charCodeAt(i)
 	}
 
-	return buffer
-}
-
-const concatArrayBuffers = (ab1: ArrayBuffer, ab2: ArrayBuffer) => {
-	const out = new Uint8Array(ab1.byteLength + ab2.byteLength)
-
-	out.set(new Uint8Array(ab1), 0)
-	out.set(new Uint8Array(ab2), ab1.byteLength)
-
-	return out.buffer
+	return arr
 }

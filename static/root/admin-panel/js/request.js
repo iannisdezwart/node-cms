@@ -34,58 +34,88 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var __values = (this && this.__values) || function(o) {
+    var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
+    if (m) return m.call(o);
+    if (o && typeof o.length === "number") return {
+        next: function () {
+            if (o && i >= o.length) o = void 0;
+            return { value: o && o[i++], done: !o };
+        }
+    };
+    throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
+};
 var _this = this;
 var request = function (url, method, body, files) {
     if (method === void 0) { method = 'GET'; }
     if (body === void 0) { body = {}; }
     if (files === void 0) { files = []; }
     return new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-        var req, start, stringifiedBody, res, i, file, data;
+        var req, start, stream;
         return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    req = new XMLHttpRequest();
-                    req.onreadystatechange = function () {
-                        if (req.readyState == 4) {
-                            if (req.status >= 200 && req.status < 300) {
-                                resolve(req.response);
-                            }
-                            else {
-                                reject({ status: req.status, response: req.responseText });
-                            }
-                        }
+            req = new XMLHttpRequest();
+            req.onreadystatechange = function () {
+                if (req.readyState == 4) {
+                    if (req.status >= 200 && req.status < 300) {
+                        resolve(req.response);
+                    }
+                    else {
+                        reject({ status: req.status, response: req.responseText });
+                    }
+                }
+            };
+            req.open(method, url);
+            start = Date.now();
+            stream = new ReadableStream({
+                start: function (controller) {
+                    var e_1, _a;
+                    var _this = this;
+                    var stringifiedBody = JSON.stringify(body);
+                    controller.enqueue(stringToUint8Array(stringifiedBody));
+                    var _loop_1 = function (file) {
+                        controller.enqueue(stringToUint8Array("\n--------------------file\n" + JSON.stringify({
+                            name: file.name,
+                            lastModified: file.lastModified,
+                            size: file.size,
+                            type: file.type
+                        }) + "\n"));
+                        var fileStream = file.stream();
+                        var reader = fileStream.getReader();
+                        var enqueueNextChunk = function () { return __awaiter(_this, void 0, void 0, function () {
+                            var chunk;
+                            return __generator(this, function (_a) {
+                                switch (_a.label) {
+                                    case 0: return [4 /*yield*/, reader.read()];
+                                    case 1:
+                                        chunk = _a.sent();
+                                        if (!chunk.done) {
+                                            controller.enqueue(chunk.value);
+                                            enqueueNextChunk();
+                                        }
+                                        return [2 /*return*/];
+                                }
+                            });
+                        }); };
+                        enqueueNextChunk();
                     };
-                    req.open(method, url);
-                    start = Date.now();
-                    stringifiedBody = JSON.stringify(body);
-                    res = stringToArrayBuffer(stringifiedBody);
-                    i = 0;
-                    _a.label = 1;
-                case 1:
-                    if (!(i < files.length)) return [3 /*break*/, 4];
-                    file = files[i];
-                    return [4 /*yield*/, file.arrayBuffer()
-                        // Todo: optimise memory complexity, concatenating each file is heavy
-                    ];
-                case 2:
-                    data = _a.sent();
-                    // Todo: optimise memory complexity, concatenating each file is heavy
-                    res = concatArrayBuffers(res, stringToArrayBuffer("\n--------------------file\n " + JSON.stringify({
-                        name: file.name,
-                        lastModified: file.lastModified,
-                        size: file.size,
-                        type: file.type
-                    }) + "\n"));
-                    res = concatArrayBuffers(res, data);
-                    _a.label = 3;
-                case 3:
-                    i++;
-                    return [3 /*break*/, 1];
-                case 4:
-                    console.log('prepared request in ' + (Date.now() - start) + 'ms');
-                    req.send(res);
-                    return [2 /*return*/];
-            }
+                    try {
+                        for (var files_1 = __values(files), files_1_1 = files_1.next(); !files_1_1.done; files_1_1 = files_1.next()) {
+                            var file = files_1_1.value;
+                            _loop_1(file);
+                        }
+                    }
+                    catch (e_1_1) { e_1 = { error: e_1_1 }; }
+                    finally {
+                        try {
+                            if (files_1_1 && !files_1_1.done && (_a = files_1.return)) _a.call(files_1);
+                        }
+                        finally { if (e_1) throw e_1.error; }
+                    }
+                }
+            });
+            console.log('prepared request in ' + (Date.now() - start) + 'ms');
+            req.send(stream);
+            return [2 /*return*/];
         });
     }); });
 };
@@ -101,17 +131,10 @@ var handleRequestError = function (err) {
         notification('Session', "status code: " + err.status + ", body: <code>" + err.response + "</code>");
     }
 };
-var stringToArrayBuffer = function (str) {
-    var buffer = new ArrayBuffer(str.length);
-    var view = new Uint8Array(buffer);
+var stringToUint8Array = function (str) {
+    var arr = new Uint8Array(str.length);
     for (var i = 0; i < str.length; i++) {
-        view[i] = str.charCodeAt(i);
+        arr[i] = str.charCodeAt(i);
     }
-    return buffer;
-};
-var concatArrayBuffers = function (ab1, ab2) {
-    var out = new Uint8Array(ab1.byteLength + ab2.byteLength);
-    out.set(new Uint8Array(ab1), 0);
-    out.set(new Uint8Array(ab2), ab1.byteLength);
-    return out.buffer;
+    return arr;
 };
