@@ -21,8 +21,6 @@ const request = (
 
 		req.open(method, url)
 
-		const start = Date.now()
-
 		let size = 0
 
 		// Create body
@@ -32,9 +30,11 @@ const request = (
 
 		// Create file metas
 
-		const fileMetas: Uint8Array[] = []
+		const fileMetas: Uint8Array[] = new Array(files.length)
 
-		for (let file of files) {
+		for (let i = 0; i < files.length; i++) {
+			const file = files[i]
+
 			const fileMeta = stringToUint8Array(
 				`\n--------------------file\n${ JSON.stringify({
 					name: file.name,
@@ -71,8 +71,6 @@ const request = (
 			addTobody(fileMeta)
 			addTobody(new Uint8Array(fileData))
 		}
-
-		console.log('prepared request in ' + (Date.now() - start) + 'ms')
 
 		req.send(rawBody)
 	})

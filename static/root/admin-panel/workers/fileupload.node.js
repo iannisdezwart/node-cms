@@ -1,4 +1,15 @@
 "use strict";
+var __values = (this && this.__values) || function(o) {
+    var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
+    if (m) return m.call(o);
+    if (o && typeof o.length === "number") return {
+        next: function () {
+            if (o && i >= o.length) o = void 0;
+            return { value: o && o[i++], done: !o };
+        }
+    };
+    throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 var apache_js_workers_1 = require("apache-js-workers");
 var path_1 = require("path");
@@ -19,35 +30,44 @@ var suToken = apache_js_workers_1.req.body.suToken;
 authenticateSuToken(suToken)
     .then(function () {
     // Authenticated, try to store all files
+    var e_1, _a;
     var path = apache_js_workers_1.req.body.path;
     try {
-        for (var fileIndex in apache_js_workers_1.req.files) {
-            var file = apache_js_workers_1.req.files[fileIndex];
-            var i = 0;
-            // Parse File Name and File Extension
-            var fileName = file.name.split('.').slice(0, -1).join('.');
-            var fileExtension = file.name.split('.').slice(-1).join('');
-            // Loop until a non-existing file path is found
-            while (true) {
-                // Create suffix for copies
-                var suffix = (i == 0) ? '' : '-' + i.toString();
-                var filePath = __dirname + "/../../content" + path + "/" + fileName + suffix + "." + fileExtension;
-                i++;
-                // If the File Path exists, try again
-                if (fs.existsSync(filePath)) {
-                    continue;
+        try {
+            for (var _b = __values(apache_js_workers_1.req.files), _c = _b.next(); !_c.done; _c = _b.next()) {
+                var file = _c.value;
+                var i = 0;
+                // Parse File Name and File Extension
+                var fileName = file.name.split('.').slice(0, -1).join('.');
+                var fileExtension = file.name.split('.').slice(-1).join('');
+                // Loop until a non-existing file path is found
+                while (true) {
+                    // Create suffix for copies
+                    var suffix = (i == 0) ? '' : '-' + i.toString();
+                    var filePath = path_1.resolve(__dirname + "/../../content" + path + "/" + fileName + suffix + "." + fileExtension);
+                    i++;
+                    // If the File Path exists, try again
+                    if (fs.existsSync(filePath)) {
+                        continue;
+                    }
+                    if (dotDotSlashAttack(filePath)) {
+                        // Send 403 error
+                        apache_js_workers_1.res.statusCode = 403;
+                        apache_js_workers_1.res.send('Forbidden');
+                        throw "POSSIBLE DOT-DOT-SLASH ATTACK! user tried to upload to this path: " + filePath;
+                    }
+                    // Write the file if the File Path does not exist, and break the loop
+                    fs.writeFileSync(filePath, file.data);
+                    break;
                 }
-                if (dotDotSlashAttack(filePath)) {
-                    // Send 403 error
-                    apache_js_workers_1.res.statusCode = 403;
-                    apache_js_workers_1.res.send('Forbidden');
-                    console.warn("POSSIBLE DOT-DOT-SLASH ATTACK! user tried to upload to this path: " + filePath);
-                    return;
-                }
-                // Write the file if the File Path does not exist, and break the loop
-                fs.writeFileSync(filePath, file.data);
-                break;
             }
+        }
+        catch (e_1_1) { e_1 = { error: e_1_1 }; }
+        finally {
+            try {
+                if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
+            }
+            finally { if (e_1) throw e_1.error; }
         }
         apache_js_workers_1.res.send('Files uploaded!');
     }

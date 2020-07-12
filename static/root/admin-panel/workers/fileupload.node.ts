@@ -29,8 +29,7 @@ authenticateSuToken(suToken)
 		const path = req.body.path as string
 
 		try {
-			for (let fileIndex in req.files) {
-				const file = req.files[fileIndex]
+			for (let file of req.files) {
 				let i = 0
 			
 				// Parse File Name and File Extension
@@ -44,7 +43,7 @@ authenticateSuToken(suToken)
 					// Create suffix for copies
 			
 					const suffix = (i == 0) ? '' : '-' + i.toString()
-					const filePath = `${ __dirname }/../../content${ path }/${ fileName }${ suffix }.${ fileExtension }`
+					const filePath = resolvePath(`${ __dirname }/../../content${ path }/${ fileName }${ suffix }.${ fileExtension }`)
 			
 					i++
 			
@@ -59,10 +58,8 @@ authenticateSuToken(suToken)
 			
 						res.statusCode = 403
 						res.send('Forbidden')
-						
-						console.warn(`POSSIBLE DOT-DOT-SLASH ATTACK! user tried to upload to this path: ${ filePath }`)
 
-						return
+						throw `POSSIBLE DOT-DOT-SLASH ATTACK! user tried to upload to this path: ${ filePath }`
 					}
 			
 					// Write the file if the File Path does not exist, and break the loop
