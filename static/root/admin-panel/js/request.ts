@@ -23,42 +23,58 @@ const request = (
 
 		const start = Date.now()
 
-		const stream = new ReadableStream<Uint8Array>({
-			start(controller) {
-				const stringifiedBody = JSON.stringify(body)
+		let size = 0
 
-				controller.enqueue(stringToUint8Array(stringifiedBody))
+		// Create body
 
-				for (let file of files) {
-					controller.enqueue(stringToUint8Array(
-						`\n--------------------file\n${ JSON.stringify({
-							name: file.name,
-							lastModified: file.lastModified,
-							size: file.size,
-							type: file.type
-						}) }\n`
-					))
+		const reqBody = stringToUint8Array(JSON.stringify(body))
+		size += reqBody.byteLength
 
-					const fileStream = file.stream()
-					const reader =  fileStream.getReader()
+		// Create file metas
 
-					const enqueueNextChunk = async () => {
-						const chunk = await reader.read()
+		const fileMetas: Uint8Array[] = []
 
-						if (!chunk.done) {
-							controller.enqueue(chunk.value)
-							enqueueNextChunk()
-						}
-					}
+		for (let file of files) {
+			const fileMeta = stringToUint8Array(
+				`\n--------------------file\n${ JSON.stringify({
+					name: file.name,
+					lastModified: file.lastModified,
+					size: file.size,
+					type: file.type
+				}) }\n`
+			)
 
-					enqueueNextChunk()
-				}
-			}
-		})
+			size += fileMeta.byteLength + file.size
+			fileMetas.push(fileMeta)
+		}
+
+		// Create raw body
+
+		let pointer = 0
+		const rawBody = new Uint8Array(size)
+
+		const addTobody = (data: Uint8Array) => {
+			rawBody.set(data, pointer)
+			pointer += data.byteLength
+		}
+
+		// Add body
+
+		addTobody(reqBody)
+
+		// Add each file
+
+		for (let i = 0; i < files.length; i++) {
+			const fileMeta = fileMetas[i]
+			const fileData = await files[i].arrayBuffer()
+
+			addTobody(fileMeta)
+			addTobody(new Uint8Array(fileData))
+		}
 
 		console.log('prepared request in ' + (Date.now() - start) + 'ms')
 
-		req.send(stream)
+		req.send(rawBody)
 	})
 }
 

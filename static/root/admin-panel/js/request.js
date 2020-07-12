@@ -51,57 +51,39 @@ var request = function (url, method, body, files) {
     if (body === void 0) { body = {}; }
     if (files === void 0) { files = []; }
     return new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-        var req, start, stream;
-        return __generator(this, function (_a) {
-            req = new XMLHttpRequest();
-            req.onreadystatechange = function () {
-                if (req.readyState == 4) {
-                    if (req.status >= 200 && req.status < 300) {
-                        resolve(req.response);
-                    }
-                    else {
-                        reject({ status: req.status, response: req.responseText });
-                    }
-                }
-            };
-            req.open(method, url);
-            start = Date.now();
-            stream = new ReadableStream({
-                start: function (controller) {
-                    var e_1, _a;
-                    var _this = this;
-                    var stringifiedBody = JSON.stringify(body);
-                    controller.enqueue(stringToUint8Array(stringifiedBody));
-                    var _loop_1 = function (file) {
-                        controller.enqueue(stringToUint8Array("\n--------------------file\n" + JSON.stringify({
-                            name: file.name,
-                            lastModified: file.lastModified,
-                            size: file.size,
-                            type: file.type
-                        }) + "\n"));
-                        var fileStream = file.stream();
-                        var reader = fileStream.getReader();
-                        var enqueueNextChunk = function () { return __awaiter(_this, void 0, void 0, function () {
-                            var chunk;
-                            return __generator(this, function (_a) {
-                                switch (_a.label) {
-                                    case 0: return [4 /*yield*/, reader.read()];
-                                    case 1:
-                                        chunk = _a.sent();
-                                        if (!chunk.done) {
-                                            controller.enqueue(chunk.value);
-                                            enqueueNextChunk();
-                                        }
-                                        return [2 /*return*/];
-                                }
-                            });
-                        }); };
-                        enqueueNextChunk();
+        var req, start, size, reqBody, fileMetas, files_1, files_1_1, file, fileMeta, pointer, rawBody, addTobody, i, fileMeta, fileData;
+        var e_1, _a;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    req = new XMLHttpRequest();
+                    req.onreadystatechange = function () {
+                        if (req.readyState == 4) {
+                            if (req.status >= 200 && req.status < 300) {
+                                resolve(req.response);
+                            }
+                            else {
+                                reject({ status: req.status, response: req.responseText });
+                            }
+                        }
                     };
+                    req.open(method, url);
+                    start = Date.now();
+                    size = 0;
+                    reqBody = stringToUint8Array(JSON.stringify(body));
+                    size += reqBody.byteLength;
+                    fileMetas = [];
                     try {
-                        for (var files_1 = __values(files), files_1_1 = files_1.next(); !files_1_1.done; files_1_1 = files_1.next()) {
-                            var file = files_1_1.value;
-                            _loop_1(file);
+                        for (files_1 = __values(files), files_1_1 = files_1.next(); !files_1_1.done; files_1_1 = files_1.next()) {
+                            file = files_1_1.value;
+                            fileMeta = stringToUint8Array("\n--------------------file\n" + JSON.stringify({
+                                name: file.name,
+                                lastModified: file.lastModified,
+                                size: file.size,
+                                type: file.type
+                            }) + "\n");
+                            size += fileMeta.byteLength + file.size;
+                            fileMetas.push(fileMeta);
                         }
                     }
                     catch (e_1_1) { e_1 = { error: e_1_1 }; }
@@ -111,11 +93,33 @@ var request = function (url, method, body, files) {
                         }
                         finally { if (e_1) throw e_1.error; }
                     }
-                }
-            });
-            console.log('prepared request in ' + (Date.now() - start) + 'ms');
-            req.send(stream);
-            return [2 /*return*/];
+                    pointer = 0;
+                    rawBody = new Uint8Array(size);
+                    addTobody = function (data) {
+                        rawBody.set(data, pointer);
+                        pointer += data.byteLength;
+                    };
+                    // Add body
+                    addTobody(reqBody);
+                    i = 0;
+                    _b.label = 1;
+                case 1:
+                    if (!(i < files.length)) return [3 /*break*/, 4];
+                    fileMeta = fileMetas[i];
+                    return [4 /*yield*/, files[i].arrayBuffer()];
+                case 2:
+                    fileData = _b.sent();
+                    addTobody(fileMeta);
+                    addTobody(new Uint8Array(fileData));
+                    _b.label = 3;
+                case 3:
+                    i++;
+                    return [3 /*break*/, 1];
+                case 4:
+                    console.log('prepared request in ' + (Date.now() - start) + 'ms');
+                    req.send(rawBody);
+                    return [2 /*return*/];
+            }
         });
     }); });
 };
