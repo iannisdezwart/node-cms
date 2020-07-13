@@ -27,25 +27,21 @@ const request = (
 			}
 		})
 
-		// Create body
+		// Send body
 
-		const reqBody = stringToUint8Array(JSON.stringify(body))
+		socket.emit('body', body)
 
-		socket.emit('data', reqBody.buffer)
-
-		// Create file metas
+		// Send files
 
 		for (let file of files) {
-			const fileMeta = stringToUint8Array(
-				`\n--------------------file\n${ JSON.stringify({
-					name: file.name,
-					lastModified: file.lastModified,
-					size: file.size,
-					type: file.type
-				}) }\n`
-			)
+			// Send file meta
 
-			socket.emit('data', fileMeta.buffer)
+			socket.emit('file meta', {
+				name: file.name,
+				lastModified: file.lastModified,
+				size: file.size,
+				type: file.type
+			})
 
 			const stream: ReadableStream<Uint8Array> = file.stream()
 			const reader = stream.getReader()
@@ -54,14 +50,16 @@ const request = (
 				const chunk = await reader.read()
 
 				if (!chunk.done) {
-					socket.emit('data', chunk.value.buffer)
+					socket.emit('file chunk', chunk.value.buffer)
 				} else {
-					const end = stringToUint8Array(`\n--------------------end`)
-					socket.emit('data', end.buffer)
 					break
 				}
 			}
 		}
+
+		// End the request
+
+		socket.emit('end')
 	})
 }
 

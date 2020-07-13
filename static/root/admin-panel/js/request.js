@@ -50,7 +50,7 @@ var request = function (url, body, files) {
     if (body === void 0) { body = {}; }
     if (files === void 0) { files = []; }
     return new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-        var socket, reqBody, files_1, files_1_1, file, fileMeta, stream, reader, chunk, end, e_1_1;
+        var socket, files_1, files_1_1, file, stream, reader, chunk, e_1_1;
         var e_1, _a;
         return __generator(this, function (_b) {
             switch (_b.label) {
@@ -72,8 +72,8 @@ var request = function (url, body, files) {
                             reject({ status: res.status, response: res.body });
                         }
                     });
-                    reqBody = stringToUint8Array(JSON.stringify(body));
-                    socket.emit('data', reqBody.buffer);
+                    // Send body
+                    socket.emit('body', body);
                     _b.label = 1;
                 case 1:
                     _b.trys.push([1, 7, 8, 9]);
@@ -82,13 +82,13 @@ var request = function (url, body, files) {
                 case 2:
                     if (!!files_1_1.done) return [3 /*break*/, 6];
                     file = files_1_1.value;
-                    fileMeta = stringToUint8Array("\n--------------------file\n" + JSON.stringify({
+                    // Send file meta
+                    socket.emit('file meta', {
                         name: file.name,
                         lastModified: file.lastModified,
                         size: file.size,
                         type: file.type
-                    }) + "\n");
-                    socket.emit('data', fileMeta.buffer);
+                    });
                     stream = file.stream();
                     reader = stream.getReader();
                     _b.label = 3;
@@ -98,11 +98,9 @@ var request = function (url, body, files) {
                 case 4:
                     chunk = _b.sent();
                     if (!chunk.done) {
-                        socket.emit('data', chunk.value.buffer);
+                        socket.emit('file chunk', chunk.value.buffer);
                     }
                     else {
-                        end = stringToUint8Array("\n--------------------end");
-                        socket.emit('data', end.buffer);
                         return [3 /*break*/, 5];
                     }
                     return [3 /*break*/, 3];
@@ -120,7 +118,10 @@ var request = function (url, body, files) {
                     }
                     finally { if (e_1) throw e_1.error; }
                     return [7 /*endfinally*/];
-                case 9: return [2 /*return*/];
+                case 9:
+                    // End the request
+                    socket.emit('end');
+                    return [2 /*return*/];
             }
         });
     }); });
