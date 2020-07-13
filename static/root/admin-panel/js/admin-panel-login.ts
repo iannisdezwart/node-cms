@@ -10,7 +10,7 @@ const login = () => {
 	const username = ($('#username') as HTMLInputElement).value.trim()
 	const password = ($('#password') as HTMLInputElement).value
 
-	request('/admin-panel/workers/login.node.js', 'POST', { username, password })
+	request('/admin-panel/workers/login.node.js', { username, password })
 		.then(token => {
 			Cookies.set('token', token)
 			Cookies.set('username', username)

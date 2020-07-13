@@ -34,68 +34,93 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var __values = (this && this.__values) || function(o) {
+    var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
+    if (m) return m.call(o);
+    if (o && typeof o.length === "number") return {
+        next: function () {
+            if (o && i >= o.length) o = void 0;
+            return { value: o && o[i++], done: !o };
+        }
+    };
+    throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
+};
 var _this = this;
-var request = function (url, method, body, files) {
-    if (method === void 0) { method = 'GET'; }
+var request = function (url, body, files) {
     if (body === void 0) { body = {}; }
     if (files === void 0) { files = []; }
     return new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-        var req, size, reqBody, fileMetas, i, file, fileMeta, pointer, rawBody, addTobody, i, fileMeta, fileData;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
+        var socket, reqBody, files_1, files_1_1, file, fileMeta, stream, reader, chunk, end, e_1_1;
+        var e_1, _a;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
                 case 0:
-                    req = new XMLHttpRequest();
-                    req.onreadystatechange = function () {
-                        if (req.readyState == 4) {
-                            if (req.status >= 200 && req.status < 300) {
-                                resolve(req.response);
-                            }
-                            else {
-                                reject({ status: req.status, response: req.responseText });
+                    socket = io({
+                        transportOptions: {
+                            polling: {
+                                extraHeaders: {
+                                    path: url
+                                }
                             }
                         }
-                    };
-                    req.open(method, url);
-                    size = 0;
+                    });
+                    socket.on('response', function (res) {
+                        if (res.status >= 200 && res.status < 300) {
+                            resolve(res);
+                        }
+                        else {
+                            reject({ status: res.status, response: res.body });
+                        }
+                    });
                     reqBody = stringToUint8Array(JSON.stringify(body));
-                    size += reqBody.byteLength;
-                    fileMetas = new Array(files.length);
-                    for (i = 0; i < files.length; i++) {
-                        file = files[i];
-                        fileMeta = stringToUint8Array("\n--------------------file\n" + JSON.stringify({
-                            name: file.name,
-                            lastModified: file.lastModified,
-                            size: file.size,
-                            type: file.type
-                        }) + "\n");
-                        size += fileMeta.byteLength + file.size;
-                        fileMetas.push(fileMeta);
-                    }
-                    pointer = 0;
-                    rawBody = new Uint8Array(size);
-                    addTobody = function (data) {
-                        rawBody.set(data, pointer);
-                        pointer += data.byteLength;
-                    };
-                    // Add body
-                    addTobody(reqBody);
-                    i = 0;
-                    _a.label = 1;
+                    socket.emit('data', reqBody.buffer);
+                    _b.label = 1;
                 case 1:
-                    if (!(i < files.length)) return [3 /*break*/, 4];
-                    fileMeta = fileMetas[i];
-                    return [4 /*yield*/, files[i].arrayBuffer()];
+                    _b.trys.push([1, 7, 8, 9]);
+                    files_1 = __values(files), files_1_1 = files_1.next();
+                    _b.label = 2;
                 case 2:
-                    fileData = _a.sent();
-                    addTobody(fileMeta);
-                    addTobody(new Uint8Array(fileData));
-                    _a.label = 3;
+                    if (!!files_1_1.done) return [3 /*break*/, 6];
+                    file = files_1_1.value;
+                    fileMeta = stringToUint8Array("\n--------------------file\n" + JSON.stringify({
+                        name: file.name,
+                        lastModified: file.lastModified,
+                        size: file.size,
+                        type: file.type
+                    }) + "\n");
+                    socket.emit('data', fileMeta.buffer);
+                    stream = file.stream();
+                    reader = stream.getReader();
+                    _b.label = 3;
                 case 3:
-                    i++;
-                    return [3 /*break*/, 1];
+                    if (!true) return [3 /*break*/, 5];
+                    return [4 /*yield*/, reader.read()];
                 case 4:
-                    req.send(rawBody);
-                    return [2 /*return*/];
+                    chunk = _b.sent();
+                    if (!chunk.done) {
+                        socket.emit('data', chunk.value.buffer);
+                    }
+                    else {
+                        end = stringToUint8Array("\n--------------------end");
+                        socket.emit('data', end.buffer);
+                        return [3 /*break*/, 5];
+                    }
+                    return [3 /*break*/, 3];
+                case 5:
+                    files_1_1 = files_1.next();
+                    return [3 /*break*/, 2];
+                case 6: return [3 /*break*/, 9];
+                case 7:
+                    e_1_1 = _b.sent();
+                    e_1 = { error: e_1_1 };
+                    return [3 /*break*/, 9];
+                case 8:
+                    try {
+                        if (files_1_1 && !files_1_1.done && (_a = files_1.return)) _a.call(files_1);
+                    }
+                    finally { if (e_1) throw e_1.error; }
+                    return [7 /*endfinally*/];
+                case 9: return [2 /*return*/];
             }
         });
     }); });

@@ -14,7 +14,7 @@ const getSuToken = async (
 	if (globalSuToken == undefined) {
 		try {
 
-			const res = await request('/admin-panel/workers/get-su-token.node.js', 'POST', { loginData })
+			const res = await request('/admin-panel/workers/get-su-token.node.js', { loginData })
 
 			// Open the padlock icon
 
@@ -23,7 +23,7 @@ const getSuToken = async (
 	
 			// Set the suToken globally
 			
-			globalSuToken = res
+			globalSuToken = res.body
 			return globalSuToken
 
 		} catch(res) {

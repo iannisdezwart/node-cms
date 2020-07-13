@@ -48,7 +48,7 @@ var getSuToken = function (loginData, secondTry) {
                     _a.label = 1;
                 case 1:
                     _a.trys.push([1, 3, , 16]);
-                    return [4 /*yield*/, request('/admin-panel/workers/get-su-token.node.js', 'POST', { loginData: loginData })
+                    return [4 /*yield*/, request('/admin-panel/workers/get-su-token.node.js', { loginData: loginData })
                         // Open the padlock icon
                     ];
                 case 2:
@@ -56,7 +56,7 @@ var getSuToken = function (loginData, secondTry) {
                     padlockImage = $('#padlock > img');
                     padlockImage.src = '/admin-panel/img/unlocked-padlock-green.png';
                     // Set the suToken globally
-                    globalSuToken = res;
+                    globalSuToken = res.body;
                     return [2 /*return*/, globalSuToken];
                 case 3:
                     res_1 = _a.sent();

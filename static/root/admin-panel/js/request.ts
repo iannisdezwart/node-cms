@@ -1,40 +1,41 @@
-type HTTPMethod = 'GET' | 'POST'
+interface SocketResponse {
+	status: number
+	body: any
+}
 
 const request = (
 	url: string,
-	method: HTTPMethod = 'GET',
 	body: Object = {},
 	files: File[] = []
-): Promise<string> => {
+): Promise<SocketResponse> => {
 	return new Promise(async (resolve, reject) => {
-		const req = new XMLHttpRequest()
-		
-		req.onreadystatechange = () => {
-			if (req.readyState == 4) {
-				if (req.status >= 200 && req.status < 300) {
-					resolve(req.response)
-				} else {
-					reject({ status: req.status, response: req.responseText })
+		const socket = io({
+			transportOptions: {
+				polling: {
+					extraHeaders: {
+						path: url
+					}
 				}
 			}
-		}
+		})
 
-		req.open(method, url)
-
-		let size = 0
+		socket.on('response', (res: SocketResponse) => {
+			if (res.status >= 200 && res.status < 300) {
+				resolve(res)
+			} else {
+				reject({ status: res.status, response: res.body })
+			}
+		})
 
 		// Create body
 
 		const reqBody = stringToUint8Array(JSON.stringify(body))
-		size += reqBody.byteLength
+
+		socket.emit('data', reqBody.buffer)
 
 		// Create file metas
 
-		const fileMetas: Uint8Array[] = new Array(files.length)
-
-		for (let i = 0; i < files.length; i++) {
-			const file = files[i]
-
+		for (let file of files) {
 			const fileMeta = stringToUint8Array(
 				`\n--------------------file\n${ JSON.stringify({
 					name: file.name,
@@ -44,35 +45,23 @@ const request = (
 				}) }\n`
 			)
 
-			size += fileMeta.byteLength + file.size
-			fileMetas.push(fileMeta)
+			socket.emit('data', fileMeta.buffer)
+
+			const stream: ReadableStream<Uint8Array> = file.stream()
+			const reader = stream.getReader()
+
+			while (true) {
+				const chunk = await reader.read()
+
+				if (!chunk.done) {
+					socket.emit('data', chunk.value.buffer)
+				} else {
+					const end = stringToUint8Array(`\n--------------------end`)
+					socket.emit('data', end.buffer)
+					break
+				}
+			}
 		}
-
-		// Create raw body
-
-		let pointer = 0
-		const rawBody = new Uint8Array(size)
-
-		const addTobody = (data: Uint8Array) => {
-			rawBody.set(data, pointer)
-			pointer += data.byteLength
-		}
-
-		// Add body
-
-		addTobody(reqBody)
-
-		// Add each file
-
-		for (let i = 0; i < files.length; i++) {
-			const fileMeta = fileMetas[i]
-			const fileData = await files[i].arrayBuffer()
-
-			addTobody(fileMeta)
-			addTobody(new Uint8Array(fileData))
-		}
-
-		req.send(rawBody)
 	})
 }
 

@@ -151,11 +151,11 @@ var db;
 */
 var fetchPages = function () {
     return new Promise(function (resolve, reject) {
-        request('/admin-panel/workers/get-pages.node.js', 'POST', {
+        request('/admin-panel/workers/get-pages.node.js', {
             token: Cookies.get('token')
         })
             .then(function (res) {
-            db = JSON.parse(res);
+            db = res.body;
             resolve();
         })
             .catch(function (res) {
@@ -292,7 +292,7 @@ var showPages = function () {
                             // User cancelled
                             throw new Error("User cancelled");
                         }
-                        return [4 /*yield*/, request('/admin-panel/workers/swap-pages.node.js', 'POST', {
+                        return [4 /*yield*/, request('/admin-panel/workers/swap-pages.node.js', {
                                 suToken: suToken, page1: page1, page2: page2
                             })
                                 .catch(handleRequestError)];
@@ -341,7 +341,7 @@ var editPage = function (id) {
                             // User cancelled
                             throw new Error("User cancelled");
                         }
-                        return [4 /*yield*/, request('/admin-panel/workers/update-page.node.js', 'POST', {
+                        return [4 /*yield*/, request('/admin-panel/workers/update-page.node.js', {
                                 suToken: suToken, pageContent: pageContent, pageId: pageId
                             })
                                 .catch(function (err) {
@@ -396,7 +396,7 @@ var addPage = function (pageType) {
             var pageContent = collectInputs(template);
             getSuToken()
                 .then(function (suToken) {
-                request('/admin-panel/workers/add-page.node.js', 'POST', {
+                request('/admin-panel/workers/add-page.node.js', {
                     suToken: suToken, pageType: pageType, pageContent: pageContent
                 })
                     .then(function () {
@@ -436,7 +436,7 @@ var deletePage = function (id) {
         window.handleSubmit = function () {
             getSuToken()
                 .then(function (suToken) {
-                request('/admin-panel/workers/delete-page.node.js', 'POST', {
+                request('/admin-panel/workers/delete-page.node.js', {
                     suToken: suToken,
                     pageId: page.id
                 })
@@ -634,7 +634,7 @@ var uploadFiles = function (fileList, path) {
                 files.push(file);
             }
             // Send the request
-            request('/admin-panel/workers/fileupload.node.js', 'POST', body, files)
+            request('/admin-panel/workers/fileupload.node.js', body, files)
                 .then(resolve)
                 .catch(handleRequestError);
         });
@@ -898,12 +898,12 @@ var filePicker = function (options, multiple) { return new Promise(function (res
 var getFiles = function (path) {
     if (path === void 0) { path = '/'; }
     return new Promise(function (resolve, reject) {
-        request('/admin-panel/workers/get-files.node.js', 'POST', {
+        request('/admin-panel/workers/get-files.node.js', {
             path: path,
             token: Cookies.get('token')
         })
             .then(function (res) {
-            var fileArray = JSON.parse(res).files;
+            var fileArray = res.body.files;
             resolve(fileArray);
         })
             .catch(function (res) {
@@ -1060,7 +1060,7 @@ var showFiles = function (path) {
                         getSuToken()
                             .then(function (suToken) {
                             var filePaths = selectedFiles.map(function (f) { return path + f.name; });
-                            request('/admin-panel/workers/delete-multiple-files.node.js', 'POST', {
+                            request('/admin-panel/workers/delete-multiple-files.node.js', {
                                 suToken: suToken,
                                 filePaths: filePaths
                             })
@@ -1087,7 +1087,7 @@ var showFiles = function (path) {
                     .then(function (selectedFolder) {
                     getSuToken()
                         .then(function (suToken) {
-                        request('/admin-panel/workers/copy-files.node.js', 'POST', {
+                        request('/admin-panel/workers/copy-files.node.js', {
                             suToken: suToken,
                             sources: selectedFiles.map(function (selectedFile) { return selectedFile.path; }),
                             destination: selectedFolder
@@ -1118,7 +1118,7 @@ var showFiles = function (path) {
                     .then(function (selectedFolder) {
                     getSuToken()
                         .then(function (suToken) {
-                        request('/admin-panel/workers/move-files.node.js', 'POST', {
+                        request('/admin-panel/workers/move-files.node.js', {
                             suToken: suToken,
                             sources: selectedFiles.map(function (selectedFile) { return selectedFile.path; }),
                             destination: selectedFolder
@@ -1167,7 +1167,7 @@ var deleteFile = function (filePath) {
         if (popupRes.buttonName == 'Delete') {
             getSuToken()
                 .then(function (suToken) {
-                request('/admin-panel/workers/delete-file.node.js', 'POST', {
+                request('/admin-panel/workers/delete-file.node.js', {
                     suToken: suToken,
                     filePath: filePath
                 })
@@ -1208,7 +1208,7 @@ var copyOrMoveFile = function (sourcePath, mode) { return __awaiter(_this, void 
                 return [4 /*yield*/, getSuToken()];
             case 2:
                 suToken = _a.sent();
-                return [4 /*yield*/, request("/admin-panel/workers/" + mode + "-file-different-name.node.js", 'POST', {
+                return [4 /*yield*/, request("/admin-panel/workers/" + mode + "-file-different-name.node.js", {
                         suToken: suToken,
                         source: sourcePath,
                         destination: destinationPath
@@ -1265,7 +1265,7 @@ var renameFile = function (sourcePath) { return __awaiter(_this, void 0, void 0,
                 return [4 /*yield*/, getSuToken()];
             case 2:
                 suToken = _a.sent();
-                return [4 /*yield*/, request('/admin-panel/workers/move-file-different-name.node.js', 'POST', {
+                return [4 /*yield*/, request('/admin-panel/workers/move-file-different-name.node.js', {
                         suToken: suToken,
                         source: sourcePath,
                         destination: destinationPath
@@ -1319,7 +1319,7 @@ var createNewDirectory = function (parentDirectoryPath) { return __awaiter(_this
                 return [4 /*yield*/, getSuToken()];
             case 2:
                 suToken = _a.sent();
-                return [4 /*yield*/, request('/admin-panel/workers/create-new-directory.node.js', 'POST', {
+                return [4 /*yield*/, request('/admin-panel/workers/create-new-directory.node.js', {
                         suToken: suToken,
                         newDirectoryPath: newDirectoryPath
                     })

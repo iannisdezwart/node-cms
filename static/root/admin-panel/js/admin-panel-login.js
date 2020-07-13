@@ -7,7 +7,7 @@ document.addEventListener('keydown', function (e) {
 var login = function () {
     var username = $('#username').value.trim();
     var password = $('#password').value;
-    request('/admin-panel/workers/login.node.js', 'POST', { username: username, password: password })
+    request('/admin-panel/workers/login.node.js', { username: username, password: password })
         .then(function (token) {
         Cookies.set('token', token);
         Cookies.set('username', username);

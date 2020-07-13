@@ -142,11 +142,11 @@ interface PageContent {
 
 const fetchPages = () => {
 	return new Promise((resolve, reject) => {
-		request('/admin-panel/workers/get-pages.node.js', 'POST', {
+		request('/admin-panel/workers/get-pages.node.js', {
 			token: Cookies.get('token')
 		})
 			.then(res => {
-				db = JSON.parse(res)
+				db = res.body
 				resolve()
 			})
 			.catch(res => {
@@ -378,7 +378,7 @@ const showPages = () => {
 					throw new Error(`User cancelled`)
 				}
 
-				await request('/admin-panel/workers/swap-pages.node.js', 'POST', {
+				await request('/admin-panel/workers/swap-pages.node.js', {
 					suToken, page1, page2
 				})
 					.catch(handleRequestError)
@@ -444,7 +444,7 @@ const editPage = (id: number) => {
 					throw new Error(`User cancelled`)
 				}
 
-				await request('/admin-panel/workers/update-page.node.js', 'POST', {
+				await request('/admin-panel/workers/update-page.node.js', {
 					suToken, pageContent, pageId
 				})
 					.catch(err => {
@@ -517,7 +517,7 @@ const addPage = (pageType: string) => {
 
 				getSuToken()
 					.then(suToken => {
-						request('/admin-panel/workers/add-page.node.js', 'POST', {
+						request('/admin-panel/workers/add-page.node.js', {
 							suToken, pageType, pageContent
 						})
 							.then(() => {
@@ -572,7 +572,7 @@ const deletePage = (id: number) => {
 				;(window as any).handleSubmit = () => {
 					getSuToken()
 						.then(suToken => {
-							request('/admin-panel/workers/delete-page.node.js', 'POST', {
+							request('/admin-panel/workers/delete-page.node.js', {
 								suToken,
 								pageId: page.id
 							})
@@ -849,7 +849,7 @@ const addImg = async (
 const uploadFiles = (
 	fileList: FileList,
 	path = '/'
-) => new Promise<string>(resolve => {
+) => new Promise<SocketResponse>(resolve => {
 	getSuToken()
 		.then(suToken => {
 			const files: File[] = []
@@ -869,7 +869,7 @@ const uploadFiles = (
 		
 			// Send the request
 		
-			request('/admin-panel/workers/fileupload.node.js', 'POST', body, files)
+			request('/admin-panel/workers/fileupload.node.js', body, files)
 				.then(resolve)
 				.catch(handleRequestError)
 		})
@@ -1277,12 +1277,12 @@ const filePicker: FilePickerOverload = (
 */
 
 const getFiles = (path = '/') => new Promise<_File[]>((resolve, reject) => {
-	request('/admin-panel/workers/get-files.node.js', 'POST', {
+	request('/admin-panel/workers/get-files.node.js', {
 		path,
 		token: Cookies.get('token')
 	})
 		.then(res => {
-			const fileArray = JSON.parse(res).files as _File[]
+			const fileArray = res.body.files as _File[]
 			resolve(fileArray)
 		})
 		.catch(res => {
@@ -1516,7 +1516,7 @@ const showFiles = (path = '/') => {
 														.then(suToken => {
 															const filePaths = selectedFiles.map(f => path + f.name)
 
-															request('/admin-panel/workers/delete-multiple-files.node.js', 'POST', {
+															request('/admin-panel/workers/delete-multiple-files.node.js', {
 																suToken,
 																filePaths
 															})
@@ -1549,7 +1549,7 @@ const showFiles = (path = '/') => {
 
 												getSuToken()
 													.then(suToken => {
-														request('/admin-panel/workers/copy-files.node.js', 'POST', {
+														request('/admin-panel/workers/copy-files.node.js', {
 															suToken,
 															sources: selectedFiles.map(
 																selectedFile => selectedFile.path
@@ -1596,7 +1596,7 @@ const showFiles = (path = '/') => {
 
 												getSuToken()
 													.then(suToken => {
-														request('/admin-panel/workers/move-files.node.js', 'POST', {
+														request('/admin-panel/workers/move-files.node.js', {
 															suToken,
 															sources: selectedFiles.map(
 																selectedFile => selectedFile.path
@@ -1711,7 +1711,7 @@ const deleteFile = (filePath: string) => {
 			if (popupRes.buttonName == 'Delete') {
 				getSuToken()
 					.then(suToken => {
-						request('/admin-panel/workers/delete-file.node.js', 'POST', {
+						request('/admin-panel/workers/delete-file.node.js', {
 							suToken,
 							filePath
 						})
@@ -1754,7 +1754,7 @@ const copyOrMoveFile = async (
 
 		const suToken = await getSuToken()
 
-		await request(`/admin-panel/workers/${ mode }-file-different-name.node.js`, 'POST', {
+		await request(`/admin-panel/workers/${ mode }-file-different-name.node.js`, {
 			suToken,
 			source: sourcePath,
 			destination: destinationPath
@@ -1819,7 +1819,7 @@ const renameFile = async (sourcePath: string) => {
 
 			const suToken = await getSuToken()
 
-			await request('/admin-panel/workers/move-file-different-name.node.js', 'POST', {
+			await request('/admin-panel/workers/move-file-different-name.node.js', {
 				suToken,
 				source: sourcePath,
 				destination: destinationPath
@@ -1880,7 +1880,7 @@ const createNewDirectory = async (parentDirectoryPath: string) => {
 
 		const suToken = await getSuToken()
 
-		await request('/admin-panel/workers/create-new-directory.node.js', 'POST', {
+		await request('/admin-panel/workers/create-new-directory.node.js', {
 			suToken,
 			newDirectoryPath
 		})
