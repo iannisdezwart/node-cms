@@ -63,8 +63,9 @@ authenticateSuToken(suToken)
 					}
 			
 					// Write the file if the File Path does not exist, and break the loop
-			
-					fs.writeFileSync(filePath, file.data)
+
+					fs.copyFileSync(file.tempPath, filePath)
+
 					break
 				}
 			}

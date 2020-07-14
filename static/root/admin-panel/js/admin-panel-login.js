@@ -9,7 +9,7 @@ var login = function () {
     var password = $('#password').value;
     request('/admin-panel/workers/login.node.js', { username: username, password: password })
         .then(function (token) {
-        Cookies.set('token', token);
+        Cookies.set('token', token.body);
         Cookies.set('username', username);
         var redirectUrl = searchParams.get('to');
         if (redirectUrl != null) {

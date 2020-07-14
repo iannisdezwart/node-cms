@@ -21,6 +21,7 @@ const request = (
 
 		socket.on('response', (res: SocketResponse) => {
 			if (res.status >= 200 && res.status < 300) {
+				console.log(res)
 				resolve(res)
 			} else {
 				reject({ status: res.status, response: res.body })

@@ -57,7 +57,7 @@ authenticateSuToken(suToken)
                         throw "POSSIBLE DOT-DOT-SLASH ATTACK! user tried to upload to this path: " + filePath;
                     }
                     // Write the file if the File Path does not exist, and break the loop
-                    fs.writeFileSync(filePath, file.data);
+                    fs.copyFileSync(file.tempPath, filePath);
                     break;
                 }
             }

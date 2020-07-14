@@ -12,7 +12,7 @@ const login = () => {
 
 	request('/admin-panel/workers/login.node.js', { username, password })
 		.then(token => {
-			Cookies.set('token', token)
+			Cookies.set('token', token.body)
 			Cookies.set('username', username)
 
 			const redirectUrl = searchParams.get('to')

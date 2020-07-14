@@ -66,6 +66,7 @@ var request = function (url, body, files) {
                     });
                     socket.on('response', function (res) {
                         if (res.status >= 200 && res.status < 300) {
+                            console.log(res);
                             resolve(res);
                         }
                         else {
