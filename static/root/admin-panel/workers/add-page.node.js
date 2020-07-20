@@ -1,28 +1,28 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var apache_js_workers_1 = require("apache-js-workers");
-var node_json_database_1 = require("node-json-database");
-var authenticateSuToken = require("./../../../private-workers/authenticate-su-token");
-var compile = require("./../../../private-workers/compile");
+const apache_js_workers_1 = require("apache-js-workers");
+const node_json_database_1 = require("node-json-database");
+const authenticate_su_token_1 = require("./../../../private-workers/authenticate-su-token");
+const compile_1 = require("./../../../private-workers/compile");
 // Get the suToken from the request
-var suToken = apache_js_workers_1.req.body.suToken;
+const suToken = apache_js_workers_1.req.body.suToken;
 // Authenticate
-authenticateSuToken(suToken)
-    .then(function () {
+authenticate_su_token_1.authenticateSuToken(suToken)
+    .then(() => {
     // Authenticated, try to add the page to the database
     try {
-        var pageType = apache_js_workers_1.req.body.pageType;
-        var pageContent = apache_js_workers_1.req.body.pageContent;
-        var pagesDB = node_json_database_1.db(__dirname + '/../../../pages.json');
-        var pagesTable = pagesDB.table('pages');
+        const pageType = apache_js_workers_1.req.body.pageType;
+        const pageContent = apache_js_workers_1.req.body.pageContent;
+        const pagesDB = node_json_database_1.db(__dirname + '/../../../pages.json');
+        const pagesTable = pagesDB.table('pages');
         // Add the page to the database
-        pagesTable.insert([{ pageType: pageType, pageContent: pageContent }]);
+        pagesTable.insert([{ pageType, pageContent }]);
         // Compile the website
-        compile()
-            .then(function () {
+        compile_1.compile()
+            .then(() => {
             apache_js_workers_1.res.send('Succesfully stored page!');
         })
-            .catch(function (err) {
+            .catch(err => {
             throw err;
         });
     }
@@ -33,7 +33,7 @@ authenticateSuToken(suToken)
         throw err;
     }
 })
-    .catch(function (err) {
+    .catch(err => {
     // Send 403 error
     apache_js_workers_1.res.statusCode = 403;
     apache_js_workers_1.res.send('Forbidden');

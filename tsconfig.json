@@ -1,11 +1,13 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "ESNext",
     "watch": true,
     "lib": [
       "dom",
       "esnext"
 		],
-		"downlevelIteration": true
+		"downlevelIteration": true,
+		"moduleResolution": "Node",
+		"module": "CommonJS"
   }
 }

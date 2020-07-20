@@ -1,7 +1,7 @@
 import { req, res } from 'apache-js-workers'
 import { resolve as resolvePath } from 'path'
 import * as fs from 'fs'
-import * as authenticateSuToken from '../../../private-workers/authenticate-su-token'
+import { authenticateSuToken } from './../../../private-workers/authenticate-su-token'
 import * as ncp from 'ncp'
 
 // Dot-dot-slash attack prevention

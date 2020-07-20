@@ -1,20 +1,20 @@
 "use strict";
-var child_process_1 = require("child_process");
-var compile = function () { return new Promise(function (resolve, reject) {
-    var child = child_process_1.execFile('node', [__dirname + '/../compiler'], {
+Object.defineProperty(exports, "__esModule", { value: true });
+const child_process_1 = require("child_process");
+exports.compile = () => new Promise((resolve, reject) => {
+    const child = child_process_1.execFile('node', [__dirname + '/../compiler'], {
         // Set cwd manually to the site directory, otherwise cwd will be ApacheJS's dir
         cwd: __dirname + '/../'
     });
     // Store stdout and stderr
-    var stdout = '';
-    var stderr = '';
-    child.stdout.on('data', function (data) { return stdout += data; });
-    child.stderr.on('data', function (data) { return stderr += data; });
-    child.on('close', function (code) {
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', data => stdout += data);
+    child.stderr.on('data', data => stderr += data);
+    child.on('close', code => {
         if (code != 0) {
-            reject({ stdout: stdout, stderr: stderr });
+            reject({ stdout, stderr });
         }
         resolve(stdout);
     });
-}); };
-module.exports = compile;
+});

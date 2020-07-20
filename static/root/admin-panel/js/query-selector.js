@@ -1,2 +1,2 @@
-var $ = function (query) { return document.querySelector(query); };
-var $a = function (query) { return document.querySelectorAll(query); };
+const $ = (query) => document.querySelector(query);
+const $a = (query) => document.querySelectorAll(query);

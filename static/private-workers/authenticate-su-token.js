@@ -1,14 +1,15 @@
 "use strict";
-var fs = require("fs");
-var jwt = require("jsonwebtoken");
-var jwtSecret = fs.readFileSync(__dirname + '/../.jwtsecret', 'utf-8');
-var authenticateSuToken = function (suToken) { return new Promise(function (resolve, reject) {
+Object.defineProperty(exports, "__esModule", { value: true });
+const fs = require("fs");
+const jwt = require("jsonwebtoken");
+const jwtSecret = fs.readFileSync(__dirname + '/../.jwtsecret', 'utf-8');
+exports.authenticateSuToken = (suToken) => new Promise((resolve, reject) => {
     if (suToken == undefined) {
         reject();
         return;
     }
     // Verify the token
-    jwt.verify(suToken, jwtSecret, function (err, decoded) {
+    jwt.verify(suToken, jwtSecret, (err, decoded) => {
         if (!err) {
             if (decoded.tokenType == 'su-token') {
                 // Authenticated
@@ -24,5 +25,4 @@ var authenticateSuToken = function (suToken) { return new Promise(function (reso
             reject();
         }
     });
-}); };
-module.exports = authenticateSuToken;
+});

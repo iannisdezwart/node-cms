@@ -1,6 +1,7 @@
 import * as fs from 'fs'
 import * as chalk from 'chalk'
 import { db } from 'node-json-database'
+import { spawn } from 'child_process'
 
 type PageCompiler = (pageContent: Object, pages: Object) => {
 	html: string
@@ -11,90 +12,35 @@ interface ObjectOf<T> {
 	[key: string]: T
 }
 
+export const compile = async (compilePage: ObjectOf<PageCompiler>) => {
+	// Store start time
+	
+	const start = Date.now()
+
 // Write the ./root directory if it does not exist
 
-if (!fs.existsSync('root')) {
-	fs.mkdirSync('root')
-}
+	if (!fs.existsSync('root')) {
+		fs.mkdirSync('root')
+	}
 
-const pagesDB = db('pages.json')
+	// Create database if it does not exist
+	
+	const pagesDB = db('pages.json')
 
-// Create database if it does not exist
+	if (!pagesDB.exists) {
+		await install()
+	} else {
+		// Create pageTypes table if it does not exist
 
-if (!pagesDB.exists) {
-	pagesDB.create()
-}
-
-// Create pageTypes table if it does not exist
-
-if (!pagesDB.table('pageTypes').exists) {
-	const table = pagesDB.table('pageTypes')
-
-	table.create()
-
-	table.columns.add([
-		{
-			name: 'name',
-			dataType: 'String',
-			constraints: [
-				'primaryKey'
-			]
-		},
-		{
-			name: 'template',
-			dataType: 'JSON',
-			constraints: [
-				'notNull'
-			]
-		},
-		{
-			name: 'canAdd',
-			dataType: 'Boolean'
+		if (!pagesDB.table('pageTypes').exists || !pagesDB.table('pages').exists) {
+			await install()
 		}
-	])
-}
+	}
 
-// Create pages table if it does not exist
-
-if (!pagesDB.table('pages').exists) {
-	const table = pagesDB.table('pages')
-
-	table.create()
-
-	table.columns.add([
-		{
-			name: 'id',
-			dataType: 'Int',
-			constraints: [
-				'primaryKey',
-				'autoIncrement'
-			]
-		},
-		{
-			name: 'pageType',
-			dataType: 'String',
-			foreignKey: {
-				table: 'pageTypes',
-				column: 'name'
-			}
-		},
-		{
-			name: 'pageContent',
-			dataType: 'JSON',
-			constraints: [
-				'notNull'
-			]
-		}
-	])
-}
-
-const pageTypesTable = pagesDB.table('pageTypes').get()
-const pagesTable = pagesDB.table('pages').get()
-
-export const compile = (compilePage: ObjectOf<PageCompiler>) => {
-	// Store start time
-
-	const start = Date.now()
+	// Get tables
+	
+	const pageTypesTable = pagesDB.table('pageTypes').get()
+	const pagesTable = pagesDB.table('pages').get()
 
 	// Compile all pages
 	
@@ -134,3 +80,8 @@ const getDirectory = (path: string) => {
 
 	return path
 }
+
+const install = () => new Promise<void>(resolve => {
+	const installer = spawn('node', [ './install' ])
+	installer.on('close', resolve)
+})

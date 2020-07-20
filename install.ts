@@ -15,6 +15,12 @@
 
 	2. Creation of directory tree
 
+	3. Creation of databases
+		3.1 Create User Database
+		3.2 Create Pages Database
+
+	4. Create JWT secret key
+
 */
 
 /* ===================
@@ -22,9 +28,11 @@
 =================== */
 
 import * as fs from 'fs'
-import * as qcd from 'queued-copy-dir'
-import { db } from 'node-json-database'
 import { resolve as resolvePath } from 'path'
+import * as qcd from 'queued-copy-dir'
+
+import { db } from 'node-json-database'
+import * as bcrypt from 'bcrypt'
 
 // Go to the project root
 
@@ -147,7 +155,17 @@ if (!fs.existsSync('root/content')) {
 
 qcd.sync(__dirname + '/static/private-workers', 'private-workers')
 
-// Create User Database
+// Create database list
+
+fs.writeFileSync('databases.json', '[]')
+
+/* ===================
+	3. Creation of databases
+=================== */
+
+/*
+	3.1 Create User Database
+*/
 
 const usersDB = db('users.json')
 
@@ -185,16 +203,28 @@ if (!adminsTable.exists) {
 			]
 		},
 		{
-			name: 'passwordSalt',
+			name: 'adminLevel',
 			dataType: 'String',
 			constraints: [
 				'notNull'
 			]
 		}
 	])
+
+	// Add default root account
+
+	adminsTable.insert([
+		{
+			username: 'root',
+			password: bcrypt.hashSync('', 12),
+			adminLevel: 'root'
+		}
+	])
 }
 
-// Create Pages Database
+/*
+	3.1 Create Pages Database
+*/
 
 const pagesDB = db('pages.json')
 
@@ -262,11 +292,17 @@ if (!pagesDB.table('pages').exists) {
 			constraints: [
 				'notNull'
 			]
+		},
+		{
+			name: 'path',
+			dataType: 'String'
 		}
 	])
 }
 
-// Create .jwtsecret
+/* ===================
+	4. Create JWT secret key
+=================== */
 
 if (!fs.existsSync('.jwtsecret')) {
 	fs.writeFileSync('.jwtsecret', randomString(128, {

@@ -1,6 +1,7 @@
 import { db } from 'node-json-database'
+import * as bcrypt from 'bcrypt'
 
-const authenticate = (loginData: { username: string, password: string }) => {
+export const authenticate = (loginData: { username: string, password: string }) => {
 	return new Promise((resolve, reject) => {
 		// Handle null data
 
@@ -17,20 +18,30 @@ const authenticate = (loginData: { username: string, password: string }) => {
 		// Search for the Login Data in the database
 	
 		const adminTable = db(__dirname + '/../users.json').table('admins')
-		const searchTable = adminTable.get().where(row => row.username == loginData.username && row.password == loginData.password)
+		const searchTable = adminTable.get().where(row => row.username == loginData.username)
 
 		// Check if the Login Data exists in the database
 		
 		if (searchTable.length == 1) {
-			// Authenticated
+			const userRecord = searchTable.rows[0]
 
-			resolve()
+			// Check password
+
+			const match = bcrypt.compareSync(loginData.password, userRecord.password)
+
+			if (match) {
+				// Password matches
+
+				resolve()
+			} else {
+				// Password does not match 
+
+				reject()
+			}
 		} else {
-			// Not authenticated
+			// User does not exist
 
 			reject()
 		}
 	})
 }
-
-export = authenticate

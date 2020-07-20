@@ -1,108 +1,86 @@
 "use strict";
-var __values = (this && this.__values) || function(o) {
-    var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
-    if (m) return m.call(o);
-    if (o && typeof o.length === "number") return {
-        next: function () {
-            if (o && i >= o.length) o = void 0;
-            return { value: o && o[i++], done: !o };
-        }
-    };
-    throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-var apache_js_workers_1 = require("apache-js-workers");
-var path_1 = require("path");
-var fs = require("fs");
-var authenticateSuToken = require("../../../private-workers/authenticate-su-token");
-var qcd = require("queued-copy-dir");
+const apache_js_workers_1 = require("apache-js-workers");
+const path_1 = require("path");
+const fs = require("fs");
+const authenticate_su_token_1 = require("./../../../private-workers/authenticate-su-token");
+const qcd = require("queued-copy-dir");
 // Dot-dot-slash attack prevention
-var dotDotSlashAttack = function (path) {
-    var resolvedPath = path_1.resolve(path);
-    var rootPath = path_1.resolve(__dirname + '/../../content');
+const dotDotSlashAttack = (path) => {
+    const resolvedPath = path_1.resolve(path);
+    const rootPath = path_1.resolve(__dirname + '/../../content');
     if (!resolvedPath.startsWith(rootPath)) {
         return true;
     }
     return false;
 };
 // Recursive rimraf
-var rimraf = function (parentPath) {
-    var e_1, _a;
+const rimraf = (parentPath) => {
     if (fs.existsSync(parentPath)) {
-        var files = fs.readdirSync(parentPath);
-        try {
-            for (var files_1 = __values(files), files_1_1 = files_1.next(); !files_1_1.done; files_1_1 = files_1.next()) {
-                var file = files_1_1.value;
-                var childPath = parentPath + '/' + file;
-                var stats = fs.statSync(childPath);
-                if (stats.isDirectory()) {
-                    rimraf(childPath);
-                }
-                else {
-                    fs.unlinkSync(childPath);
-                }
+        const files = fs.readdirSync(parentPath);
+        for (let file of files) {
+            const childPath = parentPath + '/' + file;
+            const stats = fs.statSync(childPath);
+            if (stats.isDirectory()) {
+                rimraf(childPath);
             }
-        }
-        catch (e_1_1) { e_1 = { error: e_1_1 }; }
-        finally {
-            try {
-                if (files_1_1 && !files_1_1.done && (_a = files_1.return)) _a.call(files_1);
+            else {
+                fs.unlinkSync(childPath);
             }
-            finally { if (e_1) throw e_1.error; }
         }
         fs.rmdirSync(parentPath);
     }
 };
 // Get the suToken from the request
-var suToken = apache_js_workers_1.req.body.suToken;
+const suToken = apache_js_workers_1.req.body.suToken;
 // Authenticate
-authenticateSuToken(suToken)
-    .then(function () {
+authenticate_su_token_1.authenticateSuToken(suToken)
+    .then(() => {
     // Authenticated, move the file
     try {
-        var source = apache_js_workers_1.req.body.source;
-        var destination = apache_js_workers_1.req.body.destination;
+        const source = apache_js_workers_1.req.body.source;
+        const destination = apache_js_workers_1.req.body.destination;
         if (source == undefined || destination == undefined) {
-            throw new Error("body.source or body.destination was not provided");
+            throw new Error(`body.source or body.destination was not provided`);
         }
         // Parse paths
-        var sourcePath_1 = path_1.resolve(__dirname + '/../../content' + source);
-        var destinationPath = path_1.resolve(__dirname + '/../../content' + destination);
+        const sourcePath = path_1.resolve(__dirname + '/../../content' + source);
+        const destinationPath = path_1.resolve(__dirname + '/../../content' + destination);
         // Security
-        if (dotDotSlashAttack(sourcePath_1)) {
+        if (dotDotSlashAttack(sourcePath)) {
             // Send 403 error
             apache_js_workers_1.res.statusCode = 403;
             apache_js_workers_1.res.send('Forbidden');
-            console.warn("POSSIBLE DOT-DOT-SLASH ATTACK! user tried to move this file: " + sourcePath_1);
+            console.warn(`POSSIBLE DOT-DOT-SLASH ATTACK! user tried to move this file: ${sourcePath}`);
             return;
         }
         if (dotDotSlashAttack(destinationPath)) {
             // Send 403 error
             apache_js_workers_1.res.statusCode = 403;
             apache_js_workers_1.res.send('Forbidden');
-            console.warn("POSSIBLE DOT-DOT-SLASH ATTACK! user tried to move to this file: " + destinationPath);
+            console.warn(`POSSIBLE DOT-DOT-SLASH ATTACK! user tried to move to this file: ${destinationPath}`);
             return;
         }
-        if (fs.statSync(sourcePath_1).isDirectory()) {
+        if (fs.statSync(sourcePath).isDirectory()) {
             // Prevent circular moving
             // Get Destination directory path
-            var destinationDirPath = path_1.resolve(destinationPath.substring(0, destinationPath.lastIndexOf('/') + 1));
-            if (sourcePath_1 == destinationDirPath) {
-                throw new Error("Cannot move a folder into itself. User tried to move " + sourcePath_1 + " into directory " + destinationDirPath);
+            const destinationDirPath = path_1.resolve(destinationPath.substring(0, destinationPath.lastIndexOf('/') + 1));
+            if (sourcePath == destinationDirPath) {
+                throw new Error(`Cannot move a folder into itself. User tried to move ${sourcePath} into directory ${destinationDirPath}`);
             }
-            qcd.async(sourcePath_1, destinationPath)
-                .then(function () {
+            qcd.async(sourcePath, destinationPath)
+                .then(() => {
                 // Recursively delete the source folder after it has been copied
-                rimraf(sourcePath_1);
+                rimraf(sourcePath);
             })
-                .catch(function (err) {
+                .catch(err => {
                 throw err;
             });
         }
         else {
-            fs.copyFileSync(sourcePath_1, destinationPath);
+            fs.copyFileSync(sourcePath, destinationPath);
             // Delete the source file
-            fs.unlinkSync(sourcePath_1);
+            fs.unlinkSync(sourcePath);
         }
         apache_js_workers_1.res.send('Successfully moved file');
     }
@@ -113,7 +91,7 @@ authenticateSuToken(suToken)
         console.error(err);
     }
 })
-    .catch(function () {
+    .catch(() => {
     // Send 403 error
     apache_js_workers_1.res.statusCode = 403;
     apache_js_workers_1.res.send('Forbidden');

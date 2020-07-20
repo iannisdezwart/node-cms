@@ -1,7 +1,7 @@
 import { req, res } from 'apache-js-workers'
 import { db } from 'node-json-database'
-import * as authenticateSuToken from './../../../private-workers/authenticate-su-token'
-import * as compile from './../../../private-workers/compile'
+import { authenticateSuToken } from './../../../private-workers/authenticate-su-token'
+import { compile }  from './../../../private-workers/compile'
 
 // Get the suToken from the request
 
@@ -16,17 +16,17 @@ authenticateSuToken(suToken)
 		try {
 			const pageId = req.body.pageId as number
 			const pageContent = req.body.pageContent as Object
-	
+
 			const pagesDB = db(__dirname + '/../../../pages.json')
 			const pagesTable = pagesDB.table('pages')
 
 			// Get the current page from the database
-			
+
 			const page = pagesTable.get().where(row => row.id == pageId).rows[0]
 			page.pageContent = pageContent
 
 			// Update the record
-	
+
 			pagesTable.update(page, row => row.id == pageId)
 
 			// Compile the website
@@ -36,6 +36,7 @@ authenticateSuToken(suToken)
 					res.send('Succesfully stored page!')
 				})
 				.catch(err => {
+					console.log(err)
 					throw err
 				})
 		} catch(err) {

@@ -1,9 +1,9 @@
 import { req, res } from 'apache-js-workers'
 import { resolve as resolvePath } from 'path'
 import * as fs from 'fs'
-import * as jwt from 'jsonwebtoken'
+import { authenticateSuToken } from './../../../private-workers/authenticate-su-token'
 
-interface _File {
+interface FileInfo {
 	name: string
 	path: string
 	isDirectory: boolean
@@ -25,16 +25,14 @@ const dotDotSlashAttack = (path: string) => {
 	return false
 }
 
-// Get the token from the request
+// Get the suToken from the request
 
-const token = req.body.token as string
+const suToken = req.body.suToken as string
 
-const jwtSecret = fs.readFileSync(__dirname + '/../../../.jwtsecret', 'utf-8')
+// Verify the suToken
 
-// Verify the token
-
-jwt.verify(token, jwtSecret, err => {
-	if (!err) {
+authenticateSuToken(suToken)
+	.then(() => {
 		// Authenticated
 
 		const reqPath = req.body.path as string
@@ -54,7 +52,7 @@ jwt.verify(token, jwtSecret, err => {
 		// Get files
 
 		const fileNames = fs.readdirSync(path)
-		const files: _File[] = []
+		const files: FileInfo[] = []
 
 		for (let fileName of fileNames) {
 			const stats = fs.statSync(path + '/' + fileName)
@@ -70,10 +68,10 @@ jwt.verify(token, jwtSecret, err => {
 		}
 
 		res.send({ files })
-	} else {
+	})
+	.catch(() => {
 		// Send 403 error
 
 		res.statusCode = 403
 		res.send('Forbidden')
-	}
-})
+	})

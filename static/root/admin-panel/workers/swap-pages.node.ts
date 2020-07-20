@@ -1,7 +1,7 @@
 import { req, res } from 'apache-js-workers'
 import { db } from 'node-json-database'
-import * as authenticateSuToken from '../../../private-workers/authenticate-su-token'
-import * as compile from '../../../private-workers/compile'
+import { authenticateSuToken } from './../../../private-workers/authenticate-su-token'
+import { compile }  from './../../../private-workers/compile'
 
 // Get the suToken from the request
 

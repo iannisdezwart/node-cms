@@ -146,6 +146,16 @@ class Stack<T> {
 		this.top = this.top.prev
 		this.size--
 
+		if (this.size > 0) {
+			// Remove link to next node
+
+			this.top.next = null
+		} else {
+			// Remove the bottom node
+
+			this.bottom = null
+		}
+
 		return data
 	}
 

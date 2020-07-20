@@ -1,5 +1,5 @@
 import { req, res } from 'apache-js-workers'
-import * as authenticate from './../../../private-workers/authenticate'
+import { authenticate } from './../../../private-workers/authenticate'
 import * as fs from 'fs'
 import * as jwt from 'jsonwebtoken'
 

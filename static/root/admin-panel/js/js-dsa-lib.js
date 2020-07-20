@@ -33,132 +33,136 @@
 /*
     1.1 Queue main class
 */
-var Queue = /** @class */ (function () {
-    function Queue() {
+class Queue {
+    constructor() {
         this.size = 0;
     }
-    Queue.prototype.push = function (data) {
+    push(data) {
         if (this.size == 0) {
-            var newNode = new QueueNode(data);
+            const newNode = new QueueNode(data);
             this.first = newNode;
             this.last = newNode;
         }
         else {
-            var newNode = new QueueNode(data);
+            const newNode = new QueueNode(data);
             this.last.next = newNode;
             this.last = this.last.next;
         }
         this.size++;
-    };
-    Queue.prototype.shift = function () {
+    }
+    shift() {
         if (this.size == 0) {
-            throw new Error("Cannot shift an empty Queue.");
+            throw new Error(`Cannot shift an empty Queue.`);
         }
-        var data = this.first.data;
+        const { data } = this.first;
         this.first = this.first.next;
         this.size--;
         return data;
-    };
-    Queue.prototype.toArray = function () {
-        var currentNode = this.first;
-        var i = 0;
-        var array = new Array(this.size);
+    }
+    toArray() {
+        let currentNode = this.first;
+        let i = 0;
+        const array = new Array(this.size);
         while (currentNode != null) {
             array[i] = currentNode.data;
             currentNode = currentNode.next;
             i++;
         }
         return array;
-    };
-    Queue.prototype.isEmpty = function () {
+    }
+    isEmpty() {
         return this.size == 0;
-    };
-    return Queue;
-}());
+    }
+}
 /*
     1.2 QueueNode class
 */
-var QueueNode = /** @class */ (function () {
-    function QueueNode(data) {
+class QueueNode {
+    constructor(data) {
         this.data = data;
     }
-    return QueueNode;
-}());
+}
 /* ===================
     2. Stack
 =================== */
 /*
     2.1 Stack main class
 */
-var Stack = /** @class */ (function () {
-    function Stack() {
+class Stack {
+    constructor() {
         this.size = 0;
     }
-    Stack.prototype.push = function (data) {
+    push(data) {
         if (this.size == 0) {
-            var newNode = new StackNode(data, null);
+            const newNode = new StackNode(data, null);
             this.bottom = newNode;
             this.top = newNode;
         }
         else {
-            var newNode = new StackNode(data, this.top);
+            const newNode = new StackNode(data, this.top);
             this.top.next = newNode;
             this.top = this.top.next;
         }
         this.size++;
-    };
-    Stack.prototype.pop = function () {
+    }
+    pop() {
         if (this.size == 0) {
-            throw new Error("Cannot pop an empty Stack.");
+            throw new Error(`Cannot pop an empty Stack.`);
         }
-        var data = this.top.data;
+        const { data } = this.top;
         this.top = this.top.prev;
         this.size--;
+        if (this.size > 0) {
+            // Remove link to next node
+            this.top.next = null;
+        }
+        else {
+            // Remove the bottom node
+            this.bottom = null;
+        }
         return data;
-    };
-    Stack.prototype.toArray = function () {
-        var currentNode = this.bottom;
-        var i = 0;
-        var array = new Array(this.size);
+    }
+    toArray() {
+        let currentNode = this.bottom;
+        let i = 0;
+        const array = new Array(this.size);
         while (currentNode != null) {
             array[i] = currentNode.data;
             currentNode = currentNode.next;
             i++;
         }
         return array;
-    };
-    Stack.prototype.isEmpty = function () {
+    }
+    isEmpty() {
         return this.size == 0;
-    };
-    return Stack;
-}());
+    }
+}
 /*
     2.2 StackNode class
 */
-var StackNode = /** @class */ (function () {
-    function StackNode(data, prev) {
+class StackNode {
+    constructor(data, prev) {
         this.data = data;
         this.prev = prev;
     }
-    return StackNode;
-}());
+}
 /* ===================
     3. Linked List
 =================== */
 /*
     3.1 LinkedList main class
 */
-var LinkedList = /** @class */ (function () {
-    function LinkedList() {
+class LinkedList {
+    constructor() {
         this.head = null;
         this.size = 0;
     }
-    LinkedList.prototype.insert = function (data) {
+    insert(data) {
         if (this.head == null) {
             this.head = new LinkedListNode(data);
         }
         else {
-            var currentNode = this.head;
+            let currentNode = this.head;
             if (currentNode.next == null) {
                 currentNode.next = new LinkedListNode(data);
             }
@@ -170,10 +174,10 @@ var LinkedList = /** @class */ (function () {
             }
         }
         this.size++;
-    };
-    LinkedList.prototype.insertBeforeHead = function (data) {
+    }
+    insertBeforeHead(data) {
         if (this.head != null) {
-            var newNode = new LinkedListNode(data);
+            const newNode = new LinkedListNode(data);
             newNode.next = this.head;
             this.head = newNode;
         }
@@ -181,9 +185,8 @@ var LinkedList = /** @class */ (function () {
             this.head = new LinkedListNode(data);
         }
         this.size++;
-    };
-    LinkedList.prototype.delete = function (data, multiple) {
-        if (multiple === void 0) { multiple = false; }
+    }
+    delete(data, multiple = false) {
         if (this.head == null) {
             return;
         }
@@ -195,7 +198,7 @@ var LinkedList = /** @class */ (function () {
             return;
         }
         if (this.head.next != null) {
-            var currentNode = this.head;
+            let currentNode = this.head;
             while (currentNode.next != null) {
                 if (currentNode.next.data == data) {
                     currentNode.next = currentNode.next.next;
@@ -207,17 +210,17 @@ var LinkedList = /** @class */ (function () {
                 currentNode = currentNode.next;
             }
         }
-    };
-    LinkedList.prototype.deleteHead = function () {
+    }
+    deleteHead() {
         if (this.head != null) {
-            var newHead = this.head.next;
+            const newHead = this.head.next;
             this.head = newHead;
             this.size--;
         }
-    };
-    LinkedList.prototype.search = function (data) {
-        var currentNode = this.head;
-        var found = 0;
+    }
+    search(data) {
+        let currentNode = this.head;
+        let found = 0;
         while (currentNode != null) {
             if (currentNode.data == data) {
                 found++;
@@ -225,47 +228,45 @@ var LinkedList = /** @class */ (function () {
             currentNode = currentNode.next;
         }
         return found;
-    };
-    LinkedList.prototype.toArray = function () {
-        var currentNode = this.head;
-        var i = 0;
-        var array = new Array(this.size);
+    }
+    toArray() {
+        let currentNode = this.head;
+        let i = 0;
+        let array = new Array(this.size);
         while (currentNode != null) {
             array[i] = currentNode.data;
             currentNode = currentNode.next;
             i++;
         }
         return array;
-    };
-    LinkedList.prototype.isEmpty = function () {
+    }
+    isEmpty() {
         return this.size == 0;
-    };
-    return LinkedList;
-}());
+    }
+}
 /*
     3.2 DoublyLinkedListNode
 */
-var LinkedListNode = /** @class */ (function () {
-    function LinkedListNode(data) {
+class LinkedListNode {
+    constructor(data) {
         this.data = data;
         this.next = null;
     }
-    return LinkedListNode;
-}());
+}
 /*
     3.3 DoublyLinkedList main class
 */
-var DoublyLinkedList = /** @class */ (function () {
-    function DoublyLinkedList() {
+class DoublyLinkedList {
+    constructor() {
         this.head = null;
         this.size = 0;
     }
-    DoublyLinkedList.prototype.insert = function (data) {
+    insert(data) {
         if (this.head == null) {
             this.head = new DoublyLinkedListNode(data, null);
         }
         else {
-            var currentNode = this.head;
+            let currentNode = this.head;
             if (currentNode.next == null) {
                 currentNode.next = new DoublyLinkedListNode(data, currentNode);
             }
@@ -277,10 +278,10 @@ var DoublyLinkedList = /** @class */ (function () {
             }
         }
         this.size++;
-    };
-    DoublyLinkedList.prototype.insertBeforeHead = function (data) {
+    }
+    insertBeforeHead(data) {
         if (this.head != null) {
-            var newNode = new DoublyLinkedListNode(data, null);
+            const newNode = new DoublyLinkedListNode(data, null);
             newNode.next = this.head;
             this.head.prev = newNode;
             this.head = newNode;
@@ -289,9 +290,8 @@ var DoublyLinkedList = /** @class */ (function () {
             this.head = new DoublyLinkedListNode(data, null);
         }
         this.size++;
-    };
-    DoublyLinkedList.prototype.delete = function (data, multiple) {
-        if (multiple === void 0) { multiple = false; }
+    }
+    delete(data, multiple = false) {
         if (this.head == null) {
             return;
         }
@@ -303,7 +303,7 @@ var DoublyLinkedList = /** @class */ (function () {
             return;
         }
         if (this.head.next != null) {
-            var currentNode = this.head;
+            let currentNode = this.head;
             while (currentNode.next != null) {
                 if (currentNode.next.data == data) {
                     currentNode.next = currentNode.next.next;
@@ -315,17 +315,17 @@ var DoublyLinkedList = /** @class */ (function () {
                 currentNode = currentNode.next;
             }
         }
-    };
-    DoublyLinkedList.prototype.deleteHead = function () {
+    }
+    deleteHead() {
         if (this.head != null) {
-            var newHead = this.head.next;
+            const newHead = this.head.next;
             this.head = newHead;
             this.size--;
         }
-    };
-    DoublyLinkedList.prototype.search = function (data) {
-        var currentNode = this.head;
-        var found = 0;
+    }
+    search(data) {
+        let currentNode = this.head;
+        let found = 0;
         while (currentNode != null) {
             if (currentNode.data == data) {
                 found++;
@@ -333,34 +333,32 @@ var DoublyLinkedList = /** @class */ (function () {
             currentNode = currentNode.next;
         }
         return found;
-    };
-    DoublyLinkedList.prototype.toArray = function () {
-        var currentNode = this.head;
-        var i = 0;
-        var array = new Array(this.size);
+    }
+    toArray() {
+        let currentNode = this.head;
+        let i = 0;
+        let array = new Array(this.size);
         while (currentNode != null) {
             array[i] = currentNode.data;
             currentNode = currentNode.next;
             i++;
         }
         return array;
-    };
-    DoublyLinkedList.prototype.isEmpty = function () {
+    }
+    isEmpty() {
         return this.size == 0;
-    };
-    return DoublyLinkedList;
-}());
+    }
+}
 /*
     3.4 DoublyLinkedListNode class
 */
-var DoublyLinkedListNode = /** @class */ (function () {
-    function DoublyLinkedListNode(data, prev) {
+class DoublyLinkedListNode {
+    constructor(data, prev) {
         this.data = data;
         this.next = null;
         this.prev = prev;
     }
-    return DoublyLinkedListNode;
-}());
+}
 /* ===================
     4. Graph
 =================== */

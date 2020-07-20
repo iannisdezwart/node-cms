@@ -1,6 +1,6 @@
 import { execFile } from 'child_process'
 
-const compile = () => new Promise((resolve, reject) => {
+export const compile = () => new Promise((resolve, reject) => {
 	const child = execFile('node', [ __dirname + '/../compiler' ], {
 		// Set cwd manually to the site directory, otherwise cwd will be ApacheJS's dir
 
@@ -23,5 +23,3 @@ const compile = () => new Promise((resolve, reject) => {
 		resolve(stdout)
 	})
 })
-
-export = compile

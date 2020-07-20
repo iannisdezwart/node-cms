@@ -21,7 +21,6 @@ const request = (
 
 		socket.on('response', (res: SocketResponse) => {
 			if (res.status >= 200 && res.status < 300) {
-				console.log(res)
 				resolve(res)
 			} else {
 				reject({ status: res.status, response: res.body })
@@ -71,11 +70,13 @@ const handleRequestError = (err: { status: number, response: string }) => {
 
 		globalSuToken = undefined
 
+		setPadlock('locked')
+
 		notification('Session Timed Out', `Please retry.`)
 	} else {
 		// This should never happen
 
-		notification('Session', `status code: ${ err.status }, body: <code>${ err.response }</code>`)
+		notification('Unhandled Error', `status code: ${ err.status }, body: <code>${ err.response }</code>`)
 	}
 }
 

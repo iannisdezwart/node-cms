@@ -1,6 +1,9 @@
 interface PopupButton {
 	name: string
 	classes?: string[]
+	on?: {
+		[key in keyof HTMLElementEventMap]?: Function
+	}
 }
 
 interface PopupInput {
@@ -113,6 +116,14 @@ const popup = (
 		}
 
 		buttonEl.classList.add('small')
+
+		if (button.on != undefined) {
+			for (let event in button.on) {
+				const f = button.on[event]
+	
+				buttonEl.addEventListener(event, f)
+			}
+		}
 
 		buttonEl.addEventListener('click', () => {
 			const inputResults = getInputValues()

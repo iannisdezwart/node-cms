@@ -1,18 +1,15 @@
 import { req, res } from 'apache-js-workers'
 import { db } from 'node-json-database'
-import * as fs from 'fs'
-import * as jwt from 'jsonwebtoken'
+import { authenticateSuToken } from './../../../private-workers/authenticate-su-token'
 
 // Get the token from the request
 
-const token = req.body.token as string
+const suToken = req.body.suToken as string
 
-const jwtSecret = fs.readFileSync(__dirname + '/../../../.jwtsecret', 'utf-8')
+// Verify the suToken
 
-// Verify the token
-
-jwt.verify(token, jwtSecret, err => {
-	if (!err) {
+authenticateSuToken(suToken)
+	.then(() => {
 		// Authenticated, send the pages
 
 		const pagesDB = db(__dirname + '/../../../pages.json')
@@ -21,10 +18,10 @@ jwt.verify(token, jwtSecret, err => {
 		const pageTypes = pagesDB.table('pageTypes').get().rows
 
 		res.send({ pages, pageTypes })
-	} else {
+	})
+	.catch(() => {
 		// Send 403 error
 
 		res.statusCode = 403
 		res.send('Forbidden')
-	}
-})
+	})

@@ -3,7 +3,9 @@ import * as jwt from 'jsonwebtoken'
 
 const jwtSecret = fs.readFileSync(__dirname + '/../.jwtsecret', 'utf-8')
 
-const authenticateSuToken = (suToken: string) => new Promise((resolve, reject) => {
+export const authenticateSuToken = (
+	suToken: string
+) => new Promise<void>((resolve, reject) => {
 	if (suToken == undefined) {
 		reject()
 		return
@@ -29,5 +31,3 @@ const authenticateSuToken = (suToken: string) => new Promise((resolve, reject) =
 		}
 	})
 })
-
-export = authenticateSuToken

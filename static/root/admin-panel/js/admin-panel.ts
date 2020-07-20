@@ -49,27 +49,29 @@
 		4.7 Rename File
 		4.8 Create New Directory
 
+	5. Database manager
+
 */
 
 /* ===================
 	1. On-load setup
 =================== */
 
-window.onload = () => {
+window.onload = async () => {
 	const username = Cookies.get('username')
 
+	goToTheRightPage()
+
 	if (username == undefined) {
-		// Go to login page
+		// Login
 
-		document.location.pathname = '/admin-panel/login.html'
-	} else {
-		// Set the greeting
-
-		const greetingLI = $('#greeting') as HTMLLIElement
-		greetingLI.innerText = `Welcome, ${ Cookies.get('username') }!`
+		await login()
 	}
 
-	goToTheRightPage()
+	// Set the greeting
+
+	const greetingLI = $('#greeting') as HTMLLIElement
+	greetingLI.innerText = `Welcome, ${ Cookies.get('username') }!`
 }
 
 /* ===================
@@ -105,9 +107,9 @@ const initTinyMCE = () => {
 
 */
 
-let db: DB
+let db: Pages_DB
 
-interface DB {
+interface Pages_DB {
 	pageTypes: PageType[]
 	pages: Page[]
 }
@@ -140,20 +142,18 @@ interface PageContent {
 
 */
 
-const fetchPages = () => {
-	return new Promise((resolve, reject) => {
-		request('/admin-panel/workers/get-pages.node.js', {
-			token: Cookies.get('token')
-		})
-			.then(res => {
-				db = res.body
-				resolve()
-			})
-			.catch(res => {
-				reject(res)
-			})
+const fetchPages = () => new Promise(async resolve => {
+	const suToken = await getSuToken()
+
+	request('/admin-panel/workers/get-pages.node.js', {
+		suToken
 	})
-}
+		.then(res => {
+			db = res.body
+			resolve()
+		})
+		.catch(handleRequestError)
+})
 
 const pageHistory: Stack<string> = new Stack()
 pageHistory.push(window.location.origin + '/admin-panel/')
@@ -179,7 +179,13 @@ const setSearchParams = (params: Object) => {
 
 	// Save new URL in pageHistory
 
-	pageHistory.push(window.location.href)
+	if (pageHistory.size > 0) {
+		if (pageHistory.top.data != window.location.href) {
+			pageHistory.push(window.location.href)
+		}
+	} else {
+		pageHistory.push(window.location.href)
+	}
 }
 
 const goBackInHistory = () => {
@@ -189,9 +195,9 @@ const goBackInHistory = () => {
 
 	if (pageHistory.size > 0) {
 		const prevUrl = pageHistory.pop()
-
+	
 		// Set the URL of the page without reloading it
-
+	
 		window.history.pushState({ path: prevUrl }, '', prevUrl)
 		goToTheRightPage()
 	}
@@ -238,8 +244,14 @@ const goToTheRightPage = () => {
 	}
 }
 
+// Handle back- and forward button
+
+addEventListener('popstate', goBackInHistory)
+
 const goToHomepage = () => {
 	// Todo: make homepage
+
+	setSearchParams({})
 
 	$('.main').innerHTML = /* html */ `
 		
@@ -390,15 +402,7 @@ const showPages = () => {
 				tab: 'pages'
 			})
 		})
-		.catch(res => {
-			if (res.status == 403) {
-				document.location.pathname = '/admin-panel/login.html'
-			} else {
-				// This should never happen
-
-				notification('Unspecified Error', `status code: ${ res.status }, body: <code>${ res.response }</code>`)
-			}
-		})
+		.catch(handleRequestError)
 }
 
 /*
@@ -407,81 +411,71 @@ const showPages = () => {
 
 */
 
-const editPage = (id: number) => {
+const editPage = async (id: number) => {
 	showLoader()
 
-	fetchPages()
-		.then(() => {
-			const page = db.pages.find(el => el.id == id)
-			const { template } = db.pageTypes.find(el => el.name == page.pageType)
-		
-			$('.main').innerHTML = /* html */ `
-				<h1>Editing page "${ page.pageContent.title }"</h1>
-		
-				${
-					reduceObject(template, input => /* html */ `
-						<br/><br/>
-						<h2>${ input }:</h2>
-						${ pageTemplateInputToHTML(template[input], input, page.pageContent[input]) }
-					`)
-				}
-		
+	await fetchPages()
+
+	const page = db.pages.find(el => el.id == id)
+	const { template } = db.pageTypes.find(el => el.name == page.pageType)
+
+	$('.main').innerHTML = /* html */ `
+		<h1>Editing page "${ page.pageContent.title }"</h1>
+
+		${
+			reduceObject(template, input => /* html */ `
 				<br/><br/>
-				<button id="submit-changes" onclick="handleSubmit()">Save Page</button>
-			`
+				<h2>${ input }:</h2>
+				${ pageTemplateInputToHTML(template[input], input, page.pageContent[input]) }
+			`)
+		}
 
-			// 3.2.1 Save Page
+		<br/><br/>
+		<button id="submit-changes" onclick="handleSubmit()">Save Page</button>
+	`
 
-			const savePage = async (
-				pageContent: PageContent,
-				pageId: number
-			) => {
-				const suToken = await getSuToken()
+	// 3.2.1 Save Page
 
-				if (suToken == undefined) {
-					// User cancelled
+	const savePage = async (
+		pageContent: PageContent,
+		pageId: number
+	) => {
+		const suToken = await getSuToken()
 
-					throw new Error(`User cancelled`)
-				}
+		if (suToken == undefined) {
+			// User cancelled
 
-				await request('/admin-panel/workers/update-page.node.js', {
-					suToken, pageContent, pageId
-				})
-					.catch(err => {
-						handleRequestError(err)
-						throw err
-					})
-			}
+			throw new Error(`User cancelled`)
+		}
 
-			;(window as any).handleSubmit = (keepEditing = false) => {
-				const pageContent = collectInputs(template)
-
-				savePage(pageContent, page.id)
-					.then(() => {
-						notification('Saved page', `Successfully saved page "${ page.pageContent.title }"!`)
-							
-						if (!keepEditing) {
-							showPages()
-						}
-					})
-			}
-
-			setSearchParams({
-				tab: 'edit-page',
-				'page-id': page.id
+		await request('/admin-panel/workers/update-page.node.js', {
+			suToken, pageContent, pageId
+		})
+			.catch(err => {
+				handleRequestError(err)
+				throw err
 			})
+	}
 
-			initTinyMCE()
-		})
-		.catch(res => {
-			if (res.status == 403) {
-				document.location.pathname = '/admin-panel/login.html'
-			} else {
-				// This should never happen
+	;(window as any).handleSubmit = (keepEditing = false) => {
+		const pageContent = collectInputs(template)
 
-				notification('Unspecified Error', `status code: ${ res.status }, body: <code>${ res.response }</code>`)
-			}
-		})
+		savePage(pageContent, page.id)
+			.then(() => {
+				notification('Saved page', `Successfully saved page "${ page.pageContent.title }"!`)
+					
+				if (!keepEditing) {
+					showPages()
+				}
+			})
+	}
+
+	setSearchParams({
+		tab: 'edit-page',
+		'page-id': page.id
+	})
+
+	initTinyMCE()
 }
 
 /*
@@ -490,61 +484,51 @@ const editPage = (id: number) => {
 
 */
 
-const addPage = (pageType: string) => {
+const addPage = async (pageType: string) => {
 	showLoader()
 
-	fetchPages()
-		.then(() => {
-			const { template } = db.pageTypes.find(el => el.name == pageType)
-			
-			$('.main').innerHTML = /* html */ `
-				<h1>Creating new page of type "${ pageType }"</h1>
-		
-				${
-					reduceObject(template, (input: string) => /* html */ `
-						<br/><br/>
-						<h2>${ input }:</h2>
-						${ pageTemplateInputToHTML(template[input], input, '') }
-					`)
-				}
-		
+	await fetchPages()
+	
+	const { template } = db.pageTypes.find(el => el.name == pageType)
+	
+	$('.main').innerHTML = /* html */ `
+		<h1>Creating new page of type "${ pageType }"</h1>
+
+		${
+			reduceObject(template, (input: string) => /* html */ `
 				<br/><br/>
-				<button id="add-page" onclick="handleSubmit('${ pageType }')">Add Page</button>
-			`
+				<h2>${ input }:</h2>
+				${ pageTemplateInputToHTML(template[input], input, '') }
+			`)
+		}
 
-			;(window as any).handleSubmit = () => {
-				const pageContent = collectInputs(template)
+		<br/><br/>
+		<button id="add-page" onclick="handleSubmit('${ pageType }')">Add Page</button>
+	`
 
-				getSuToken()
-					.then(suToken => {
-						request('/admin-panel/workers/add-page.node.js', {
-							suToken, pageType, pageContent
-						})
-							.then(() => {
-								notification('Added page', `Successfully added page "${ pageContent.title }"!`)
+	;(window as any).handleSubmit = () => {
+		const pageContent = collectInputs(template)
 
-								showPages()
-							})
-							.catch(handleRequestError)
+		getSuToken()
+			.then(suToken => {
+				request('/admin-panel/workers/add-page.node.js', {
+					suToken, pageType, pageContent
+				})
+					.then(() => {
+						notification('Added page', `Successfully added page "${ pageContent.title }"!`)
+
+						showPages()
 					})
-			}
-		
-			initTinyMCE()
-
-			setSearchParams({
-				tab: 'add-page',
-				'page-type': pageType
+					.catch(handleRequestError)
 			})
-		})
-		.catch(res => {
-			if (res.status == 403) {
-				document.location.pathname = '/admin-panel/login.html'
-			} else {
-				// This should never happen
+	}
 
-				notification('Unspecified Error', `status code: ${ res.status }, body: <code>${ res.response }</code>`)
-			}
-		})
+	initTinyMCE()
+
+	setSearchParams({
+		tab: 'add-page',
+		'page-type': pageType
+	})
 }
 
 /*
@@ -553,52 +537,41 @@ const addPage = (pageType: string) => {
 
 */
 
-const deletePage = (id: number) => {
+const deletePage = async (id: number) => {
 	showLoader()
 
-	fetchPages()
-		.then(() => {
-			const page = db.pages.find(el => el.id == id)
+	await fetchPages()
 
-			$('.main').innerHTML = /* html */ `
-				<h1>Deleting page "${ page.pageContent.title }"</h1>
+	const page = db.pages.find(el => el.id == id)
 
-				<p>Are you sure you want to delete this page?</p>
-
-				<br/><br/>
-				<button id="delete-page" onclick="handleSubmit()">Delete Page</button>
-				`
-
-				;(window as any).handleSubmit = () => {
-					getSuToken()
-						.then(suToken => {
-							request('/admin-panel/workers/delete-page.node.js', {
-								suToken,
-								pageId: page.id
-							})
-								.then(() => {
-									notification('Deleted page', `Successfully deleted page "${ page.pageContent.title }"!`)
-		
-									showPages()
-								})
-								.catch(handleRequestError)
-						})
-				}
-
-				setSearchParams({
-					tab: 'delete-page',
-					'page-id': id
-				})
-		})
-		.catch(res => {
-			if (res.status == 403) {
-				document.location.pathname = '/admin-panel/login.html'
-			} else {
-				// This should never happen
-
-				notification('Unspecified Error', `status code: ${ res.status }, body: <code>${ res.response }</code>`)
+	await popup(
+		`Deleting page "${ page.pageContent.title }"`,
+		'Are you sure you want to delete this page?',
+		[
+			{
+				name: 'Delete Page',
+				classes: [ 'red' ]
 			}
+		]
+	)
+
+	const suToken = await getSuToken()
+
+	request('/admin-panel/workers/delete-page.node.js', {
+		suToken,
+		pageId: page.id
+	})
+		.then(() => {
+			notification('Deleted page', `Successfully deleted page "${ page.pageContent.title }"!`)
+
+			showPages()
 		})
+		.catch(handleRequestError)
+
+	setSearchParams({
+		tab: 'delete-page',
+		'page-id': id
+	})
 }
 
 /*
@@ -933,7 +906,7 @@ const initDropArea = (path = '/') => new Promise(resolve => {
 	dropArea.addEventListener('drop', drop, false)
 })
 
-interface _File {
+interface FileInfo {
 	name: string
 	path: string
 	isDirectory: boolean
@@ -1276,13 +1249,16 @@ const filePicker: FilePickerOverload = (
 
 */
 
-const getFiles = (path = '/') => new Promise<_File[]>((resolve, reject) => {
+const getFiles = (
+	path = '/'
+) => new Promise<FileInfo[]>(async (resolve, reject) => {
+	const suToken = await getSuToken()
+
 	request('/admin-panel/workers/get-files.node.js', {
-		path,
-		token: Cookies.get('token')
+		path, suToken
 	})
 		.then(res => {
-			const fileArray = res.body.files as _File[]
+			const fileArray = res.body.files as FileInfo[]
 			resolve(fileArray)
 		})
 		.catch(res => {
@@ -1478,7 +1454,7 @@ const showFiles = (path = '/') => {
 
 									const getSelectedFiles = () => {
 										const tableRows = $a('tr.file-row')
-										const selectedFiles: _File[] = []
+										const selectedFiles: FileInfo[] = []
 
 										for (let i = 0; i < tableRows.length; i++) {
 											const checkboxEl = tableRows[i].querySelector<HTMLInputElement>('input[type="checkbox"]')
@@ -1905,5 +1881,70 @@ const createNewDirectory = async (parentDirectoryPath: string) => {
 		showFiles(new URLSearchParams(document.location.search).get('path'))
 } catch(err) {
 		// User cancelled
+	}
+}
+
+/* ===================
+	5. Database manager
+=================== */
+
+interface DB {
+	tables: {
+		[tableName: string]: DB_Table
+	}
+}
+
+interface DB_Table {
+	cols: DB_Table_Col[]
+	rows: DB_Table_Row[]
+}
+
+interface DB_Table_Col {
+	name: string
+	dataType: DataType
+	constraints?: Constraint[]
+	foreignKey?: Link
+	linkedWith?: Link[]
+	default?: any
+	data?: {
+		[key: string]: any
+	}
+}
+
+interface Link {
+	table: string
+	column: string
+}
+
+type DB_Table_Row = any[]
+
+interface DB_Table_Row_Formatted {
+	[colName: string]: any
+}
+
+type DataType = 'Binary' | 'Hex' | 'Bit' | 'Int' | 'Float' | 'DateTime' | 'String' | 'Char' | 'JSON' | 'Boolean'
+type Constraint = 'primaryKey' | 'autoIncrement' | 'notNull' | 'unique'
+
+const showDatabases = async () => {
+	showLoader()
+
+	setSearchParams({
+		tab: 'database-overview'
+	})
+
+	try {
+		// Get databases
+
+		const suToken = await getSuToken()
+
+		const response = await request('/admin-panel/workers/show-databases.node.js', {
+			suToken
+		})
+		const databases = response.body as DB[]
+
+		console.log(databases)
+
+	} catch(err) {
+		handleRequestError(err)
 	}
 }

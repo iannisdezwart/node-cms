@@ -16,39 +16,24 @@
 
     2. Creation of directory tree
 
+    3. Creation of databases
+        3.1 Create User Database
+        3.2 Create Pages Database
+
+    4. Create JWT secret key
+
 */
-var __assign = (this && this.__assign) || function () {
-    __assign = Object.assign || function(t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-                t[p] = s[p];
-        }
-        return t;
-    };
-    return __assign.apply(this, arguments);
-};
-var __values = (this && this.__values) || function(o) {
-    var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
-    if (m) return m.call(o);
-    if (o && typeof o.length === "number") return {
-        next: function () {
-            if (o && i >= o.length) o = void 0;
-            return { value: o && o[i++], done: !o };
-        }
-    };
-    throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 /* ===================
     1. Imports and functions
 =================== */
-var fs = require("fs");
-var qcd = require("queued-copy-dir");
-var node_json_database_1 = require("node-json-database");
-var path_1 = require("path");
+const fs = require("fs");
+const path_1 = require("path");
+const qcd = require("queued-copy-dir");
+const node_json_database_1 = require("node-json-database");
+const bcrypt = require("bcrypt");
 // Go to the project root
-var cwd = path_1.resolve(process.cwd());
+const cwd = path_1.resolve(process.cwd());
 if (cwd.endsWith('/node_modules/@iannisz/node-cms')) {
     // Go from ./project/node_modules/@iannisz/node-cms to ./project
     process.chdir('./../../../');
@@ -56,34 +41,23 @@ if (cwd.endsWith('/node_modules/@iannisz/node-cms')) {
 /*
     1.1 Recursive rimraf
 */
-var rimraf = function (parentPath) {
-    var e_1, _a;
+const rimraf = (parentPath) => {
     if (fs.existsSync(parentPath)) {
-        var files = fs.readdirSync(parentPath);
-        try {
-            for (var files_1 = __values(files), files_1_1 = files_1.next(); !files_1_1.done; files_1_1 = files_1.next()) {
-                var file = files_1_1.value;
-                var childPath = parentPath + '/' + file;
-                var stats = fs.statSync(childPath);
-                if (stats.isDirectory()) {
-                    rimraf(childPath);
-                }
-                else {
-                    fs.unlinkSync(childPath);
-                }
+        const files = fs.readdirSync(parentPath);
+        for (let file of files) {
+            const childPath = parentPath + '/' + file;
+            const stats = fs.statSync(childPath);
+            if (stats.isDirectory()) {
+                rimraf(childPath);
             }
-        }
-        catch (e_1_1) { e_1 = { error: e_1_1 }; }
-        finally {
-            try {
-                if (files_1_1 && !files_1_1.done && (_a = files_1.return)) _a.call(files_1);
+            else {
+                fs.unlinkSync(childPath);
             }
-            finally { if (e_1) throw e_1.error; }
         }
         fs.rmdirSync(parentPath);
     }
 };
-var randomCharSets = {
+const randomCharSets = {
     lowerCaseAlphabetical: 'abcdefghijklmnopqrstuvwxyz',
     upperCaseAlphabetical: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
     underscore: '_',
@@ -93,30 +67,33 @@ var randomCharSets = {
     rightSideKeyboardSymbolsExclQuotes: '[{]}|\\;:,<.>/?',
     quotes: '\'"'
 };
-var randomString = function (length, sets) {
-    sets = __assign({
-        lowerCaseAlphabetical: true,
-        upperCaseAlphabetical: true,
-        underscore: true,
-        dash: true,
-        numbers: true,
-        upperKeyboardRowSymbols: false,
-        rightSideKeyboardSymbolsExclQuotes: false,
-        quotes: false
-    }, sets);
-    var chars = '';
-    for (var set in sets) {
+const randomString = (length, sets) => {
+    sets = {
+        ...{
+            lowerCaseAlphabetical: true,
+            upperCaseAlphabetical: true,
+            underscore: true,
+            dash: true,
+            numbers: true,
+            upperKeyboardRowSymbols: false,
+            rightSideKeyboardSymbolsExclQuotes: false,
+            quotes: false
+        },
+        ...sets
+    };
+    let chars = '';
+    for (let set in sets) {
         if (sets[set]) {
             chars += randomCharSets[set];
         }
     }
-    var string = '';
-    for (var i = 0; i < length; i++) {
+    let string = '';
+    for (let i = 0; i < length; i++) {
         string += chars.charAt(randomIntBetween(0, chars.length - 1));
     }
     return string;
 };
-var randomIntBetween = function (min, max) { return Math.floor(Math.random() * (max - min + 1) + min); };
+const randomIntBetween = (min, max) => Math.floor(Math.random() * (max - min + 1) + min);
 /* ===================
     2. Creation of directory tree
 =================== */
@@ -135,12 +112,19 @@ if (!fs.existsSync('root/content')) {
 }
 // Overwrite ./private-workers directory contents
 qcd.sync(__dirname + '/static/private-workers', 'private-workers');
-// Create User Database
-var usersDB = node_json_database_1.db('users.json');
+// Create database list
+fs.writeFileSync('databases.json', '[]');
+/* ===================
+    3. Creation of databases
+=================== */
+/*
+    3.1 Create User Database
+*/
+const usersDB = node_json_database_1.db('users.json');
 if (!usersDB.exists) {
     usersDB.create();
 }
-var adminsTable = usersDB.table('admins');
+const adminsTable = usersDB.table('admins');
 if (!adminsTable.exists) {
     adminsTable.create();
     adminsTable.columns.add([
@@ -168,21 +152,31 @@ if (!adminsTable.exists) {
             ]
         },
         {
-            name: 'passwordSalt',
+            name: 'adminLevel',
             dataType: 'String',
             constraints: [
                 'notNull'
             ]
         }
     ]);
+    // Add default root account
+    adminsTable.insert([
+        {
+            username: 'root',
+            password: bcrypt.hashSync('', 12),
+            adminLevel: 'root'
+        }
+    ]);
 }
-// Create Pages Database
-var pagesDB = node_json_database_1.db('pages.json');
+/*
+    3.1 Create Pages Database
+*/
+const pagesDB = node_json_database_1.db('pages.json');
 if (!pagesDB.exists) {
     pagesDB.create();
 }
 if (!pagesDB.table('pageTypes').exists) {
-    var table = pagesDB.table('pageTypes');
+    const table = pagesDB.table('pageTypes');
     table.create();
     table.columns.add([
         {
@@ -210,7 +204,7 @@ if (!pagesDB.table('pageTypes').exists) {
 }
 // Create pages table if it does not exist
 if (!pagesDB.table('pages').exists) {
-    var table = pagesDB.table('pages');
+    const table = pagesDB.table('pages');
     table.create();
     table.columns.add([
         {
@@ -235,10 +229,16 @@ if (!pagesDB.table('pages').exists) {
             constraints: [
                 'notNull'
             ]
+        },
+        {
+            name: 'path',
+            dataType: 'String'
         }
     ]);
 }
-// Create .jwtsecret
+/* ===================
+    4. Create JWT secret key
+=================== */
 if (!fs.existsSync('.jwtsecret')) {
     fs.writeFileSync('.jwtsecret', randomString(128, {
         lowerCaseAlphabetical: true,
