@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.compile = void 0;
 const child_process_1 = require("child_process");
 exports.compile = () => new Promise((resolve, reject) => {
     const child = child_process_1.execFile('node', [__dirname + '/../compiler'], {

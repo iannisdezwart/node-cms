@@ -33,6 +33,14 @@
 	color: #fff;
 }
 
+*:first-child {
+	margin-top: 0;
+}
+
+*:last-child {
+	margin-bottom: 0;
+}
+
 body {
 	margin: 0;
 	padding: 0;
@@ -43,6 +51,7 @@ body {
 
 ::-webkit-scrollbar {
 	width: 10px;
+	height: 10px;
 }
 
 ::-webkit-scrollbar-track {
@@ -64,6 +73,11 @@ body {
 .clickable-icon {
 	height: 16px;
 	cursor: pointer;
+}
+
+.inline-centered-icon {
+	height: 32px;
+	vertical-align: middle;
 }
 
 /* ===================
@@ -203,70 +217,75 @@ ul > li > a {
 	3. Page-specific Styles
 =================== */
 
-ul.pages {
+ul.pages, ul.databases {
 	margin: 0;
 	padding: 0;
 	list-style-type: none;
 }
 
-ul.pages > li {
+ul.pages > li, ul.databases > li  {
 	padding: 1em;
 	background-color: #333;
 }
 
-table.pages {
+table.pages, table.databases {
 	background-color: #444;
 	padding: 1em;
 	border-spacing: 1em;
 }
 
-table.pages thead {
+table.pages thead, table.databases thead {
 	font-weight: 800;
 	font-style: italic;
 }
 
-table.files {
+table.fullwidth {
 	width: 100%;
 	background-color: #444;
 	padding: 1em;
 	border-collapse: collapse;
 }
 
-table.files thead {
+table.fullwidth thead {
 	font-weight: 800;
 	font-style: italic;
 }
 
-table.files tr.file-row {
+table.fullwidth tr {
 	border-top: 1px solid #555;
 	transition: background-color 300ms ease;
 }
 
-table.files tr.file-row:hover {
+table.fullwidth tr:hover {
 	background-color: rgba(192, 192, 192, 0.1);
 }
 
-table.files > thead > tr {
+table.fullwidth thead tr {
 	border: none;
 }
 
-table.files td {
+table.fullwidth tbody {
+	max-height: 80vh;
+	overflow-y: auto;
+}
+
+table.fullwidth td {
 	padding: .5em;
 }
 
-table.files .col-checkbox {
+table.fullwidth .col-checkbox {
 	width: 1px; /* Set width to minimum */
 }
 
-table.files .col-icon {
+table.fullwidth .col-icon {
 	width: 1px; /* Set width to minimum */ 
 }
 
-table.files tbody .col-name {
+table.fullwidth tbody .col-name {
 	cursor: pointer;
 }
 
-table.files .col-options {
+table.fullwidth .col-options {
 	width: 1px; /* Set width to minimum */
 }
 
@@ -482,6 +501,20 @@ input[type="text"], input[type="password"] {
 
 input.red {
 	border: 2px solid #cc5858;
+}
+
+input.small {
+	background-color: #333;
+	color: #fff;
+
+	border: none;
+	border-radius: 3px;
+	padding: .25em;
+	width: 150px;
+}
+
+input.small.red {
+	border-bottom: 2px solid #cc5858;
 }
 
 /* 

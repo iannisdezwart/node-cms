@@ -1,5 +1,6 @@
 import { req, res, log } from 'apache-js-workers'
 import * as fs from 'fs'
+import { resolve as resolvePath } from 'path'
 import { authenticateSuToken } from './../../../private-workers/authenticate-su-token'
 import { DB } from 'node-json-database'
 
@@ -11,22 +12,16 @@ const suToken = req.body.suToken as string
 
 authenticateSuToken(suToken)
 	.then(() => {
-		// Authenticated, send the user the databases
+		// Authenticated, send the user the database
 
 		try {
-			const dbListFile = fs.readFileSync(__dirname + '/../../../databases.json', 'utf8')
-			const dbList = JSON.parse(dbListFile) as string[]
+			const dbName = req.body.dbName as string
+			const dbPath = resolvePath(__dirname + '/../../../' + dbName)
+			const dbFile = fs.readFileSync(dbPath, 'utf8')
+
+			const db = JSON.parse(dbFile) as DB
 	
-			const dbs: DB[] = []
-	
-			for (let dbName of dbList) {
-				const dbFile = fs.readFileSync(__dirname + '/../../../' + dbName, 'utf-8')
-				const db = JSON.parse(dbFile) as DB
-	
-				dbs.push(db)
-			}
-	
-			res.send(dbs)
+			res.send(db)
 		} catch(err) {
 			// Send 500 error
 

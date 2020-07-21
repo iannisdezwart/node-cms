@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.authenticateSuToken = void 0;
 const fs = require("fs");
 const jwt = require("jsonwebtoken");
 const jwtSecret = fs.readFileSync(__dirname + '/../.jwtsecret', 'utf-8');

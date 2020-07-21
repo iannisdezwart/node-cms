@@ -2,23 +2,20 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const apache_js_workers_1 = require("apache-js-workers");
 const fs = require("fs");
+const path_1 = require("path");
 const authenticate_su_token_1 = require("./../../../private-workers/authenticate-su-token");
 // Get the suToken from the request
 const suToken = apache_js_workers_1.req.body.suToken;
 // Authenticate
 authenticate_su_token_1.authenticateSuToken(suToken)
     .then(() => {
-    // Authenticated, send the user the databases
+    // Authenticated, send the user the database
     try {
-        const dbListFile = fs.readFileSync(__dirname + '/../../../databases.json', 'utf8');
-        const dbList = JSON.parse(dbListFile);
-        const dbs = [];
-        for (let dbName of dbList) {
-            const dbFile = fs.readFileSync(__dirname + '/../../../' + dbName, 'utf-8');
-            const db = JSON.parse(dbFile);
-            dbs.push(db);
-        }
-        apache_js_workers_1.res.send(dbs);
+        const dbName = apache_js_workers_1.req.body.dbName;
+        const dbPath = path_1.resolve(__dirname + '/../../../' + dbName);
+        const dbFile = fs.readFileSync(dbPath, 'utf8');
+        const db = JSON.parse(dbFile);
+        apache_js_workers_1.res.send(db);
     }
     catch (err) {
         // Send 500 error

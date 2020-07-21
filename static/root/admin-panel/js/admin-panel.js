@@ -50,6 +50,15 @@
         4.8 Create New Directory
 
     5. Database manager
+        5.1 Get Database List
+        5.2 Show Database List
+        5.3 Get Database
+        5.4 Show Database
+        5.5 Show Table
+            5.5.1 Input Type From Datatype
+            5.5.2 Parse Input Value
+            5.5.3 Edit Row
+            5.5.4 Update Row
 
 */
 /* ===================
@@ -84,7 +93,7 @@ const initTinyMCE = () => {
     2.1 Common Types
 
 */
-let db;
+let pagesDB;
 /*
 
     2.2 Common Functions
@@ -96,7 +105,7 @@ const fetchPages = () => new Promise(async (resolve) => {
         suToken
     })
         .then(res => {
-        db = res.body;
+        pagesDB = res.body;
         resolve();
     })
         .catch(handleRequestError);
@@ -141,41 +150,51 @@ const goToTheRightPage = () => {
     if (tab == null) {
         goToHomepage();
     }
-    else {
-        if (tab == 'pages') {
+    else if (tab == 'pages') {
+        showPages();
+    }
+    else if (tab == 'edit-page') {
+        const pageId = parseInt(searchParams.get('page-id'));
+        if (pageId == null) {
             showPages();
         }
-        else if (tab == 'edit-page') {
-            const pageId = parseInt(searchParams.get('page-id'));
-            if (pageId == null) {
-                showPages();
-            }
-            else {
-                editPage(pageId);
-            }
+        else {
+            editPage(pageId);
         }
-        else if (tab == 'delete-page') {
-            const pageId = parseInt(searchParams.get('page-id'));
-            if (pageId == null) {
-                showPages();
-            }
-            else {
-                deletePage(pageId);
-            }
+    }
+    else if (tab == 'delete-page') {
+        const pageId = parseInt(searchParams.get('page-id'));
+        if (pageId == null) {
+            showPages();
         }
-        else if (tab == 'add-page') {
-            const pageType = searchParams.get('page-type');
-            if (pageType == null) {
-                showPages();
-            }
-            else {
-                addPage(pageType);
-            }
+        else {
+            deletePage(pageId);
         }
-        else if (tab == 'file-manager') {
-            const path = searchParams.get('path');
-            showFiles(path);
+    }
+    else if (tab == 'add-page') {
+        const pageType = searchParams.get('page-type');
+        if (pageType == null) {
+            showPages();
         }
+        else {
+            addPage(pageType);
+        }
+    }
+    else if (tab == 'file-manager') {
+        const path = searchParams.get('path');
+        showFiles(path);
+    }
+    else if (tab == 'database-overview') {
+        showDatabaseList();
+    }
+    else if (tab == 'show-database') {
+        const dbName = searchParams.get('db-name');
+        showDatabase(dbName);
+    }
+    else if (tab == 'show-database-table') {
+        const dbName = searchParams.get('db-name');
+        const tableName = searchParams.get('table-name');
+        showTable(dbName, tableName);
     }
 };
 // Handle back- and forward button
@@ -205,7 +224,7 @@ const reduceObject = (obj, f) => {
 };
 const showLoader = () => {
     $('.main').innerHTML = /* html */ `
-		<div class="loader"></div>
+	<div class="loader"></div>
 	`;
 };
 /* ===================
@@ -220,54 +239,54 @@ const showPages = () => {
     showLoader();
     fetchPages()
         .then(() => {
-        const { pages, pageTypes } = db;
+        const { pages, pageTypes } = pagesDB;
         $('.main').innerHTML = /* html */ `
-				<ul class="pages">
-					${reduceArray(pageTypes, pageType => {
+			<ul class="pages">
+				${reduceArray(pageTypes, pageType => {
             const pagesOfCurrentType = pages.filter(page => page.pageType == pageType.name);
             return /* html */ `
-							<li>
-								<h1>${captitalise(pageType.name)}:</h1>
-								<table class="pages">
-									<thead>
-										<tr>
-											<td>Page Title:</td>
-										</tr>
-									</thead>
-									<tbody>
-										${reduceArray(pagesOfCurrentType, (page, i) => /* html */ `
-												<tr>
-													<td><span>${page.pageContent.title}</span></td>
-													<td>
-														<button class="small" onclick="editPage(${page.id})">Edit</button>
-														${(pageType.canAdd) ? /* html */ `
-															<button class="small red" onclick="deletePage(${page.id})">Delete</button>
-														` : ''}
-													</td>
-													<td>
-														${(i != 0) ? /* html */ `
-															<img class="clickable-icon" src="/admin-panel/img/arrow-up.png" alt="up" title="move up" style="margin-right: .5em" onclick="movePage('UP', '${pageType.name}', ${i})">
-														` : ''}
-													</td>
-													<td>
-														${(i != pagesOfCurrentType.length - 1) ? /* html */ `
-															<img class="clickable-icon" src="/admin-panel/img/arrow-down.png" alt="down" title="move down" onclick="movePage('DOWN', '${pageType.name}', ${i})">
-														` : ''}
-													</td>
-												</tr>
-											`)
+					<li>
+						<h1>${captitalise(pageType.name)}:</h1>
+						<table class="pages">
+							<thead>
+								<tr>
+									<td>Page Title:</td>
+								</tr>
+							</thead>
+							<tbody>
+								${reduceArray(pagesOfCurrentType, (page, i) => /* html */ `
+								<tr>
+									<td><span>${page.pageContent.title}</span></td>
+									<td>
+										<button class="small" onclick="editPage(${page.id})">Edit</button>
+										${(pageType.canAdd) ? /* html */ `
+										<button class="small red" onclick="deletePage(${page.id})">Delete</button>
+										` : ''}
+									</td>
+									<td>
+										${(i != 0) ? /* html */ `
+										<img class="clickable-icon" src="/admin-panel/img/arrow-up.png" alt="up" title="move up" style="margin-right: .5em" onclick="movePage('UP', '${pageType.name}', ${i})">
+										` : ''}
+									</td>
+									<td>
+										${(i != pagesOfCurrentType.length - 1) ? /* html */ `
+										<img class="clickable-icon" src="/admin-panel/img/arrow-down.png" alt="down" title="move down" onclick="movePage('DOWN', '${pageType.name}', ${i})">
+										` : ''}
+									</td>
+								</tr>
+								`)
                 +
                     (() => (pageType.canAdd) ? /* html */ `
-												<tr>
-													<td>
-														<button class="small" onclick="addPage('${pageType.name}')">Add page</button>
-													</td>
-												</tr>
-											` : '')()}
-									</tbody>
-								</table>
-							</li>
-						`;
+									<tr>
+										<td>
+											<button class="small" onclick="addPage('${pageType.name}')">Add page</button>
+										</td>
+									</tr>
+								` : '')()}
+							</tbody>
+						</table>
+					</li>
+				`;
         })}
 				</ul>
 			`;
@@ -302,19 +321,19 @@ const showPages = () => {
 const editPage = async (id) => {
     showLoader();
     await fetchPages();
-    const page = db.pages.find(el => el.id == id);
-    const { template } = db.pageTypes.find(el => el.name == page.pageType);
+    const page = pagesDB.pages.find(el => el.id == id);
+    const { template } = pagesDB.pageTypes.find(el => el.name == page.pageType);
     $('.main').innerHTML = /* html */ `
-		<h1>Editing page "${page.pageContent.title}"</h1>
+	<h1>Editing page "${page.pageContent.title}"</h1>
 
-		${reduceObject(template, input => /* html */ `
-				<br/><br/>
-				<h2>${input}:</h2>
-				${pageTemplateInputToHTML(template[input], input, page.pageContent[input])}
-			`)}
+	${reduceObject(template, input => /* html */ `
+	<br/><br/>
+	<h2>${input}:</h2>
+	${pageTemplateInputToHTML(template[input], input, page.pageContent[input])}
+	`)}
 
-		<br/><br/>
-		<button id="submit-changes" onclick="handleSubmit()">Save Page</button>
+	<br/><br/>
+	<button id="submit-changes" onclick="handleSubmit()">Save Page</button>
 	`;
     // 3.2.1 Save Page
     const savePage = async (pageContent, pageId) => {
@@ -355,18 +374,18 @@ const editPage = async (id) => {
 const addPage = async (pageType) => {
     showLoader();
     await fetchPages();
-    const { template } = db.pageTypes.find(el => el.name == pageType);
+    const { template } = pagesDB.pageTypes.find(el => el.name == pageType);
     $('.main').innerHTML = /* html */ `
-		<h1>Creating new page of type "${pageType}"</h1>
+	<h1>Creating new page of type "${pageType}"</h1>
 
-		${reduceObject(template, (input) => /* html */ `
-				<br/><br/>
-				<h2>${input}:</h2>
-				${pageTemplateInputToHTML(template[input], input, '')}
-			`)}
+	${reduceObject(template, (input) => /* html */ `
+	<br/><br/>
+	<h2>${input}:</h2>
+	${pageTemplateInputToHTML(template[input], input, '')}
+	`)}
 
-		<br/><br/>
-		<button id="add-page" onclick="handleSubmit('${pageType}')">Add Page</button>
+	<br/><br/>
+	<button id="add-page" onclick="handleSubmit('${pageType}')">Add Page</button>
 	`;
     window.handleSubmit = () => {
         const pageContent = collectInputs(template);
@@ -396,7 +415,7 @@ const addPage = async (pageType) => {
 const deletePage = async (id) => {
     showLoader();
     await fetchPages();
-    const page = db.pages.find(el => el.id == id);
+    const page = pagesDB.pages.find(el => el.id == id);
     await popup(`Deleting page "${page.pageContent.title}"`, 'Are you sure you want to delete this page?', [
         {
             name: 'Delete Page',
@@ -430,37 +449,37 @@ const pageTemplateInputToHTML = (inputType, inputName, inputContent) => {
     else if (inputType == 'string') {
         // string
         return /* html */ `
-			<input id="${inputName}" data-input="${inputName}" type="text" value="${inputContent}" />
+		<input id="${inputName}" data-input="${inputName}" type="text" value="${inputContent}" />
 		`;
     }
     else if (inputType == 'img[]') {
         // img[]
         const imgs = inputContent;
         return /* html */ `
-			<div class="img-array" id="${inputName}" data-input="${inputName}">
-				${reduceArray(imgs, (img, i) => generateImgArrayImg(img, (i != 0), (i != imgs.length - 1)))}
-				<div class="img-array-plus" onclick="addImg('${inputName}')"></div>
-			</div>
+		<div class="img-array" id="${inputName}" data-input="${inputName}">
+			${reduceArray(imgs, (img, i) => generateImgArrayImg(img, (i != 0), (i != imgs.length - 1)))}
+			<div class="img-array-plus" onclick="addImg('${inputName}')"></div>
+		</div>
 		`;
     }
 };
 // 3.5.1 Generate .img-array-img Element
 const generateImgArrayImg = (imgSrc, hasLeftArrow, hasRightArrow) => /* html */ `
-	<div class="img-array-img">
-		<div class="img-array-img-options">
-			<button class="small light" onclick="editImg(this)">Edit</button>
-			<button class="small light red" onclick="deleteImg(this)">Delete</button>
-		</div>
-		<div class="img-array-img-arrows">
-			${(hasLeftArrow) ? /* html */ `
-				<img class="arrow-left" src="/admin-panel/img/arrow-left.png" alt="arrow-left" onclick="moveImg('left', this)">
-			` : ''}
-			${(hasRightArrow) ? /* html */ `
-				<img class="arrow-right" src="/admin-panel/img/arrow-right.png" alt="arrow-right" onclick="moveImg('right', this)">
-			` : ''}
-		</div>
-		<img class="img" data-path="${imgSrc}" src="${imgSrc}">
+<div class="img-array-img">
+	<div class="img-array-img-options">
+		<button class="small light" onclick="editImg(this)">Edit</button>
+		<button class="small light red" onclick="deleteImg(this)">Delete</button>
 	</div>
+	<div class="img-array-img-arrows">
+		${(hasLeftArrow) ? /* html */ `
+		<img class="arrow-left" src="/admin-panel/img/arrow-left.png" alt="arrow-left" onclick="moveImg('left', this)">
+		` : ''}
+		${(hasRightArrow) ? /* html */ `
+		<img class="arrow-right" src="/admin-panel/img/arrow-right.png" alt="arrow-right" onclick="moveImg('right', this)">
+		` : ''}
+	</div>
+	<img class="img" data-path="${imgSrc}" src="${imgSrc}">
+</div>
 `;
 /*
 
@@ -570,7 +589,7 @@ const addImg = async (inputName) => {
     const prevImgArrayImg = imgArrayPlus.previousElementSibling.previousElementSibling;
     if (prevImgArrayImg != null) {
         prevImgArrayImg.querySelector('.img-array-img-arrows').innerHTML += /* html */ `
-			<img class="arrow-right" src="/admin-panel/img/arrow-right.png" alt="arrow-right" onclick="moveImg('right', this)">
+		<img class="arrow-right" src="/admin-panel/img/arrow-right.png" alt="arrow-right" onclick="moveImg('right', this)">
 		`;
     }
 };
@@ -659,27 +678,31 @@ const filePicker = (options, multiple) => new Promise((resolveFilePicker, reject
     const filePickerEl = document.createElement('div');
     filePickerEl.classList.add('popup');
     filePickerEl.innerHTML = /* html */ `
-		<a class="popup-close-button">✕</a>
-		<h1 class="popup-title">${options.title}</h1>
-		${(options.body != undefined) ? /* html */ `
-				<p class="popup-body">${options.body}</p>
-			` : ''}
-		<div class="file-list-container">
-			<ul class="file-list file-list-root">
-				<li class="file-list-item file-list-root" onclick="selectLI(this)" onmouseover="hoverLI(this)" onmouseleave="hoverLI(this, false)" data-path="/">
-					<img class="file-manager-file-icon" src="/admin-panel/img/file-icons/dir.png" alt="dir" onerror="
-						this.src = '${`/admin-panel/img/file-icons/unknown.png`}'; this.onerror = null
-					">
-					/
-				</li>
-			</ul>
-		</div>
-		${(options.type == 'new-file') ? /* html */ `
-				<p>Fill in the name of the file</p>
-				<input type="text" class="filepicker-new-file" value="${options.newFileName}" placeholder="Enter new file name...">
-			` : ''}
-		<br><br>
-		<button class="small">${options.buttonText}</button>
+	<a class="popup-close-button">✕</a>
+	<h1 class="popup-title">${options.title}</h1>
+
+	${(options.body != undefined) ? /* html */ `
+	<p class="popup-body">${options.body}</p>
+	` : ''}
+
+	<div class="file-list-container">
+		<ul class="file-list file-list-root">
+			<li class="file-list-item file-list-root" onclick="selectLI(this)" onmouseover="hoverLI(this)" onmouseleave="hoverLI(this, false)" data-path="/">
+				<img class="file-manager-file-icon" src="/admin-panel/img/file-icons/dir.png" alt="dir" onerror="
+					this.src = '${`/admin-panel/img/file-icons/unknown.png`}'; this.onerror = null
+				">
+				/
+			</li>
+		</ul>
+	</div>
+
+	${(options.type == 'new-file') ? /* html */ `
+	<p>Fill in the name of the file</p>
+	<input type="text" class="filepicker-new-file" value="${options.newFileName}" placeholder="Enter new file name...">
+	` : ''}
+
+	<br><br>
+	<button class="small">${options.buttonText}</button>
 	`;
     // 4.3.1 Create UL from files
     const createULFromFiles = (path) => new Promise(resolve => {
@@ -704,13 +727,14 @@ const filePicker = (options, multiple) => new Promise((resolveFilePicker, reject
                     : name.slice(name.lastIndexOf('.') + 1);
                 // Create the child LI
                 fileListEl.innerHTML += /* html */ `
-						<li class="file-list-item" onclick="selectLI(this)" onmouseover="hoverLI(this)" onmouseleave="hoverLI(this, false)" data-path="${(file.isDirectory) ? path + file.name + '/' : path + file.name}">
-							${(file.isDirectory) ? `<span class="plus-button" data-expanded="false" onclick="expandDirectory(this)"></span>` : ''}
-							<img class="file-manager-file-icon" src="/admin-panel/img/file-icons/${extension}.png" alt="${extension}" onerror="
-								this.src = '${`/admin-panel/img/file-icons/unknown.png`}'; this.onerror = null
-							">
-							${file.name}
-						</li>
+					<li class="file-list-item" onclick="selectLI(this)" onmouseover="hoverLI(this)" onmouseleave="hoverLI(this, false)" data-path="${(file.isDirectory) ? path + file.name + '/' : path + file.name}">
+						${(file.isDirectory) ? /* html */ `<span class="plus-button" data-expanded="false" onclick="expandDirectory(this)"></span>` : ''}
+						<img class="file-manager-file-icon" src="/admin-panel/img/file-icons/${extension}.png" alt="${extension}" onerror="
+							this.src = '/admin-panel/img/file-icons/unknown.png';
+							this.onerror = null;
+						">
+						${file.name}
+					</li>
 					`;
             }
             // 4.3.1.1 li.file-list-item hover animation
@@ -942,38 +966,38 @@ const showFiles = (path = '/') => {
         .then(files => {
         files.sort(file => file.isDirectory ? -1 : 1);
         $('.main').innerHTML = /* html */ `
-				<div class="drop-area">
-					<h1>Folder: ${path}</h1>
+			<div class="drop-area">
+				<h1>Folder: ${path}</h1>
 
-					<button class="small" onclick="showFiles(upALevel('${path}'))">Up a level</button>
-					<button class="small" onclick="$('input[type=file]').click()">Upload Files</button>
-					<button class="small" onclick="createNewDirectory('${path}')">New Folder</button>
-					<span class="bulk-actions hidden">
-						Selected Files:
-						<button class="small" onclick="bulkCopyFiles()">Copy</button>
-						<button class="small" onclick="bulkMoveFiles()">Move</button>
-						<button class="small red" onclick="bulkDeleteFiles()">Delete</button>
-					</span>
+				<button class="small" onclick="showFiles(upALevel('${path}'))">Up a level</button>
+				<button class="small" onclick="$('input[type=file]').click()">Upload Files</button>
+				<button class="small" onclick="createNewDirectory('${path}')">New Folder</button>
+				<span class="bulk-actions hidden">
+					Selected Files:
+					<button class="small" onclick="bulkCopyFiles()">Copy</button>
+					<button class="small" onclick="bulkMoveFiles()">Move</button>
+					<button class="small red" onclick="bulkDeleteFiles()">Delete</button>
+				</span>
 
-					<br><br>
+				<br><br>
 
-					<table class="files">
+				<table class="fullwidth">
 
-						<thead>
-							<tr>
-								<td class="col-checkbox">
-									<input type="checkbox" onclick="toggleAllCheckboxes()" title="Select all">
-								</td>
-								<td class="col-icon"></td>
-								<td class="col-name">Name</td>
-								<td class="col-size">Size</td>
-								<td class="col-modified">Modified</td>
-								<td class="col-options"></td>
-							</tr>
-						</thead>
+					<thead>
+						<tr>
+							<td class="col-checkbox">
+								<input type="checkbox" onclick="toggleAllCheckboxes()" title="Select all">
+							</td>
+							<td class="col-icon"></td>
+							<td class="col-name">Name</td>
+							<td class="col-size">Size</td>
+							<td class="col-modified">Last Modified</td>
+							<td class="col-options"></td>
+						</tr>
+					</thead>
 
-						<tbody>
-							${reduceArray(files, file => {
+					<tbody>
+						${reduceArray(files, file => {
             const { name } = file;
             const size = file.isDirectory ? '–' : parseSize(file.size);
             const modified = parseDate(file.modified);
@@ -1051,7 +1075,7 @@ const showFiles = (path = '/') => {
             window.bulkDeleteFiles = () => {
                 const selectedFiles = getSelectedFiles();
                 popup('Deleting multiple files', `Are you sure you want to delete ${numifyNoun(selectedFiles.length, 'file', 'files')}?
-											<codeblock>${reduceArray(selectedFiles, f => f.name + '<br>')}</codeblock>`, [
+										<codeblock>${reduceArray(selectedFiles, f => f.name + '<br>')}</codeblock>`, [
                     {
                         name: 'Delete',
                         classes: ['red']
@@ -1144,51 +1168,51 @@ const showFiles = (path = '/') => {
                 });
             };
             return /* html */ `
-										<tr class="file-row">
-											<td class="col-checkbox">
-												<input type="checkbox" onchange="handleFileCheckboxes(this)">
-											</td>
+								<tr class="file-row">
+									<td class="col-checkbox">
+										<input type="checkbox" onchange="handleFileCheckboxes(this)">
+									</td>
 
-											<td class="col-icon">
-												<img class="file-manager-file-icon" src="/admin-panel/img/file-icons/${extension}.png" alt="${extension}" onerror="
-													this.src = '${`/admin-panel/img/file-icons/unknown.png`}'; this.onerror = null
-												">
-											</td>
+									<td class="col-icon">
+										<img class="file-manager-file-icon" src="/admin-panel/img/file-icons/${extension}.png" alt="${extension}" onerror="
+											this.src = '${`/admin-panel/img/file-icons/unknown.png`}'; this.onerror = null
+										">
+									</td>
 
-											<td class="col-name" onclick="
-												${file.isDirectory} ? showFiles('${path + file.name}/') : openFile('${path + file.name}')
-											">
-												${file.name}
-											</td>
+									<td class="col-name" onclick="
+										${file.isDirectory} ? showFiles('${path + file.name}/') : openFile('${path + file.name}')
+									">
+										${file.name}
+									</td>
 
-											<td class="col-size">
-												${file.isDirectory ? file.filesInside + ' items' : size}
-											</td>
+									<td class="col-size">
+										${file.isDirectory ? file.filesInside + ' items' : size}
+									</td>
 
-											<td class="col-modified">
-												${modified}
-											</td>
+									<td class="col-modified">
+										${modified}
+									</td>
 
-											<td class="col-options">
-												<div class="dropdown-menu" onclick="toggleDropdown(this, event)">
-													<div class="dropdown-menu-content">
-														<button class="small" onclick="copyFile('${path + file.name}')">Copy</button>
-														<br><br>
-														<button class="small" onclick="moveFile('${path + file.name}')">Move</button>
-														<br><br>
-														<button class="small" onclick="renameFile('${path + file.name}')">Rename</button>
-														<br><br>
-														<button class="small red" onclick="deleteFile('${path + file.name}')">Delete</button>
-													</div>
-												</div>
-											</td>
-										</tr>
-									`;
+									<td class="col-options">
+										<div class="dropdown-menu" onclick="toggleDropdown(this, event)">
+											<div class="dropdown-menu-content">
+												<button class="small" onclick="copyFile('${path + file.name}')">Copy</button>
+												<br><br>
+												<button class="small" onclick="moveFile('${path + file.name}')">Move</button>
+												<br><br>
+												<button class="small" onclick="renameFile('${path + file.name}')">Rename</button>
+												<br><br>
+												<button class="small red" onclick="deleteFile('${path + file.name}')">Delete</button>
+											</div>
+										</div>
+									</td>
+								</tr>
+								`;
         })}
-						</tbody>
+					</tbody>
 
-					</table>
-				</div>
+				</table>
+			</div>
 			`;
         initDropArea(path)
             .then(() => {
@@ -1352,21 +1376,361 @@ const createNewDirectory = async (parentDirectoryPath) => {
         // User cancelled
     }
 };
-const showDatabases = async () => {
+/*
+    5.1 Get Database List
+*/
+const getDatabaseList = async () => {
+    try {
+        const suToken = await getSuToken();
+        const response = await request('/admin-panel/workers/get-database-list.node.js', {
+            suToken
+        });
+        const databases = response.body;
+        return databases;
+    }
+    catch (err) {
+        handleRequestError(err);
+    }
+};
+/*
+    5.2 Show Database List
+*/
+const showDatabaseList = async () => {
     showLoader();
     setSearchParams({
         tab: 'database-overview'
     });
+    const databases = await getDatabaseList();
+    $('.main').innerHTML = /* html */ `
+	<h1>Databases</h1>
+
+	<table class="fullwidth databases-list">
+		<thead>
+			<td class="col-icon"></td>
+			<td>Name</td>
+			<td>Size</td>
+			<td>Last Modified</td>
+			<td>Options</td>
+		</thead>
+		<tbody>
+			${reduceArray(databases, dbInfo => /* html */ `
+			<tr>
+				<td class="col-icon">
+					<img class="file-manager-file-icon" src="/admin-panel/img/database.png" alt="Database Icon">
+				</td>
+				<td class="col-name" onclick="showDatabase('${dbInfo.name}')">${dbInfo.name.replace('.json', '')}</td>
+				<td>${parseSize(dbInfo.size)}</td>
+				<td>${parseDate(dbInfo.modified)}</td>
+				<td>
+					<button class="small" onclick="showDatabase('${dbInfo.name}')">View</button>
+					<button class="small">Copy</button>
+					<button class="small red">Delete</button>
+				</td>
+			</tr>
+			`)}
+		</tbody>
+	</table>
+	`;
+};
+/*
+    5.3 Get Database
+*/
+const getDatabase = async (dbName) => {
+    const suToken = await getSuToken();
     try {
-        // Get databases
-        const suToken = await getSuToken();
-        const response = await request('/admin-panel/workers/show-databases.node.js', {
-            suToken
+        const response = await request('/admin-panel/workers/get-database.node.js', {
+            suToken, dbName
         });
-        const databases = response.body;
-        console.log(databases);
+        return response.body;
     }
     catch (err) {
         handleRequestError(err);
+    }
+};
+/*
+    5.4 Show Database
+*/
+const showDatabase = async (dbName) => {
+    showLoader();
+    setSearchParams({
+        tab: 'show-database',
+        'db-name': dbName
+    });
+    const db = await getDatabase(dbName);
+    $('.main').innerHTML = /* html */ `
+	<h1>
+		<img class="inline-centered-icon" src="/admin-panel/img/database.png" alt="Database Icon">
+		${dbName.replace('.json', '')}
+	</h1>
+
+	<table class="fullwidth database-tables-list">
+		<thead>
+			<td></td>
+			<td>Table Name</td>
+			<td>Rows/Columns</td>
+			<td>Table Actions</td>
+		</thead>
+		<tbody>
+			${reduceObject(db.tables, tableName => {
+        const table = db.tables[tableName];
+        const { rows, cols } = table;
+        return /* html */ `
+				<tr>
+					<td class="col-icon">
+						<img class="file-manager-file-icon" src="/admin-panel/img/table.png" alt="Table Icon">
+					</td>
+					<td class="col-name" onclick="showTable('${dbName}', '${tableName}')">${tableName}</td>
+					<td>${rows.length}/${cols.length}</td>
+					<td>
+						<button class="small" onclick="showTable('${dbName}', '${tableName}')">View</button>
+					</td>
+				</tr>
+				`;
+    })}
+		</tbody>
+	</table>
+	`;
+};
+/*
+    5.5 Show Table
+*/
+const showTable = async (dbName, tableName) => {
+    showLoader();
+    setSearchParams({
+        tab: 'show-database-table',
+        'db-name': dbName,
+        'table-name': tableName
+    });
+    const db = await getDatabase(dbName);
+    const table = db.tables[tableName];
+    const { rows, cols } = table;
+    $('.main').innerHTML = /* html */ `
+	<h1>
+		<img class="inline-centered-icon" src="/admin-panel/img/table.png" alt="Table Icon">
+		${dbName.replace('.json', '')} > ${tableName}
+	</h1>
+
+	<table class="fullwidth database-table">
+		<thead>
+			${reduceArray(cols, col => {
+        const dataType = `Datatype: ${col.dataType}\n`;
+        const constraints = (col.constraints != undefined)
+            ? `Constraints: ${col.constraints.join(', ')}\n`
+            : '';
+        const foreignKey = (col.foreignKey != undefined)
+            ? `Foreign Key: ${col.foreignKey.table}.${col.foreignKey.column}\n`
+            : '';
+        return /* html */ `
+				<td title="${dataType}${constraints}${foreignKey}">
+					${col.name}
+				</td>
+				`;
+    })}
+			<td></td>
+		</thead>
+		<tbody>
+			${reduceArray(rows, (row, rowNum) => /* html */ `
+			<tr>
+				${reduceArray(cols, (col, i) => /* html */ `
+				<td data-datatype="${col.dataType}" data-col-name="${col.name}" class="col">${row[i]}</td>
+				`)}
+				<td>
+					<button onclick="editRow('${dbName}', '${tableName}', ${rowNum})" class="small edit">Edit</button>
+					<button class="small red">Delete</button>
+				</td>
+			</tr>
+			`)}
+		</tbody>
+		<tfoot>
+			${reduceArray(cols, col => /* html */ `
+			<td>
+				${inputTypeFromDataType(col.dataType).outerHTML}
+			</td>
+			`)}
+			<td>
+				<button class="small">Add</button>
+			</td>
+		</tfoot>
+	</table>
+	`;
+};
+// 5.5.1 Input Type From Datatype
+const inputTypeFromDataType = (dataType) => {
+    const inputEl = document.createElement('input');
+    inputEl.classList.add('small');
+    if (dataType == 'Binary') {
+        inputEl.type = 'text';
+        inputEl.addEventListener('input', () => {
+            const { value } = inputEl;
+            // Make sure the value only contains 0's and 1's
+            if (value.replace(/(0|1)/g, '') == '') {
+                inputEl.classList.remove('red');
+            }
+            else {
+                inputEl.classList.add('red');
+            }
+        });
+    }
+    else if (dataType == 'Bit') {
+        inputEl.type = 'text';
+        inputEl.addEventListener('input', () => {
+            const { value } = inputEl;
+            // Make sure the value is either 0 or 1
+            if (value == '0' || value == '1') {
+                inputEl.classList.remove('red');
+            }
+            else {
+                inputEl.classList.add('red');
+            }
+        });
+    }
+    else if (dataType == 'Boolean') {
+        inputEl.type = 'checkbox';
+    }
+    else if (dataType == 'Char') {
+        inputEl.type = 'text';
+        inputEl.addEventListener('input', () => {
+            const { value } = inputEl;
+            // Make sure the string length is 1
+            if (value.length != 1) {
+                inputEl.classList.remove('red');
+            }
+            else {
+                inputEl.classList.add('red');
+            }
+        });
+    }
+    else if (dataType == 'DateTime') {
+        inputEl.type = 'datetime-local';
+    }
+    else if (dataType == 'Float') {
+        inputEl.type = 'number';
+        inputEl.step = 'any';
+    }
+    else if (dataType == 'Hex') {
+        inputEl.type = 'text';
+        inputEl.addEventListener('input', () => {
+            const { value } = inputEl;
+            // Make sure only the hexadecimal numbers are present
+            if (value.toLowerCase().replace(/([0-9]|[a-f])/g, '') == '') {
+                inputEl.classList.remove('red');
+            }
+            else {
+                inputEl.classList.add('red');
+            }
+        });
+    }
+    else if (dataType == 'Int') {
+        inputEl.type = 'number';
+        inputEl.step = '1';
+    }
+    else if (dataType == 'JSON') {
+        inputEl.type = 'text';
+    }
+    else if (dataType == 'String') {
+        inputEl.type = 'text';
+    }
+    else {
+        throw new Error(`Datatype '${dataType}' not handled`);
+    }
+    return inputEl;
+};
+// 5.5.2 Parse Input Value
+const parseInputValue = (input, dataType) => {
+    const { value, checked } = input;
+    // Handle bad data
+    if (input.classList.contains('red')) {
+        throw new Error(`Input of '${value}' could not be parsed to datatype '${dataType}'`);
+    }
+    if (dataType == 'Binary') {
+        return value;
+    }
+    else if (dataType == 'Bit') {
+        return parseInt(value);
+    }
+    else if (dataType == 'Boolean') {
+        return checked;
+    }
+    else if (dataType == 'Char') {
+        return value;
+    }
+    else if (dataType == 'DateTime') {
+        return new Date(value);
+    }
+    else if (dataType == 'Float') {
+        return parseFloat(value);
+    }
+    else if (dataType == 'Hex') {
+        return value;
+    }
+    else if (dataType == 'Int') {
+        return parseInt(value);
+    }
+    else if (dataType == 'JSON') {
+        return value;
+    }
+    else if (dataType == 'String') {
+        return value;
+    }
+    else {
+        throw new Error(`Datatype '${dataType}' not handled`);
+    }
+};
+// 5.5.3 Edit Row
+const editRow = (dbName, tableName, rowNum) => {
+    const rowEl = $a('.database-table tbody tr')[rowNum];
+    // Change button text to 'Save'
+    const button = rowEl.querySelector('button.edit');
+    button.innerText = 'Save';
+    // Change all fields to inputs
+    const fields = rowEl.querySelectorAll('.col');
+    fields.forEach(cell => {
+        // Get data from cell
+        const data = cell.innerText;
+        // Clear the text
+        cell.innerHTML = '';
+        // Get datatype
+        const dataType = cell.getAttribute('data-datatype');
+        // Add the input
+        const input = inputTypeFromDataType(dataType);
+        cell.appendChild(input);
+        input.value = data;
+    });
+    // Listen for the Save button click
+    button.addEventListener('click', () => {
+        // Gather inputs
+        const row = {};
+        fields.forEach(cell => {
+            const colName = cell.getAttribute('data-col-name');
+            const dataType = cell.getAttribute('data-datatype');
+            const input = cell.querySelector('input');
+            // Store the input value
+            const value = parseInputValue(input, dataType);
+            row[colName] = value;
+        });
+        // Remove the inputs and add the plain data back in the cells
+        fields.forEach(cell => {
+            const colName = cell.getAttribute('data-col-name');
+            const input = cell.querySelector('input');
+            // Remove the input
+            input.remove();
+            // Add the plain data back in the cell
+            cell.innerText = row[colName].toString();
+        });
+        // Update the value in the database
+        updateRow(dbName, tableName, rowNum, row);
+    });
+};
+// 5.5.4 Update Row
+const updateRow = async (dbName, tableName, rowNum, row) => {
+    const suToken = await getSuToken();
+    try {
+        await request('/admin-panel/workers/database-update.node.js', {
+            suToken, dbName, tableName, rowNum, row
+        });
+    }
+    catch (err) {
+        handleRequestError(err);
+        return;
     }
 };

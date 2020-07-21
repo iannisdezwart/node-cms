@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.compile = void 0;
 const fs = require("fs");
 const chalk = require("chalk");
 const node_json_database_1 = require("node-json-database");
