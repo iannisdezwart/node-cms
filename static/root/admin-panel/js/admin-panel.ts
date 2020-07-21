@@ -59,6 +59,7 @@
 			5.5.2 Parse Input Value
 			5.5.3 Edit Row
 			5.5.4 Update Row
+			5.5.5 Delete Row
 
 */
 
@@ -265,6 +266,15 @@ const goToTheRightPage = () => {
 // Handle back- and forward button
 
 addEventListener('popstate', goBackInHistory)
+
+// Handle reload
+
+addEventListener('beforeunload', async () => {
+	const req = await request('/admin-panel/workers/get-refresh-token', {})
+	const refreshToken = req.body
+
+	Cookies.set('refresh-token', refreshToken)
+})
 
 const goToHomepage = () => {
 	// Todo: make homepage
@@ -2136,7 +2146,7 @@ const showTable = async (
 				`) }
 				<td>
 					<button onclick="editRow('${ dbName }', '${ tableName }', ${ rowNum })" class="small edit">Edit</button>
-					<button class="small red">Delete</button>
+					<button onclick="deleteRow('${ dbName }', '${ tableName }', ${ rowNum })" class="small red">Delete</button>
 				</td>
 			</tr>
 			`) }
@@ -2289,6 +2299,8 @@ const editRow = (
 	// Change button text to 'Save'
 
 	const button = rowEl.querySelector<HTMLButtonElement>('button.edit')
+	const savedOnclick = button.onclick
+	button.onclick = null
 	button.innerText = 'Save'
 
 	// Change all fields to inputs
@@ -2318,7 +2330,7 @@ const editRow = (
 
 	// Listen for the Save button click
 
-	button.addEventListener('click', () => {
+	button.addEventListener('click', async () => {
 		// Gather inputs
 
 		const row: DB_Table_Row_Formatted = {}
@@ -2351,7 +2363,13 @@ const editRow = (
 
 		// Update the value in the database
 
-		updateRow(dbName, tableName, rowNum, row)
+		await updateRow(dbName, tableName, rowNum, row)
+
+		// Todo: Show loader
+		// Reset button text to edit
+
+		button.innerText = 'Edit'
+		button.onclick = savedOnclick
 	})
 }
 
@@ -2361,16 +2379,33 @@ const updateRow = async (
 	dbName: string,
 	tableName: string,
 	rowNum: number,
-	row: DB_Table_Row_Formatted
+	newRow: DB_Table_Row_Formatted
 ) => {
 	const suToken = await getSuToken()
 
 	try {
-		await request('/admin-panel/workers/database-update.node.js', {
-			suToken, dbName, tableName, rowNum, row
+		await request('/admin-panel/workers/database-update-row.node.js', {
+			suToken, dbName, tableName, rowNum, newRow
 		})
 	} catch(err) {
 		handleRequestError(err)
-		return
+	}
+}
+
+// 5.5.5 Delete Row
+
+const deleteRow = async (
+	dbName: string,
+	tableName: string,
+	rowNum: number
+) => {
+	const suToken = await getSuToken()
+
+	try {
+		await request('/admin-panel/workers/database-delete-row.node.js', {
+			suToken, dbName, tableName, rowNum
+		})
+	} catch(err) {
+		
 	}
 }

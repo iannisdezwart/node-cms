@@ -59,6 +59,7 @@
             5.5.2 Parse Input Value
             5.5.3 Edit Row
             5.5.4 Update Row
+            5.5.5 Delete Row
 
 */
 /* ===================
@@ -199,6 +200,12 @@ const goToTheRightPage = () => {
 };
 // Handle back- and forward button
 addEventListener('popstate', goBackInHistory);
+// Handle reload
+addEventListener('beforeunload', async () => {
+    const req = await request('/admin-panel/workers/get-refresh-token', {});
+    const refreshToken = req.body;
+    Cookies.set('refresh-token', refreshToken);
+});
 const goToHomepage = () => {
     // Todo: make homepage
     setSearchParams({});
@@ -1536,7 +1543,7 @@ const showTable = async (dbName, tableName) => {
 				`)}
 				<td>
 					<button onclick="editRow('${dbName}', '${tableName}', ${rowNum})" class="small edit">Edit</button>
-					<button class="small red">Delete</button>
+					<button onclick="deleteRow('${dbName}', '${tableName}', ${rowNum})" class="small red">Delete</button>
 				</td>
 			</tr>
 			`)}
@@ -1681,6 +1688,8 @@ const editRow = (dbName, tableName, rowNum) => {
     const rowEl = $a('.database-table tbody tr')[rowNum];
     // Change button text to 'Save'
     const button = rowEl.querySelector('button.edit');
+    const savedOnclick = button.onclick;
+    button.onclick = null;
     button.innerText = 'Save';
     // Change all fields to inputs
     const fields = rowEl.querySelectorAll('.col');
@@ -1697,7 +1706,7 @@ const editRow = (dbName, tableName, rowNum) => {
         input.value = data;
     });
     // Listen for the Save button click
-    button.addEventListener('click', () => {
+    button.addEventListener('click', async () => {
         // Gather inputs
         const row = {};
         fields.forEach(cell => {
@@ -1718,19 +1727,33 @@ const editRow = (dbName, tableName, rowNum) => {
             cell.innerText = row[colName].toString();
         });
         // Update the value in the database
-        updateRow(dbName, tableName, rowNum, row);
+        await updateRow(dbName, tableName, rowNum, row);
+        // Todo: Show loader
+        // Reset button text to edit
+        button.innerText = 'Edit';
+        button.onclick = savedOnclick;
     });
 };
 // 5.5.4 Update Row
-const updateRow = async (dbName, tableName, rowNum, row) => {
+const updateRow = async (dbName, tableName, rowNum, newRow) => {
     const suToken = await getSuToken();
     try {
-        await request('/admin-panel/workers/database-update.node.js', {
-            suToken, dbName, tableName, rowNum, row
+        await request('/admin-panel/workers/database-update-row.node.js', {
+            suToken, dbName, tableName, rowNum, newRow
         });
     }
     catch (err) {
         handleRequestError(err);
-        return;
+    }
+};
+// 5.5.5 Delete Row
+const deleteRow = async (dbName, tableName, rowNum) => {
+    const suToken = await getSuToken();
+    try {
+        await request('/admin-panel/workers/database-delete-row.node.js', {
+            suToken, dbName, tableName, rowNum
+        });
+    }
+    catch (err) {
     }
 };
