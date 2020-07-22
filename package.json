@@ -1,6 +1,6 @@
 {
   "name": "@iannisz/node-cms",
-  "version": "0.0.34",
+  "version": "0.0.35",
   "description": "Node CMS",
   "main": "index.js",
   "scripts": {
@@ -15,12 +15,12 @@
     "@types/jsonwebtoken": "^8.5.0",
     "@types/node": "^14.0.24",
     "@types/socket.io-client": "^1.4.33",
-    "apache-js-workers": "0.0.13",
+    "apache-js-workers": "^0.0.13",
     "bcrypt": "^5.0.0",
     "chalk": "^4.1.0",
     "jsonwebtoken": "^8.5.1",
     "ncp": "^2.0.0",
-    "node-json-database": "0.0.20",
+    "node-json-database": "^0.0.21",
     "queued-copy-dir": "^0.0.2"
   }
 }
