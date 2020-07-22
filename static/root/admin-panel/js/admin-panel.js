@@ -60,6 +60,7 @@
             5.5.3 Edit Row
             5.5.4 Update Row
             5.5.5 Delete Row
+        5.6 Add Row
 
 */
 /* ===================
@@ -932,8 +933,8 @@ let checkboxStatus = 'unchecked';
 let checkedCheckboxes = 0;
 const allCheckboxesChecked = () => {
     const checkboxes = $a('tbody .col-checkbox input[type="checkbox"]');
-    for (let i = 0; i < checkboxes.length; i++) {
-        if (!checkboxes[i].checked) {
+    for (let checkbox of checkboxes) {
+        if (!checkbox.checked) {
             return false;
         }
     }
@@ -1430,8 +1431,6 @@ const showDatabaseList = async () => {
 				<td>${parseDate(dbInfo.modified)}</td>
 				<td>
 					<button class="small" onclick="showDatabase('${dbInfo.name}')">View</button>
-					<button class="small">Copy</button>
-					<button class="small red">Delete</button>
 				</td>
 			</tr>
 			`)}
@@ -1514,7 +1513,7 @@ const showTable = async (dbName, tableName) => {
     $('.main').innerHTML = /* html */ `
 	<h1>
 		<img class="inline-centered-icon" src="/admin-panel/img/table.png" alt="Table Icon">
-		${dbName.replace('.json', '')} > ${tableName}
+		<a onclick="showDatabase('${dbName}')">${dbName.replace('.json', '')}</a> > ${tableName}
 	</h1>
 
 	<table class="fullwidth database-table">
@@ -1550,12 +1549,12 @@ const showTable = async (dbName, tableName) => {
 		</tbody>
 		<tfoot>
 			${reduceArray(cols, col => /* html */ `
-			<td>
+			<td data-datatype="${col.dataType}" data-col-name="${col.name}" class="col">
 				${inputTypeFromDataType(col.dataType).outerHTML}
 			</td>
 			`)}
 			<td>
-				<button class="small">Add</button>
+				<button onclick="addRow('${dbName}', '${tableName}')" class="small">Add</button>
 			</td>
 		</tfoot>
 	</table>
@@ -1753,7 +1752,38 @@ const deleteRow = async (dbName, tableName, rowNum) => {
         await request('/admin-panel/workers/database-delete-row.node.js', {
             suToken, dbName, tableName, rowNum
         });
+        // Reload the table
+        showTable(dbName, tableName);
     }
     catch (err) {
+        handleRequestError(err);
+    }
+};
+/*
+    5.6 Add Row
+*/
+const addRow = async (dbName, tableName) => {
+    // Get the new row
+    const newRow = {};
+    const fields = $a('tfoot .col');
+    for (let cell of fields) {
+        const colName = cell.getAttribute('data-col-name');
+        const dataType = cell.getAttribute('data-datatype');
+        const input = cell.querySelector('input');
+        // Store the input value
+        const value = parseInputValue(input, dataType);
+        newRow[colName] = value;
+    }
+    // Query
+    try {
+        const suToken = await getSuToken();
+        await request('/admin-panel/workers/database-insert-row.node.js', {
+            suToken, dbName, tableName, newRow
+        });
+        // Reload the table
+        showTable(dbName, tableName);
+    }
+    catch (err) {
+        handleRequestError(err);
     }
 };
