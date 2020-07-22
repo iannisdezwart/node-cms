@@ -40,7 +40,7 @@ const popup = (
 		const inputResults = new Map<string, string>()
 
 		for (let input of inputs) {
-			const { value } = $(`input[data-name="${ input.name }"]`) as HTMLInputElement
+			const { value } = $<HTMLInputElement>(`input[data-name="${ input.name }"]`)
 			inputResults.set(input.name, value)
 		}
 

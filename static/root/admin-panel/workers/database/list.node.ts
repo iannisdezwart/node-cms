@@ -1,7 +1,7 @@
 import { req, res, log } from 'apache-js-workers'
 import * as fs from 'fs'
 import { resolve as resolvePath } from 'path'
-import { authenticateSuToken } from './../../../private-workers/authenticate-su-token'
+import { authenticateSuToken } from './../../../../private-workers/authenticate-su-token'
 
 interface DB_Info {
 	name: string
@@ -20,14 +20,14 @@ authenticateSuToken(suToken)
 		// Authenticated, send the user the database list
 
 		try {
-			const dbPathListFilePath = resolvePath(__dirname + '/../../../databases.json')
+			const dbPathListFilePath = resolvePath(__dirname + '/../../../../databases.json')
 			const dbPathListFile = fs.readFileSync(dbPathListFilePath, 'utf8')
 			const dbPathList = JSON.parse(dbPathListFile) as string[]
 
 			const dbList: DB_Info[] = []
 
 			for (let dbPath of dbPathList) {
-				const dbFilePath = resolvePath(__dirname + '/../../../' + dbPath)
+				const dbFilePath = resolvePath(__dirname + '/../../../../' + dbPath)
 				const dbFileStats = fs.statSync(dbFilePath)
 
 				dbList.push({

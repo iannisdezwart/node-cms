@@ -52,15 +52,18 @@
     5. Database manager
         5.1 Get Database List
         5.2 Show Database List
-        5.3 Get Database
-        5.4 Show Database
-        5.5 Show Table
-            5.5.1 Input Type From Datatype
-            5.5.2 Parse Input Value
-            5.5.3 Edit Row
-            5.5.4 Update Row
-            5.5.5 Delete Row
-        5.6 Add Row
+        5.3 Get Table List of Database
+        5.4 Show Table List of Database
+        5.5 Get Table
+        5.6 Show Table
+            5.6.1 Create Input Element From Datatype
+            5.6.2 Parse Input Value
+            5.6.3 Edit Row
+            5.6.4 Update Row
+            5.6.5 Delete Row
+            5.6.6 Add Row
+            5.6.7 Table Ordering
+            5.6.8 Table Filtering
 
 */
 /* ===================
@@ -191,7 +194,7 @@ const goToTheRightPage = () => {
     }
     else if (tab == 'show-database') {
         const dbName = searchParams.get('db-name');
-        showDatabase(dbName);
+        showTableListOfDatabase(dbName);
     }
     else if (tab == 'show-database-table') {
         const dbName = searchParams.get('db-name');
@@ -1390,7 +1393,7 @@ const createNewDirectory = async (parentDirectoryPath) => {
 const getDatabaseList = async () => {
     try {
         const suToken = await getSuToken();
-        const response = await request('/admin-panel/workers/get-database-list.node.js', {
+        const response = await request('/admin-panel/workers/database/list.node.js', {
             suToken
         });
         const databases = response.body;
@@ -1426,11 +1429,11 @@ const showDatabaseList = async () => {
 				<td class="col-icon">
 					<img class="file-manager-file-icon" src="/admin-panel/img/database.png" alt="Database Icon">
 				</td>
-				<td class="col-name" onclick="showDatabase('${dbInfo.name}')">${dbInfo.name.replace('.json', '')}</td>
+				<td class="col-name" onclick="showTableListOfDatabase('${dbInfo.name}')">${dbInfo.name.replace('.json', '')}</td>
 				<td>${parseSize(dbInfo.size)}</td>
 				<td>${parseDate(dbInfo.modified)}</td>
 				<td>
-					<button class="small" onclick="showDatabase('${dbInfo.name}')">View</button>
+					<button class="small" onclick="showTableListOfDatabase('${dbInfo.name}')">View</button>
 				</td>
 			</tr>
 			`)}
@@ -1438,13 +1441,10 @@ const showDatabaseList = async () => {
 	</table>
 	`;
 };
-/*
-    5.3 Get Database
-*/
-const getDatabase = async (dbName) => {
+const getTableListOfDatabase = async (dbName) => {
     const suToken = await getSuToken();
     try {
-        const response = await request('/admin-panel/workers/get-database.node.js', {
+        const response = await request('/admin-panel/workers/database/list-tables.node.js', {
             suToken, dbName
         });
         return response.body;
@@ -1454,15 +1454,15 @@ const getDatabase = async (dbName) => {
     }
 };
 /*
-    5.4 Show Database
+    5.4 Show Table List of Database
 */
-const showDatabase = async (dbName) => {
+const showTableListOfDatabase = async (dbName) => {
     showLoader();
     setSearchParams({
         tab: 'show-database',
         'db-name': dbName
     });
-    const db = await getDatabase(dbName);
+    const db = await getTableListOfDatabase(dbName);
     $('.main').innerHTML = /* html */ `
 	<h1>
 		<img class="inline-centered-icon" src="/admin-panel/img/database.png" alt="Database Icon">
@@ -1477,16 +1477,16 @@ const showDatabase = async (dbName) => {
 			<td>Table Actions</td>
 		</thead>
 		<tbody>
-			${reduceObject(db.tables, tableName => {
-        const table = db.tables[tableName];
-        const { rows, cols } = table;
+			${reduceObject(db, tableName => {
+        const table = db[tableName];
+        const { rowCount, colCount } = table;
         return /* html */ `
 				<tr>
 					<td class="col-icon">
 						<img class="file-manager-file-icon" src="/admin-panel/img/table.png" alt="Table Icon">
 					</td>
 					<td class="col-name" onclick="showTable('${dbName}', '${tableName}')">${tableName}</td>
-					<td>${rows.length}/${cols.length}</td>
+					<td>${rowCount}/${colCount}</td>
 					<td>
 						<button class="small" onclick="showTable('${dbName}', '${tableName}')">View</button>
 					</td>
@@ -1498,8 +1498,27 @@ const showDatabase = async (dbName) => {
 	`;
 };
 /*
-    5.5 Show Table
+    5.5 Get Table
 */
+const getTable = async (dbName, tableName, orderArr = []) => {
+    const suToken = await getSuToken();
+    try {
+        const response = await request('/admin-panel/workers/database/table/get.node.js', {
+            suToken, dbName, tableName, orderArr
+        });
+        return response.body;
+    }
+    catch (err) {
+        handleRequestError(err);
+    }
+};
+/*
+    5.6 Show Table
+*/
+let currentTable;
+let currentDbName;
+let currentTableName;
+let currentOrderBy = new Map();
 const showTable = async (dbName, tableName) => {
     showLoader();
     setSearchParams({
@@ -1507,17 +1526,26 @@ const showTable = async (dbName, tableName) => {
         'db-name': dbName,
         'table-name': tableName
     });
-    const db = await getDatabase(dbName);
-    const table = db.tables[tableName];
+    currentTable = await getTable(dbName, tableName);
+    currentDbName = dbName;
+    currentTableName = tableName;
+    currentOrderBy.clear();
+    showCurrentTable();
+};
+const showCurrentTable = (filter) => {
+    // Filter table if a filter is provided
+    const table = (filter != undefined) ? filterTable(currentTable, filter) : currentTable;
     const { rows, cols } = table;
     $('.main').innerHTML = /* html */ `
 	<h1>
 		<img class="inline-centered-icon" src="/admin-panel/img/table.png" alt="Table Icon">
-		<a class="underline" onclick="showDatabase('${dbName}')">${dbName.replace('.json', '')}</a> > ${tableName}
+		<a class="underline" onclick="showTableListOfDatabase('${currentDbName}')">${currentDbName.replace('.json', '')}</a> > ${currentTableName}
 	</h1>
 
 	<table class="fullwidth database-table">
 		<thead>
+			<!-- The columns come here -->
+
 			${reduceArray(cols, col => {
         const dataType = `Datatype: ${col.dataType}\n`;
         const constraints = (col.constraints != undefined)
@@ -1527,41 +1555,48 @@ const showTable = async (dbName, tableName) => {
             ? `Foreign Key: ${col.foreignKey.table}.${col.foreignKey.column}\n`
             : '';
         return /* html */ `
-				<td title="${dataType}${constraints}${foreignKey}">
+				<td data-col-name="${col.name}" title="${dataType}${constraints}${foreignKey}">
 					${col.name}
+					<img onclick="toggleOrderTable(this, '${col.name}')" class="order-direction hidden" src="/admin-panel/img/arrow-down-faded.png" data-direction="unset" title="Unset">
 				</td>
 				`;
     })}
 			<td></td>
 		</thead>
 		<tbody>
+			<!-- The rows come here -->
+
 			${reduceArray(rows, (row, rowNum) => /* html */ `
+			<!-- This is a row -->
+
 			<tr>
-				${reduceArray(cols, (col, i) => /* html */ `
-				<td data-datatype="${col.dataType}" data-col-name="${col.name}" class="col">${row[i]}</td>
+				${reduceArray(cols, col => /* html */ `
+				<td data-datatype="${col.dataType}" data-col-name="${col.name}" class="col">${row[col.name]}</td>
 				`)}
 				<td>
-					<button onclick="editRow('${dbName}', '${tableName}', ${rowNum})" class="small edit">Edit</button>
-					<button onclick="deleteRow('${dbName}', '${tableName}', ${rowNum})" class="small red">Delete</button>
+					<button onclick="editRow('${currentDbName}', '${currentTableName}', ${rowNum})" class="small edit">Edit</button>
+					<button onclick="deleteRow('${currentDbName}', '${currentTableName}', ${rowNum})" class="small red">Delete</button>
 				</td>
 			</tr>
 			`)}
 		</tbody>
 		<tfoot>
+			<!-- User can add rows here -->
+
 			${reduceArray(cols, col => /* html */ `
 			<td data-datatype="${col.dataType}" data-col-name="${col.name}" class="col">
-				${inputTypeFromDataType(col.dataType).outerHTML}
+				${createInputElFromDataType(col.dataType).outerHTML}
 			</td>
 			`)}
 			<td>
-				<button onclick="addRow('${dbName}', '${tableName}')" class="small">Add</button>
+				<button onclick="addRow('${currentDbName}', '${currentTableName}')" class="small">Add</button>
 			</td>
 		</tfoot>
 	</table>
 	`;
 };
-// 5.5.1 Input Type From Datatype
-const inputTypeFromDataType = (dataType) => {
+// 5.6.1 Create Input Element From Datatype
+const createInputElFromDataType = (dataType) => {
     const inputEl = document.createElement('input');
     inputEl.classList.add('small');
     if (dataType == 'Binary') {
@@ -1641,7 +1676,7 @@ const inputTypeFromDataType = (dataType) => {
     }
     return inputEl;
 };
-// 5.5.2 Parse Input Value
+// 5.6.2 Parse Input Value
 const parseInputValue = (input, dataType) => {
     const { value, checked } = input;
     // Handle bad data
@@ -1682,7 +1717,7 @@ const parseInputValue = (input, dataType) => {
         throw new Error(`Datatype '${dataType}' not handled`);
     }
 };
-// 5.5.3 Edit Row
+// 5.6.3 Edit Row
 const editRow = (dbName, tableName, rowNum) => {
     const rowEl = $a('.database-table tbody tr')[rowNum];
     // Change button text to 'Save'
@@ -1700,7 +1735,7 @@ const editRow = (dbName, tableName, rowNum) => {
         // Get datatype
         const dataType = cell.getAttribute('data-datatype');
         // Add the input
-        const input = inputTypeFromDataType(dataType);
+        const input = createInputElFromDataType(dataType);
         cell.appendChild(input);
         input.value = data;
     });
@@ -1733,11 +1768,11 @@ const editRow = (dbName, tableName, rowNum) => {
         button.onclick = savedOnclick;
     });
 };
-// 5.5.4 Update Row
+// 5.6.4 Update Row
 const updateRow = async (dbName, tableName, rowNum, newRow) => {
     const suToken = await getSuToken();
     try {
-        await request('/admin-panel/workers/database-update-row.node.js', {
+        await request('/admin-panel/workers/database/table/update-row.node.js', {
             suToken, dbName, tableName, rowNum, newRow
         });
     }
@@ -1745,11 +1780,11 @@ const updateRow = async (dbName, tableName, rowNum, newRow) => {
         handleRequestError(err);
     }
 };
-// 5.5.5 Delete Row
+// 5.6.5 Delete Row
 const deleteRow = async (dbName, tableName, rowNum) => {
     const suToken = await getSuToken();
     try {
-        await request('/admin-panel/workers/database-delete-row.node.js', {
+        await request('/admin-panel/workers/database/table/delete-row.node.js', {
             suToken, dbName, tableName, rowNum
         });
         // Reload the table
@@ -1759,9 +1794,7 @@ const deleteRow = async (dbName, tableName, rowNum) => {
         handleRequestError(err);
     }
 };
-/*
-    5.6 Add Row
-*/
+// 5.6.6 Add Row
 const addRow = async (dbName, tableName) => {
     // Get the new row
     const newRow = {};
@@ -1777,7 +1810,7 @@ const addRow = async (dbName, tableName) => {
     // Query
     try {
         const suToken = await getSuToken();
-        await request('/admin-panel/workers/database-insert-row.node.js', {
+        await request('/admin-panel/workers/database/table/insert-row.node.js', {
             suToken, dbName, tableName, newRow
         });
         // Reload the table
@@ -1786,4 +1819,96 @@ const addRow = async (dbName, tableName) => {
     catch (err) {
         handleRequestError(err);
     }
+};
+// 5.6.7 Table Ordering
+const toggleOrderTable = async (orderArrow, colName) => {
+    /*
+
+        Visuals
+
+    */
+    const prevDirection = orderArrow.getAttribute('data-direction');
+    let direction;
+    // Get new direction
+    if (prevDirection == 'unset') {
+        direction = 'down';
+    }
+    else if (prevDirection == 'down') {
+        direction = 'up';
+    }
+    else {
+        direction = 'unset';
+    }
+    // Set new direction
+    orderArrow.setAttribute('data-direction', direction);
+    orderArrow.title = captitalise(direction);
+    // Set right image and style
+    if (direction == 'up') {
+        orderArrow.src = '/admin-panel/img/arrow-up.png';
+    }
+    else if (direction == 'down') {
+        orderArrow.src = '/admin-panel/img/arrow-down.png';
+    }
+    else {
+        orderArrow.src = '/admin-panel/img/arrow-down-faded.png';
+    }
+    if (direction == 'unset') {
+        orderArrow.classList.add('hidden');
+    }
+    else {
+        orderArrow.classList.remove('hidden');
+    }
+    /*
+    
+        Actual ordering
+    
+    */
+    if (direction == 'unset') {
+        currentOrderBy.delete(colName);
+    }
+    else {
+        currentOrderBy.set(colName, (direction == 'down') ? 'ASC' : 'DESC');
+    }
+    await orderCurrentTable();
+    showCurrentTable();
+    setOrderArrowsOfTable();
+};
+const orderCurrentTable = async () => {
+    // Generate orderBy array
+    const orderArr = [];
+    for (let [colName, ordering] of currentOrderBy) {
+        orderArr.push([colName, ordering]);
+    }
+    // Send request
+    currentTable = await getTable(currentDbName, currentTableName, orderArr);
+};
+const setOrderArrowsOfTable = () => {
+    for (let [colName, ordering] of currentOrderBy) {
+        // Get element
+        const orderArrow = $(`[data-col-name="${colName}"] img.order-direction`);
+        // Set new direction
+        const direction = (ordering == 'ASC') ? 'down' : 'up';
+        orderArrow.setAttribute('data-direction', direction);
+        orderArrow.title = captitalise(direction);
+        // Set right image and style
+        if (direction == 'up') {
+            orderArrow.src = '/admin-panel/img/arrow-up.png';
+        }
+        else {
+            orderArrow.src = '/admin-panel/img/arrow-down.png';
+        }
+        orderArrow.classList.remove('hidden');
+    }
+};
+const filterTable = (table, filter) => {
+    const rowsOut = [];
+    for (let row of table.rows) {
+        if (filter(row)) {
+            rowsOut.push(row);
+        }
+    }
+    return {
+        cols: table.cols,
+        rows: rowsOut
+    };
 };

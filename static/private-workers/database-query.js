@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.handleError = exports.queryTable = void 0;
+exports.handleError = exports.queryTable = exports.queryDatabase = void 0;
 const apache_js_workers_1 = require("apache-js-workers");
 const authenticate_su_token_1 = require("./authenticate-su-token");
 const node_json_database_1 = require("node-json-database");
@@ -15,6 +15,30 @@ class QueryError extends Error {
         return this.stack;
     }
 }
+exports.queryDatabase = (dbName, queryCallback) => new Promise((resolve, reject) => {
+    // Get the suToken from the request
+    const suToken = apache_js_workers_1.req.body.suToken;
+    authenticate_su_token_1.authenticateSuToken(suToken)
+        .then(() => {
+        // Authenticated, execute query
+        const database = node_json_database_1.db(__dirname + '/../' + dbName);
+        if (!database.exists) {
+            reject(new QueryError(400, `Database '${dbName}' was not found`));
+        }
+        try {
+            // Run the callback, which should contain the queries
+            queryCallback(database);
+        }
+        catch (err) {
+            reject(new QueryError(500, err.stack));
+        }
+        // Query ran successfully
+        resolve();
+    })
+        .catch(() => {
+        reject(new QueryError(403));
+    });
+});
 exports.queryTable = (dbName, tableName, queryCallback) => new Promise((resolve, reject) => {
     // Get the suToken from the request
     const suToken = apache_js_workers_1.req.body.suToken;

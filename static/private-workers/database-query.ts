@@ -14,6 +14,41 @@ class QueryError extends Error {
 	}
 }
 
+export const queryDatabase = (
+	dbName: string,
+	queryCallback: (database: ReturnType<typeof db>) => void
+) => new Promise<void>((resolve, reject) => {
+	// Get the suToken from the request
+	
+	const suToken = req.body.suToken as string
+	
+	authenticateSuToken(suToken)
+		.then(() => {
+			// Authenticated, execute query
+
+			const database = db(__dirname + '/../' + dbName)
+	
+			if (!database.exists) {
+				reject(new QueryError(400, `Database '${ dbName }' was not found`))
+			}
+	
+			try {
+				// Run the callback, which should contain the queries
+
+				queryCallback(database)
+			} catch(err) {
+				reject(new QueryError(500, err.stack))
+			}
+
+			// Query ran successfully
+
+			resolve()
+		})
+		.catch(() => {
+			reject(new QueryError(403))
+		})
+})
+
 export const queryTable = (
 	dbName: string,
 	tableName: string,

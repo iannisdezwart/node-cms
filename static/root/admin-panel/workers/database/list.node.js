@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const apache_js_workers_1 = require("apache-js-workers");
 const fs = require("fs");
 const path_1 = require("path");
-const authenticate_su_token_1 = require("./../../../private-workers/authenticate-su-token");
+const authenticate_su_token_1 = require("./../../../../private-workers/authenticate-su-token");
 // Get the suToken from the request
 const suToken = apache_js_workers_1.req.body.suToken;
 // Authenticate
@@ -11,12 +11,12 @@ authenticate_su_token_1.authenticateSuToken(suToken)
     .then(() => {
     // Authenticated, send the user the database list
     try {
-        const dbPathListFilePath = path_1.resolve(__dirname + '/../../../databases.json');
+        const dbPathListFilePath = path_1.resolve(__dirname + '/../../../../databases.json');
         const dbPathListFile = fs.readFileSync(dbPathListFilePath, 'utf8');
         const dbPathList = JSON.parse(dbPathListFile);
         const dbList = [];
         for (let dbPath of dbPathList) {
-            const dbFilePath = path_1.resolve(__dirname + '/../../../' + dbPath);
+            const dbFilePath = path_1.resolve(__dirname + '/../../../../' + dbPath);
             const dbFileStats = fs.statSync(dbFilePath);
             dbList.push({
                 name: dbPath,

@@ -1,4 +1,4 @@
-import { queryTable, handleError } from './../../../private-workers/database-query'
+import { queryTable, handleError } from './../../../../../private-workers/database-query'
 import { req, res } from 'apache-js-workers'
 import { DB_Table_Row_Formatted } from 'node-json-database'
 

@@ -82,6 +82,7 @@ body {
 
 .underline {
 	text-decoration: underline;
+	cursor: pointer;
 }
 
 /* ===================
@@ -291,6 +292,22 @@ table.fullwidth tbody .col-name {
 
 table.fullwidth .col-options {
 	width: 1px; /* Set width to minimum */
+}
+
+table.database-table img.order-direction {
+	height: 1em;
+	margin-left: 5px;
+	vertical-align: middle;
+
+	cursor: pointer;
+}
+
+table.database-table img.order-direction.hidden {
+	display: none;
+}
+
+table.database-table td:hover img.order-direction {
+	display: unset;
 }
 
 img.file-manager-file-icon {
