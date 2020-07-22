@@ -157,7 +157,9 @@ qcd.sync(__dirname + '/static/private-workers', 'private-workers')
 
 // Create database list
 
-fs.writeFileSync('databases.json', '[]')
+if (!fs.existsSync('databases.json')) {
+	fs.writeFileSync('databases.json', '[]')
+}
 
 /* ===================
 	3. Creation of databases
