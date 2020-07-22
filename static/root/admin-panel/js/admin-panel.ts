@@ -2113,7 +2113,7 @@ const showTable = async (
 	$('.main').innerHTML = /* html */ `
 	<h1>
 		<img class="inline-centered-icon" src="/admin-panel/img/table.png" alt="Table Icon">
-		<a onclick="showDatabase('${ dbName }')">${ dbName.replace('.json', '') }</a> > ${ tableName }
+		<a class="underline" onclick="showDatabase('${ dbName }')">${ dbName.replace('.json', '') }</a> > ${ tableName }
 	</h1>
 
 	<table class="fullwidth database-table">

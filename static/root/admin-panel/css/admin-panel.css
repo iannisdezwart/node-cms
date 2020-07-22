@@ -80,6 +80,10 @@ body {
 	vertical-align: middle;
 }
 
+.underline {
+	text-decoration: underline;
+}
+
 /* ===================
 	2. Layout
 =================== */
