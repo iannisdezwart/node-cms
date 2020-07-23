@@ -11,7 +11,8 @@ database_query_1.queryTable(dbName, tableName, tableFn => {
     const table = tableFn.get();
     const orderedTable = table.orderBy(orderArr);
     const { rows, cols } = orderedTable;
-    apache_js_workers_1.res.send({ rows, cols });
+    const { data } = tableFn;
+    apache_js_workers_1.res.send({ rows, cols, data });
 })
     .catch(err => {
     database_query_1.handleError(err);

@@ -6,11 +6,6 @@ class QueryError extends Error {
 	constructor(public code: number, message: string = '') {
 		super(message)
 		this.name = 'QueryError'
-		this.message = `Code: ${ this.code }, Message: ${ this.message }`
-	}
-
-	toString() {
-		return this.stack
 	}
 }
 
@@ -26,7 +21,9 @@ export const queryDatabase = (
 		.then(() => {
 			// Authenticated, execute query
 
-			const database = db(__dirname + '/../' + dbName)
+			const database = db(__dirname + '/../' + dbName, {
+				safeAndFriendlyErrors: true
+			})
 	
 			if (!database.exists) {
 				reject(new QueryError(400, `Database '${ dbName }' was not found`))
@@ -37,7 +34,7 @@ export const queryDatabase = (
 
 				queryCallback(database)
 			} catch(err) {
-				reject(new QueryError(500, err.stack))
+				reject(new QueryError(500, err.message))
 			}
 
 			// Query ran successfully
@@ -62,7 +59,9 @@ export const queryTable = (
 		.then(() => {
 			// Authenticated, execute query
 
-			const database = db(__dirname + '/../' + dbName)
+			const database = db(__dirname + '/../' + dbName, {
+				safeAndFriendlyErrors: true
+			})
 	
 			if (!database.exists) {
 				reject(new QueryError(400, `Database '${ dbName }' was not found`))
@@ -79,7 +78,7 @@ export const queryTable = (
 
 				queryCallback(table)
 			} catch(err) {
-				reject(new QueryError(500, err.stack))
+				reject(new QueryError(500, err.message))
 			}
 
 			// Query ran successfully
@@ -101,7 +100,7 @@ export const handleError = (err: QueryError) => {
 	} else if (err.code == 403) {
 		res.send('Forbidden')
 	} else if (err.code == 500) {
-		res.send('Internal Server Error: ' + err.message)
+		res.send('Database Error: ' + err.message)
 	} else {
 		res.send('Unhandled Error: ' + err.message)
 	}

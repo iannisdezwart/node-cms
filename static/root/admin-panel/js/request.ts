@@ -76,7 +76,10 @@ const handleRequestError = (err: { status: number, response: string }) => {
 	} else {
 		// This should never happen
 
-		notification('Unhandled Error', `status code: ${ err.status }, body: <code>${ err.response }</code>`)
+		notification('Unhandled Error', `status code: ${ err.status }, body: <codeblock>${
+			err.response
+				.replace(/\n/g, '<br>')
+		}</codeblock>`, null)
 	}
 }
 

@@ -233,6 +233,13 @@ const reduceObject = (obj, f) => {
     }
     return output;
 };
+const reduceMap = (map, f) => {
+    let output = '';
+    for (let [key, value] of map) {
+        output += f(key, value);
+    }
+    return output;
+};
 const showLoader = () => {
     $('.main').innerHTML = /* html */ `
 	<div class="loader"></div>
@@ -1519,6 +1526,8 @@ let currentTable;
 let currentDbName;
 let currentTableName;
 let currentOrderBy = new Map();
+let currentFilters = new Map();
+let currentBuiltInFilters = new Map();
 const showTable = async (dbName, tableName) => {
     showLoader();
     setSearchParams({
@@ -1530,18 +1539,49 @@ const showTable = async (dbName, tableName) => {
     currentDbName = dbName;
     currentTableName = tableName;
     currentOrderBy.clear();
-    showCurrentTable();
-};
-const showCurrentTable = (filter) => {
-    // Filter table if a filter is provided
-    const table = (filter != undefined) ? filterTable(currentTable, filter) : currentTable;
-    const { rows, cols } = table;
+    currentFilters.clear();
+    currentBuiltInFilters.clear();
+    const { data } = currentTable;
+    // Get the built-in filters from the extra data of the table
+    if (data != undefined) {
+        if (data.filters != undefined) {
+            for (let filterName in data.filters) {
+                currentBuiltInFilters.set(filterName, eval(data.filters[filterName]));
+            }
+        }
+    }
     $('.main').innerHTML = /* html */ `
 	<h1>
 		<img class="inline-centered-icon" src="/admin-panel/img/table.png" alt="Table Icon">
 		<a class="underline" onclick="showTableListOfDatabase('${currentDbName}')">${currentDbName.replace('.json', '')}</a> > ${currentTableName}
 	</h1>
 
+	<div class="table-container"></div>
+
+	<br><br>
+
+	<div class="built-in-filters">
+		${reduceMap(currentBuiltInFilters, filterName => /* html */ `
+		<input type="checkbox" onchange="setTableFilter('${filterName}', this.checked)">
+		${filterName}
+		<br>
+		`)}
+	</div>
+	`;
+    updateTable();
+};
+const updateTable = (...filters) => {
+    let table = currentTable;
+    // Apply each filter from the parameters
+    for (let filter of filters) {
+        table = filterTable(table, filter);
+    }
+    // Apply each filter from currentFilters
+    for (let [_filterName, filterFunction] of currentFilters) {
+        table = filterTable(table, filterFunction);
+    }
+    const { rows, cols } = table;
+    $('.table-container').innerHTML = /* html */ `
 	<table class="fullwidth database-table">
 		<thead>
 			<!-- The columns come here -->
@@ -1787,8 +1827,10 @@ const deleteRow = async (dbName, tableName, rowNum) => {
         await request('/admin-panel/workers/database/table/delete-row.node.js', {
             suToken, dbName, tableName, rowNum
         });
+        // Refetch the table
+        currentTable = await getTable(dbName, tableName);
         // Reload the table
-        showTable(dbName, tableName);
+        updateTable();
     }
     catch (err) {
         handleRequestError(err);
@@ -1813,8 +1855,10 @@ const addRow = async (dbName, tableName) => {
         await request('/admin-panel/workers/database/table/insert-row.node.js', {
             suToken, dbName, tableName, newRow
         });
+        // Refetch the table
+        currentTable = await getTable(dbName, tableName);
         // Reload the table
-        showTable(dbName, tableName);
+        updateTable();
     }
     catch (err) {
         handleRequestError(err);
@@ -1870,7 +1914,7 @@ const toggleOrderTable = async (orderArrow, colName) => {
         currentOrderBy.set(colName, (direction == 'down') ? 'ASC' : 'DESC');
     }
     await orderCurrentTable();
-    showCurrentTable();
+    updateTable();
     setOrderArrowsOfTable();
 };
 const orderCurrentTable = async () => {
@@ -1908,7 +1952,18 @@ const filterTable = (table, filter) => {
         }
     }
     return {
-        cols: table.cols,
+        ...table,
         rows: rowsOut
     };
+};
+const setTableFilter = (builtInFilterName, enabled) => {
+    if (enabled) {
+        const filterFunction = currentBuiltInFilters.get(builtInFilterName);
+        currentFilters.set(builtInFilterName, filterFunction);
+    }
+    else {
+        currentFilters.delete(builtInFilterName);
+    }
+    // Refresh table
+    updateTable();
 };

@@ -14,8 +14,9 @@ queryTable(
 		const table = tableFn.get()
 		const orderedTable = table.orderBy(orderArr)
 		const { rows, cols } = orderedTable
+		const { data } = tableFn
 
-		res.send({ rows, cols })
+		res.send({ rows, cols, data })
 	}
 )
 	.catch(err => {

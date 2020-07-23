@@ -318,6 +318,19 @@ const reduceObject = (
 	return output
 }
 
+const reduceMap = <K, V>(
+	map: Map<K, V>,
+	f: (key: K, value: V) => string
+) => {
+	let output = ''
+
+	for (let [ key, value ] of map) {
+		output += f(key, value)
+	}
+
+	return output
+}
+
 const showLoader = () => {
 	$('.main').innerHTML = /* html */ `
 	<div class="loader"></div>
@@ -1945,6 +1958,7 @@ interface DB_Table_Col {
 interface TableRepresentation {
 	cols: DB_Table_Col[]
 	rows: DB_Table_Row_Formatted[]
+	data?: any
 }
 
 interface Link {
@@ -2134,7 +2148,10 @@ const getTable = async (
 let currentTable: TableRepresentation
 let currentDbName: string
 let currentTableName: string
+
 let currentOrderBy = new Map<string, 'ASC' | 'DESC'>()
+let currentFilters = new Map<string, FilterFunction>()
+let currentBuiltInFilters = new Map<string, FilterFunction>()
 
 const showTable = async (
 	dbName: string,
@@ -2147,23 +2164,26 @@ const showTable = async (
 		'db-name': dbName,
 		'table-name': tableName
 	})
-
+	
 	currentTable = await getTable(dbName, tableName)
 	currentDbName = dbName
 	currentTableName = tableName
+
 	currentOrderBy.clear()
+	currentFilters.clear()
+	currentBuiltInFilters.clear()
 
-	showCurrentTable()
-}
+	const { data } = currentTable
 
-const showCurrentTable = (
-	filter?: FilterFunction
-) => {
-	// Filter table if a filter is provided
+	// Get the built-in filters from the extra data of the table
 
-	const table = (filter != undefined) ? filterTable(currentTable, filter) : currentTable
-
-	const { rows, cols } = table
+	if (data != undefined) {
+		if (data.filters != undefined) {
+			for (let filterName in data.filters) {
+				currentBuiltInFilters.set(filterName, eval(data.filters[filterName]))
+			}
+		}
+	}
 
 	$('.main').innerHTML = /* html */ `
 	<h1>
@@ -2171,6 +2191,42 @@ const showCurrentTable = (
 		<a class="underline" onclick="showTableListOfDatabase('${ currentDbName }')">${ currentDbName.replace('.json', '') }</a> > ${ currentTableName }
 	</h1>
 
+	<div class="table-container"></div>
+
+	<br><br>
+
+	<div class="built-in-filters">
+		${ reduceMap(currentBuiltInFilters, filterName => /* html */ `
+		<input type="checkbox" onchange="setTableFilter('${ filterName }', this.checked)">
+		${ filterName }
+		<br>
+		`) }
+	</div>
+	`
+
+	updateTable()
+}
+
+const updateTable = (
+	...filters: FilterFunction[]
+) => {
+	let table = currentTable
+
+	// Apply each filter from the parameters
+
+	for (let filter of filters) {
+		table = filterTable(table, filter)
+	}
+
+	// Apply each filter from currentFilters
+
+	for (let [ _filterName, filterFunction ] of currentFilters) {
+		table = filterTable(table, filterFunction)
+	}
+
+	const { rows, cols } = table
+
+	$('.table-container').innerHTML = /* html */ `
 	<table class="fullwidth database-table">
 		<thead>
 			<!-- The columns come here -->
@@ -2469,9 +2525,13 @@ const deleteRow = async (
 			suToken, dbName, tableName, rowNum
 		})
 
+		// Refetch the table
+
+		currentTable = await getTable(dbName, tableName)
+
 		// Reload the table
 
-		showTable(dbName, tableName)
+		updateTable()
 	} catch(err) {
 		handleRequestError(err)
 	}
@@ -2509,9 +2569,13 @@ const addRow = async (
 			suToken, dbName, tableName, newRow
 		})
 
+		// Refetch the table
+
+		currentTable = await getTable(dbName, tableName)
+
 		// Reload the table
 
-		showTable(dbName, tableName)
+		updateTable()
 	} catch(err) {
 		handleRequestError(err)
 	}
@@ -2576,7 +2640,7 @@ const toggleOrderTable = async (
 	}
 
 	await orderCurrentTable()
-	showCurrentTable()
+	updateTable()
 	setOrderArrowsOfTable()
 }
 
@@ -2636,7 +2700,23 @@ const filterTable = (
 	}
 
 	return {
-		cols: table.cols,
+		...table,
 		rows: rowsOut
 	}
+}
+
+const setTableFilter = (
+	builtInFilterName: string,
+	enabled: boolean
+) => {
+	if (enabled) {
+		const filterFunction = currentBuiltInFilters.get(builtInFilterName)
+		currentFilters.set(builtInFilterName, filterFunction)
+	} else {
+		currentFilters.delete(builtInFilterName)
+	}
+
+	// Refresh table
+
+	updateTable()
 }

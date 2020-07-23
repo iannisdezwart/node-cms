@@ -9,10 +9,6 @@ class QueryError extends Error {
         super(message);
         this.code = code;
         this.name = 'QueryError';
-        this.message = `Code: ${this.code}, Message: ${this.message}`;
-    }
-    toString() {
-        return this.stack;
     }
 }
 exports.queryDatabase = (dbName, queryCallback) => new Promise((resolve, reject) => {
@@ -21,7 +17,9 @@ exports.queryDatabase = (dbName, queryCallback) => new Promise((resolve, reject)
     authenticate_su_token_1.authenticateSuToken(suToken)
         .then(() => {
         // Authenticated, execute query
-        const database = node_json_database_1.db(__dirname + '/../' + dbName);
+        const database = node_json_database_1.db(__dirname + '/../' + dbName, {
+            safeAndFriendlyErrors: true
+        });
         if (!database.exists) {
             reject(new QueryError(400, `Database '${dbName}' was not found`));
         }
@@ -30,7 +28,7 @@ exports.queryDatabase = (dbName, queryCallback) => new Promise((resolve, reject)
             queryCallback(database);
         }
         catch (err) {
-            reject(new QueryError(500, err.stack));
+            reject(new QueryError(500, err.message));
         }
         // Query ran successfully
         resolve();
@@ -45,7 +43,9 @@ exports.queryTable = (dbName, tableName, queryCallback) => new Promise((resolve,
     authenticate_su_token_1.authenticateSuToken(suToken)
         .then(() => {
         // Authenticated, execute query
-        const database = node_json_database_1.db(__dirname + '/../' + dbName);
+        const database = node_json_database_1.db(__dirname + '/../' + dbName, {
+            safeAndFriendlyErrors: true
+        });
         if (!database.exists) {
             reject(new QueryError(400, `Database '${dbName}' was not found`));
         }
@@ -58,7 +58,7 @@ exports.queryTable = (dbName, tableName, queryCallback) => new Promise((resolve,
             queryCallback(table);
         }
         catch (err) {
-            reject(new QueryError(500, err.stack));
+            reject(new QueryError(500, err.message));
         }
         // Query ran successfully
         resolve();
@@ -77,7 +77,7 @@ exports.handleError = (err) => {
         apache_js_workers_1.res.send('Forbidden');
     }
     else if (err.code == 500) {
-        apache_js_workers_1.res.send('Internal Server Error: ' + err.message);
+        apache_js_workers_1.res.send('Database Error: ' + err.message);
     }
     else {
         apache_js_workers_1.res.send('Unhandled Error: ' + err.message);

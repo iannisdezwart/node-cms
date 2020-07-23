@@ -10,7 +10,8 @@ const newRow = req.body.newRow as DB_Table_Row_Formatted
 queryTable(
 	dbName,
 	tableName,
-	table => table.update(newRow, row => row.rowNum == rowNum)
+	table => table.insert([ newRow ], rowNum)
+	// table.update(newRow, row => row.rowNum == rowNum)
 )
 	.then(() => {
 		res.send('Row updated')
