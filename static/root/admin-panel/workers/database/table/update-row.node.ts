@@ -11,7 +11,6 @@ queryTable(
 	dbName,
 	tableName,
 	table => table.insert([ newRow ], rowNum)
-	// table.update(newRow, row => row.rowNum == rowNum)
 )
 	.then(() => {
 		res.send('Row updated')

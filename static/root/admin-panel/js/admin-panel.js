@@ -110,7 +110,7 @@ const fetchPages = () => new Promise(async (resolve) => {
         suToken
     })
         .then(res => {
-        pagesDB = res.body;
+        pagesDB = JSON.parse(res);
         resolve();
     })
         .catch(handleRequestError);
@@ -207,7 +207,7 @@ addEventListener('popstate', goBackInHistory);
 // Handle reload
 addEventListener('beforeunload', async () => {
     const req = await request('/admin-panel/workers/get-refresh-token', {});
-    const refreshToken = req.body;
+    const refreshToken = req;
     Cookies.set('refresh-token', refreshToken);
 });
 const goToHomepage = () => {
@@ -920,7 +920,7 @@ const getFiles = (path = '/') => new Promise(async (resolve, reject) => {
         path, suToken
     })
         .then(res => {
-        const fileArray = res.body.files;
+        const fileArray = JSON.parse(res).files;
         resolve(fileArray);
     })
         .catch(res => {
@@ -999,23 +999,24 @@ const showFiles = (path = '/') => {
 
 				<br><br>
 
-				<table class="fullwidth">
+				<div class="table-container">
+					<table class="fullwidth">
 
-					<thead>
-						<tr>
-							<td class="col-checkbox">
-								<input type="checkbox" onclick="toggleAllCheckboxes()" title="Select all">
-							</td>
-							<td class="col-icon"></td>
-							<td class="col-name">Name</td>
-							<td class="col-size">Size</td>
-							<td class="col-modified">Last Modified</td>
-							<td class="col-options"></td>
-						</tr>
-					</thead>
+						<thead>
+							<tr>
+								<td class="col-checkbox">
+									<input type="checkbox" onclick="toggleAllCheckboxes()" title="Select all">
+								</td>
+								<td class="col-icon"></td>
+								<td class="col-name">Name</td>
+								<td class="col-size">Size</td>
+								<td class="col-modified">Last Modified</td>
+								<td class="col-options"></td>
+							</tr>
+						</thead>
 
-					<tbody>
-						${reduceArray(files, file => {
+						<tbody>
+							${reduceArray(files, file => {
             const { name } = file;
             const size = file.isDirectory ? '–' : parseSize(file.size);
             const modified = parseDate(file.modified);
@@ -1093,7 +1094,7 @@ const showFiles = (path = '/') => {
             window.bulkDeleteFiles = () => {
                 const selectedFiles = getSelectedFiles();
                 popup('Deleting multiple files', `Are you sure you want to delete ${numifyNoun(selectedFiles.length, 'file', 'files')}?
-										<codeblock>${reduceArray(selectedFiles, f => f.name + '<br>')}</codeblock>`, [
+											<codeblock>${reduceArray(selectedFiles, f => f.name + '<br>')}</codeblock>`, [
                     {
                         name: 'Delete',
                         classes: ['red']
@@ -1118,9 +1119,6 @@ const showFiles = (path = '/') => {
                                 .catch(handleRequestError);
                         });
                     }
-                })
-                    .catch(() => {
-                    // User cancelled
                 });
             };
             window.bulkCopyFiles = () => {
@@ -1186,50 +1184,44 @@ const showFiles = (path = '/') => {
                 });
             };
             return /* html */ `
-								<tr class="file-row">
-									<td class="col-checkbox">
-										<input type="checkbox" onchange="handleFileCheckboxes(this)">
-									</td>
+									<tr class="file-row">
+										<td class="col-checkbox">
+											<input type="checkbox" onchange="handleFileCheckboxes(this)">
+										</td>
 
-									<td class="col-icon">
-										<img class="file-manager-file-icon" src="/admin-panel/img/file-icons/${extension}.png" alt="${extension}" onerror="
-											this.src = '${`/admin-panel/img/file-icons/unknown.png`}'; this.onerror = null
+										<td class="col-icon">
+											<img class="file-manager-file-icon" src="/admin-panel/img/file-icons/${extension}.png" alt="${extension}" onerror="
+												this.src = '${`/admin-panel/img/file-icons/unknown.png`}'; this.onerror = null
+											">
+										</td>
+
+										<td class="col-name" onclick="
+											${file.isDirectory} ? showFiles('${path + file.name}/') : openFile('${path + file.name}')
 										">
-									</td>
+											${file.name}
+										</td>
 
-									<td class="col-name" onclick="
-										${file.isDirectory} ? showFiles('${path + file.name}/') : openFile('${path + file.name}')
-									">
-										${file.name}
-									</td>
+										<td class="col-size">
+											${file.isDirectory ? file.filesInside + ' items' : size}
+										</td>
 
-									<td class="col-size">
-										${file.isDirectory ? file.filesInside + ' items' : size}
-									</td>
+										<td class="col-modified">
+											${modified}
+										</td>
 
-									<td class="col-modified">
-										${modified}
-									</td>
-
-									<td class="col-options">
-										<div class="dropdown-menu" onclick="toggleDropdown(this, event)">
-											<div class="dropdown-menu-content">
-												<button class="small" onclick="copyFile('${path + file.name}')">Copy</button>
-												<br><br>
-												<button class="small" onclick="moveFile('${path + file.name}')">Move</button>
-												<br><br>
-												<button class="small" onclick="renameFile('${path + file.name}')">Rename</button>
-												<br><br>
-												<button class="small red" onclick="deleteFile('${path + file.name}')">Delete</button>
-											</div>
-										</div>
-									</td>
-								</tr>
-								`;
+										<td class="col-options">
+											<button class="small" onclick="copyFile('${path + file.name}')">Copy</button>
+											<button class="small" onclick="moveFile('${path + file.name}')">Move</button>
+											<button class="small" onclick="renameFile('${path + file.name}')">Rename</button>
+											<button class="small red" onclick="deleteFile('${path + file.name}')">Delete</button>
+										</td>
+									</tr>
+									`;
         })}
-					</tbody>
+						</tbody>
 
-				</table>
+					</table>
+				</div>
 			</div>
 			`;
         initDropArea(path)
@@ -1269,9 +1261,6 @@ const deleteFile = (filePath) => {
                     .catch(handleRequestError);
             });
         }
-    })
-        .catch(() => {
-        // User cancelled
     });
 };
 /*
@@ -1317,42 +1306,37 @@ const copyOrMoveFile = async (sourcePath, mode) => {
 
 */
 const renameFile = async (sourcePath) => {
-    try {
-        const popupRes = await popup(`Renaming File`, `Enter a new name for <code>${sourcePath.substring(sourcePath.lastIndexOf('/') + 1)}</code>`, [
-            {
-                name: 'Rename'
-            }
-        ], [
-            {
-                name: 'new-name',
-                placeholder: 'Enter a new name...',
-                type: 'text',
-                value: sourcePath.substring(sourcePath.lastIndexOf('/') + 1),
-                enterTriggersButton: 'Rename'
-            }
-        ]);
-        if (popupRes.buttonName == 'Rename') {
-            const newName = popupRes.inputs.get('new-name');
-            const dirPath = sourcePath.substring(0, sourcePath.lastIndexOf('/') + 1);
-            const destinationPath = dirPath + newName;
-            const suToken = await getSuToken();
-            await request('/admin-panel/workers/move-file-different-name.node.js', {
-                suToken,
-                source: sourcePath,
-                destination: destinationPath
-            })
-                .catch(err => {
-                // This should never happen
-                notification('Unspecified Error', `status code: ${err.status}, body: <code>${err.response}</code>`);
-                throw err;
-            });
-            notification(`Renamed file`, `Succesfully renamed file <code>${sourcePath}</code> to <code>${destinationPath}</code>`);
-            // Refresh files
-            showFiles(new URLSearchParams(document.location.search).get('path'));
+    const popupRes = await popup(`Renaming File`, `Enter a new name for <code>${sourcePath.substring(sourcePath.lastIndexOf('/') + 1)}</code>`, [
+        {
+            name: 'Rename'
         }
-    }
-    catch (err) {
-        // User cancelled
+    ], [
+        {
+            name: 'new-name',
+            placeholder: 'Enter a new name...',
+            type: 'text',
+            value: sourcePath.substring(sourcePath.lastIndexOf('/') + 1),
+            enterTriggersButton: 'Rename'
+        }
+    ]);
+    if (popupRes.buttonName == 'Rename') {
+        const newName = popupRes.inputs.get('new-name');
+        const dirPath = sourcePath.substring(0, sourcePath.lastIndexOf('/') + 1);
+        const destinationPath = dirPath + newName;
+        const suToken = await getSuToken();
+        await request('/admin-panel/workers/move-file-different-name.node.js', {
+            suToken,
+            source: sourcePath,
+            destination: destinationPath
+        })
+            .catch(err => {
+            // This should never happen
+            notification('Unspecified Error', `status code: ${err.status}, body: <code>${err.response}</code>`);
+            throw err;
+        });
+        notification(`Renamed file`, `Succesfully renamed file <code>${sourcePath}</code> to <code>${destinationPath}</code>`);
+        // Refresh files
+        showFiles(new URLSearchParams(document.location.search).get('path'));
     }
 };
 /*
@@ -1361,38 +1345,33 @@ const renameFile = async (sourcePath) => {
 
 */
 const createNewDirectory = async (parentDirectoryPath) => {
-    try {
-        const popupRes = await popup('New Folder', `Creating a new folder in <code>${parentDirectoryPath}</code>`, [
-            {
-                name: 'Create'
-            }
-        ], [
-            {
-                name: 'new-dir-name',
-                placeholder: 'Enter a name...',
-                type: 'text',
-                enterTriggersButton: 'Create'
-            }
-        ]);
-        const newDirName = popupRes.inputs.get('new-dir-name');
-        const newDirectoryPath = parentDirectoryPath + newDirName;
-        const suToken = await getSuToken();
-        await request('/admin-panel/workers/create-new-directory.node.js', {
-            suToken,
-            newDirectoryPath
-        })
-            .catch(err => {
-            // This should never happen
-            notification('Unspecified Error', `status code: ${err.status}, body: <code>${err.response}</code>`);
-            throw err;
-        });
-        notification(`Created directory`, `Succesfully created directory <code>${newDirName}</code>`);
-        // Refresh files
-        showFiles(new URLSearchParams(document.location.search).get('path'));
-    }
-    catch (err) {
-        // User cancelled
-    }
+    const popupRes = await popup('New Folder', `Creating a new folder in <code>${parentDirectoryPath}</code>`, [
+        {
+            name: 'Create'
+        }
+    ], [
+        {
+            name: 'new-dir-name',
+            placeholder: 'Enter a name...',
+            type: 'text',
+            enterTriggersButton: 'Create'
+        }
+    ]);
+    const newDirName = popupRes.inputs.get('new-dir-name');
+    const newDirectoryPath = parentDirectoryPath + newDirName;
+    const suToken = await getSuToken();
+    await request('/admin-panel/workers/create-new-directory.node.js', {
+        suToken,
+        newDirectoryPath
+    })
+        .catch(err => {
+        // This should never happen
+        notification('Unspecified Error', `status code: ${err.status}, body: <code>${err.response}</code>`);
+        throw err;
+    });
+    notification(`Created directory`, `Succesfully created directory <code>${newDirName}</code>`);
+    // Refresh files
+    showFiles(new URLSearchParams(document.location.search).get('path'));
 };
 /*
     5.1 Get Database List
@@ -1403,7 +1382,7 @@ const getDatabaseList = async () => {
         const response = await request('/admin-panel/workers/database/list.node.js', {
             suToken
         });
-        const databases = response.body;
+        const databases = JSON.parse(response);
         return databases;
     }
     catch (err) {
@@ -1422,30 +1401,33 @@ const showDatabaseList = async () => {
     $('.main').innerHTML = /* html */ `
 	<h1>Databases</h1>
 
-	<table class="fullwidth databases-list">
-		<thead>
-			<td class="col-icon"></td>
-			<td>Name</td>
-			<td>Size</td>
-			<td>Last Modified</td>
-			<td>Options</td>
-		</thead>
-		<tbody>
-			${reduceArray(databases, dbInfo => /* html */ `
-			<tr>
-				<td class="col-icon">
-					<img class="file-manager-file-icon" src="/admin-panel/img/database.png" alt="Database Icon">
-				</td>
-				<td class="col-name" onclick="showTableListOfDatabase('${dbInfo.name}')">${dbInfo.name.replace('.json', '')}</td>
-				<td>${parseSize(dbInfo.size)}</td>
-				<td>${parseDate(dbInfo.modified)}</td>
-				<td>
-					<button class="small" onclick="showTableListOfDatabase('${dbInfo.name}')">View</button>
-				</td>
-			</tr>
-			`)}
-		</tbody>
-	</table>
+	<div class="table-container">
+		<table class="fullwidth databases-list">
+			<thead>
+				<td class="col-icon"></td>
+				<td>Name</td>
+				<td>Size</td>
+				<td>Last Modified</td>
+				<td class="col-options"></td>
+			</thead>
+			<tbody>
+				${reduceArray(databases, dbInfo => /* html */ `
+				<tr>
+					<td class="col-icon">
+						<img class="file-manager-file-icon" src="/admin-panel/img/database.png" alt="Database Icon">
+					</td>
+					<td class="col-name" onclick="showTableListOfDatabase('${dbInfo.name}')">${dbInfo.name.replace('.json', '')}</td>
+					<td>${parseSize(dbInfo.size)}</td>
+					<td>${parseDate(dbInfo.modified)}</td>
+					<td class="col-options">
+						<button class="small" onclick="showTableListOfDatabase('${dbInfo.name}')">View</button>
+					</td>
+				</tr>
+				`)}
+			</tbody>
+		</table>
+	</div>
+
 	`;
 };
 const getTableListOfDatabase = async (dbName) => {
@@ -1454,7 +1436,7 @@ const getTableListOfDatabase = async (dbName) => {
         const response = await request('/admin-panel/workers/database/list-tables.node.js', {
             suToken, dbName
         });
-        return response.body;
+        return JSON.parse(response);
     }
     catch (err) {
         handleRequestError(err);
@@ -1476,32 +1458,37 @@ const showTableListOfDatabase = async (dbName) => {
 		${dbName.replace('.json', '')}
 	</h1>
 
-	<table class="fullwidth database-tables-list">
-		<thead>
-			<td></td>
-			<td>Table Name</td>
-			<td>Rows/Columns</td>
-			<td>Table Actions</td>
-		</thead>
-		<tbody>
-			${reduceObject(db, tableName => {
+	<div class="table-container">
+		<table class="fullwidth database-tables-list">
+			<thead>
+				<td></td>
+				<td>Table Name</td>
+				<td>Rows</td>
+				<td>Columns</td>
+				<td class="col-options"></td>
+			</thead>
+			<tbody>
+				${reduceObject(db, tableName => {
         const table = db[tableName];
         const { rowCount, colCount } = table;
         return /* html */ `
-				<tr>
-					<td class="col-icon">
-						<img class="file-manager-file-icon" src="/admin-panel/img/table.png" alt="Table Icon">
-					</td>
-					<td class="col-name" onclick="showTable('${dbName}', '${tableName}')">${tableName}</td>
-					<td>${rowCount}/${colCount}</td>
-					<td>
-						<button class="small" onclick="showTable('${dbName}', '${tableName}')">View</button>
-					</td>
-				</tr>
-				`;
+					<tr>
+						<td class="col-icon">
+							<img class="file-manager-file-icon" src="/admin-panel/img/table.png" alt="Table Icon">
+						</td>
+						<td class="col-name" onclick="showTable('${dbName}', '${tableName}')">${tableName}</td>
+						<td>${rowCount}</td>
+						<td>${colCount}</td>
+						<td class="col-options">
+							<button class="small" onclick="showTable('${dbName}', '${tableName}')">View</button>
+						</td>
+					</tr>
+					`;
     })}
-		</tbody>
-	</table>
+			</tbody>
+		</table>
+	</div>
+
 	`;
 };
 /*
@@ -1513,7 +1500,7 @@ const getTable = async (dbName, tableName, orderArr = []) => {
         const response = await request('/admin-panel/workers/database/table/get.node.js', {
             suToken, dbName, tableName, orderArr
         });
-        return response.body;
+        return JSON.parse(response);
     }
     catch (err) {
         handleRequestError(err);
@@ -1528,6 +1515,7 @@ let currentTableName;
 let currentOrderBy = new Map();
 let currentFilters = new Map();
 let currentBuiltInFilters = new Map();
+let currentCustomFilters;
 const showTable = async (dbName, tableName) => {
     showLoader();
     setSearchParams({
@@ -1541,6 +1529,7 @@ const showTable = async (dbName, tableName) => {
     currentOrderBy.clear();
     currentFilters.clear();
     currentBuiltInFilters.clear();
+    currentCustomFilters = [];
     const { data } = currentTable;
     // Get the built-in filters from the extra data of the table
     if (data != undefined) {
@@ -1556,9 +1545,15 @@ const showTable = async (dbName, tableName) => {
 		<a class="underline" onclick="showTableListOfDatabase('${currentDbName}')">${currentDbName.replace('.json', '')}</a> > ${currentTableName}
 	</h1>
 
+	<div class="table-action-row">
+		<button onclick="setCustomFilters()" class="small">Filter</button>
+	</div>
+
+	<br>
+
 	<div class="table-container"></div>
 
-	<br><br>
+	<h3>Built-in filters:</h3>
 
 	<div class="built-in-filters">
 		${reduceMap(currentBuiltInFilters, filterName => /* html */ `
@@ -1570,11 +1565,12 @@ const showTable = async (dbName, tableName) => {
 	`;
     updateTable();
 };
-const updateTable = (...filters) => {
+const updateTable = () => {
     let table = currentTable;
-    // Apply each filter from the parameters
-    for (let filter of filters) {
-        table = filterTable(table, filter);
+    // Apply the current custom filter
+    const customFilterFunction = customFiltersToFilterFunction();
+    if (customFilterFunction != null) {
+        table = filterTable(table, customFilterFunction);
     }
     // Apply each filter from currentFilters
     for (let [_filterName, filterFunction] of currentFilters) {
@@ -1613,7 +1609,7 @@ const updateTable = (...filters) => {
 				${reduceArray(cols, col => /* html */ `
 				<td data-datatype="${col.dataType}" data-col-name="${col.name}" class="col">${row[col.name]}</td>
 				`)}
-				<td>
+				<td class="col-options">
 					<button onclick="editRow('${currentDbName}', '${currentTableName}', ${rowNum})" class="small edit">Edit</button>
 					<button onclick="deleteRow('${currentDbName}', '${currentTableName}', ${rowNum})" class="small red">Delete</button>
 				</td>
@@ -1780,7 +1776,7 @@ const editRow = (dbName, tableName, rowNum) => {
         input.value = data;
     });
     // Listen for the Save button click
-    button.addEventListener('click', async () => {
+    button.onclick = async () => {
         // Gather inputs
         const row = {};
         fields.forEach(cell => {
@@ -1806,7 +1802,7 @@ const editRow = (dbName, tableName, rowNum) => {
         // Reset button text to edit
         button.innerText = 'Edit';
         button.onclick = savedOnclick;
-    });
+    };
 };
 // 5.6.4 Update Row
 const updateRow = async (dbName, tableName, rowNum, newRow) => {
@@ -1944,6 +1940,7 @@ const setOrderArrowsOfTable = () => {
         orderArrow.classList.remove('hidden');
     }
 };
+// Filter a TableRepresentation with a FilterFunction
 const filterTable = (table, filter) => {
     const rowsOut = [];
     for (let row of table.rows) {
@@ -1956,6 +1953,7 @@ const filterTable = (table, filter) => {
         rows: rowsOut
     };
 };
+// Enable or disable a built-in filter
 const setTableFilter = (builtInFilterName, enabled) => {
     if (enabled) {
         const filterFunction = currentBuiltInFilters.get(builtInFilterName);
@@ -1966,4 +1964,185 @@ const setTableFilter = (builtInFilterName, enabled) => {
     }
     // Refresh table
     updateTable();
+};
+// Map to convert user-friendly operators to JS operators
+const operatorMap = new Map([
+    ['Equals ( = )', '=='],
+    ['Is bigger than ( > )', '>'],
+    ['Is bigger than or equal to ( >= )', '>='],
+    ['Is smaller than ( < )', '<'],
+    ['Is smaller than or equal to ( <= )', '<='],
+]);
+// Surround input values with quotes if needed
+const parseFilterInputValue = (value, colName) => {
+    const { cols } = currentTable;
+    let dataType;
+    for (let col of cols) {
+        if (col.name == colName) {
+            dataType = col.dataType;
+            break;
+        }
+    }
+    if (dataType == undefined) {
+        throw new Error(`Could not find column "${colName}" in the current table`);
+    }
+    if (['Bit', 'Boolean', 'Float', 'Int'].includes(dataType)) {
+        return value;
+    }
+    else {
+        return `"${value}"`;
+    }
+};
+// Show the custom filter popup and handle the result
+const setCustomFilters = async () => {
+    const { cols } = currentTable;
+    const generateInputHTML = (button) => /* html */ `
+	<div class="input">
+
+		<div class="search no-input-filter overflow column">
+			<input type="text" placeholder="Select column..." style="width: 150px">
+			<div class="arrow"></div>
+			<ul class="dropdown">
+				${reduceArray(cols, col => /* html */ `
+				<li>${col.name}</li>
+				`)}
+			</ul>
+		</div>
+
+		<div class="search no-input-filter overflow operator">
+			<input type="text" placeholder="Select operator...">
+			<div class="arrow"></div>
+			<ul class="dropdown">
+				${reduceMap(operatorMap, userFriendlyOperator => /* html */ `
+				<li>${userFriendlyOperator}</li>
+				`)}
+			</ul>
+		</div>
+
+		<input class="value dark" type="text" style="width: 150px" placeholder="Value">
+		
+		${(button == 'clear') ? /* html */ `
+		<button class="red" onclick="clearFilter(this)">Clear filter</button>
+		` : /* html */ `
+		<button class="red" onclick="deleteFilter(this)">Delete filter</button>
+		`}
+
+	</div>
+	`;
+    const popupId = randomString(10);
+    document.body.insertAdjacentHTML('beforeend', /* html */ `
+	<div class="popup" data-id="${popupId}">
+		<a class="popup-close-button" onclick="removePopup()">✕</a>
+		<h1 class="popup-title">Set Filters</h1>
+
+		<div class="inputs">
+			${generateInputHTML('clear')}
+		</div>
+
+		<br>
+		<button class="plus add-filter" onclick="addFilter(this)">Add a filter</button>
+		<br><br>
+		<button class="small" onclick="setFilters(this)">Set</button>
+	</div>
+	`);
+    window.addFilter = (buttonEl) => {
+        const inputContainer = buttonEl.parentElement.$('.inputs');
+        inputContainer.insertAdjacentHTML('beforeend', generateInputHTML('delete'));
+        initSearchBoxes();
+    };
+    window.deleteFilter = (buttonEl) => {
+        const inputs = buttonEl.previousElementSibling;
+        const lineBreak = inputs.previousElementSibling;
+        if (lineBreak != null) {
+            lineBreak.remove();
+        }
+        inputs.remove();
+        buttonEl.remove();
+    };
+    window.clearFilter = (buttonEl) => {
+        const inputContainer = buttonEl.previousElementSibling;
+        const inputs = inputContainer.$a('input');
+        for (let input of inputs) {
+            input.value = '';
+        }
+    };
+    window.removePopup = () => {
+        popupEl.classList.add('closed');
+        setTimeout(() => {
+            popupEl.remove();
+        }, 300);
+    };
+    const popupEl = $(`.popup[data-id="${popupId}"]`);
+    // Show existing filters
+    for (let i = 0; i < currentCustomFilters.length; i++) {
+        const filter = currentCustomFilters[i];
+        const inputRows = popupEl.$a('.inputs .input');
+        const lastInputRow = inputRows[inputRows.length - 1];
+        // Set values
+        const colInput = lastInputRow.$('.column input');
+        const operatorInput = lastInputRow.$('.operator input');
+        const valueInput = lastInputRow.$('input.value');
+        colInput.value = filter.colName;
+        operatorInput.value = filter.operator;
+        valueInput.value = filter.value;
+        // Remove double quotes from stringed values
+        if (filter.value.startsWith('"')) {
+            valueInput.value = filter.value.substring(1, filter.value.length - 1);
+        }
+        // Create new input row
+        if (i != currentCustomFilters.length - 1) {
+            window.addFilter(popupEl.$('.add-filter'));
+        }
+    }
+    initSearchBoxes();
+    window.setFilters = (buttonEl) => {
+        // Get all inputs
+        const inputs = buttonEl.parentElement.$a('.inputs .input');
+        // Reset current custom filters
+        currentCustomFilters = [];
+        for (let i = 0; i < inputs.length; i++) {
+            const input = inputs[i];
+            // Get and parse input values
+            const colName = input.$('.column input').value;
+            // Skip if colName is empty
+            if (colName == '') {
+                continue;
+            }
+            const operator = input.$('.operator input').value;
+            const value = parseFilterInputValue(input.$('input.value').value, colName);
+            // Push the filter to the current custom filters
+            currentCustomFilters.push({
+                colName, operator, value
+            });
+        }
+        // Remove the popup from the screen
+        popupEl.classList.add('closed');
+        setTimeout(() => {
+            popupEl.remove();
+        }, 300);
+        // Update the table
+        updateTable();
+    };
+};
+const customFiltersToFilterFunction = () => {
+    if (currentCustomFilters.length == 0) {
+        return null;
+    }
+    let filterFunctionString = 'row => ';
+    let amountOfFilters = 0;
+    for (let i = 0; i < currentCustomFilters.length; i++) {
+        const filter = currentCustomFilters[i];
+        const { colName, value } = filter;
+        const operator = operatorMap.get(filter.operator);
+        if (colName == '' || value == '' || operator == undefined) {
+            continue;
+        }
+        amountOfFilters++;
+        const suffix = (i != currentCustomFilters.length - 1) ? ' && ' : ';';
+        filterFunctionString += `row.${colName} ${operator} ${value}${suffix}`;
+    }
+    if (amountOfFilters == 0) {
+        return null;
+    }
+    return eval(filterFunctionString);
 };

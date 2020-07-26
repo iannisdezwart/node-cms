@@ -66,6 +66,10 @@ body {
 	background-color: rgba(255, 255, 255, 0.16)
 }
 
+::-webkit-scrollbar-corner {
+	background-color: transparent;
+}
+
 .hidden {
 	display: none;
 }
@@ -183,7 +187,7 @@ ul > li > a {
 
 /* Mobile layout */
 
-@media screen and (max-width: 700px) {
+@media screen and (max-width: 900px) {
 	.app {
 		margin-left: 0;
 	}
@@ -233,28 +237,47 @@ ul.pages > li, ul.databases > li  {
 	background-color: #333;
 }
 
-table.pages, table.databases {
+table.pages {
 	background-color: #444;
 	padding: 1em;
 	border-spacing: 1em;
 }
 
-table.pages thead, table.databases thead {
+table.pages thead {
 	font-weight: 800;
 	font-style: italic;
 }
 
 table.fullwidth {
+	--table-colour: #444;
 	width: 100%;
-	background-color: #444;
+	background-color: var(--table-colour);
 	padding: 1em;
 	border-collapse: collapse;
 }
 
-table.fullwidth thead {
+/* Scrollable table */
+
+.table-container {
+	max-height: 70vh;
+	overflow: auto;
+}
+
+table.fullwidth thead td {
+	position: sticky;
+	top: 0;
+	background-color: var(--table-colour);
 	font-weight: 800;
 	font-style: italic;
 }
+
+table.fullwidth tfoot td {
+	position: sticky;
+	bottom: 0;
+	background-color: var(--table-colour);
+}
+
+/* Table rows */
 
 table.fullwidth tr {
 	border-top: 1px solid #555;
@@ -269,14 +292,11 @@ table.fullwidth thead tr {
 	border: none;
 }
 
-table.fullwidth tbody {
-	max-height: 80vh;
-	overflow-y: auto;
-}
-
 table.fullwidth td {
 	padding: .5em;
 }
+
+/* Column widths */
 
 table.fullwidth .col-checkbox {
 	width: 1px; /* Set width to minimum */
@@ -291,7 +311,8 @@ table.fullwidth tbody .col-name {
 }
 
 table.fullwidth .col-options {
-	width: 1px; /* Set width to minimum */
+	width: 1px;
+	white-space: nowrap;
 }
 
 table.database-table img.order-direction {
@@ -431,10 +452,10 @@ button {
 	margin-right: .5em;
 	border: 2px solid var(--border-colour);
 	background-color: #555;
-	font-size: 16px;
+	font-size: 1em;
 	font-weight: 800;
 	border-radius: 5px;
-	padding: .75em;
+	padding: .5em;
 	cursor: pointer;
 	transition: background-color 300ms ease;
 }
@@ -465,6 +486,31 @@ button:focus {
 	outline: none;
 }
 
+button.plus {
+	position: relative;
+	margin-left: 2em;
+	border: none;
+	background-color: transparent;
+	padding: 0;
+}
+
+button.plus::after {
+	content: "+";
+
+	position: absolute;
+	width: 1.5em;
+	height: 1.5em;
+	top: 50%;
+	left: -2em;
+	transform: translateY(-50%);
+
+	line-height: 1.5em;
+	text-align: center;
+
+	border-radius: 50%;
+	border: 2px solid var(--accent);
+}
+
 /* 
 	4.3 Inputs
 */
@@ -477,6 +523,15 @@ input {
 	color: #000;
 	font-size: 1em;
 	padding: .5em;
+}
+
+input.dark {
+	color: #fff;
+	background-color: #555;
+}
+
+input.dark::placeholder {
+	color: #ccc;
 }
 
 input:focus {
@@ -536,6 +591,108 @@ input.small {
 
 input.small.red {
 	border-bottom: 2px solid #cc5858;
+}
+
+/* Searchbox */
+
+.search {
+	position: relative;
+	display: inline-block;
+	margin-bottom: .5em;
+  background-color: #555;
+  border: 2px solid var(--accent);
+  border-radius: 5px;
+}
+
+.search .arrow {
+  content: '';
+  background-image: url('/admin-panel/img/arrow-down.png');
+  background-size: contain;
+  position: absolute;
+  width: 1em;
+  height: 1em;
+  right: .5em;
+  cursor: pointer;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.search .arrow.down {
+  background-image: url('/admin-panel/img/arrow-up.png');
+}
+
+.search input {
+	color: #fff;
+	background-color: transparent;
+	width: 150px;
+  border: none;
+  padding-right: 1.5em;
+  font-size: 1em;
+}
+
+.search input::placeholder {
+	color: #ccc;
+}
+
+.search input:focus {
+  outline: none;
+}
+
+.search ul.dropdown {
+  visibility: hidden;
+  opacity: 0;
+  position: absolute;
+  z-index: 1;
+  left: 0;
+  top: calc(100% + 2px);
+  margin: 0;
+  padding: 0 1em;
+  width: 100%;
+  max-height: 200px;
+  overflow-y: auto;
+  word-wrap: break-word;
+  box-sizing: border-box;
+  background-color: #555;
+  border-radius: 5px;
+  list-style-type: none;
+  transition: opacity 300ms ease, visibility 300ms ease;
+}
+
+.search.overflow ul.dropdown {
+	width: unset;
+	min-width: 100%;
+}
+
+.search ul.dropdown.visible {
+  visibility: visible;
+  opacity: 1;
+  padding: .5em 1em;
+}
+
+.search ul.dropdown li {
+  padding: .5em;
+  cursor: pointer;
+  user-select: none;
+}
+
+.search ul.dropdown li.selected {
+  background-color: #666;
+  border-radius: 5px;
+}
+
+/* Custom Table Filters */
+
+div.inputs {
+	min-width: 170px;
+}
+
+div.input {
+	padding: 1em 0;
+	border-top: 1px solid #666;
+}
+
+div.input:first-child {
+	border-top: none;
 }
 
 /* 

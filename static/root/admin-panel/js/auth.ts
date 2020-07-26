@@ -36,7 +36,7 @@ const getSuToken = async (
 
 		// Set the suToken globally
 		
-		globalSuToken = res.body
+		globalSuToken = res
 		return globalSuToken
 
 	} catch(res) {
@@ -97,7 +97,7 @@ const togglePadlock = async () => {
 }
 
 const setPadlock = (mode: 'locked' | 'unlocked') => {
-	const padlockImage = $('#padlock > img') as HTMLImageElement
+	const padlockImage = $<HTMLImageElement>('#padlock > img')
 
 	if (mode == 'locked') {
 		padlockImage.src = '/admin-panel/img/locked-padlock-orange.png'
@@ -141,7 +141,7 @@ const login = async (
 	try {
 		const res = await request('/admin-panel/workers/login.node.js', { username, password })
 
-		Cookies.set('token', res.body)
+		Cookies.set('token', res)
 		Cookies.set('username', username)
 
 		await getSuToken({ username, password })

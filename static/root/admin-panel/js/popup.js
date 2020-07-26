@@ -1,4 +1,4 @@
-const popup = (title, body, buttons = [], inputs = [], disappearsAfterMs) => new Promise((resolve, reject) => {
+const popup = (title, body, buttons = [], inputs = [], disappearsAfterMs) => new Promise(resolve => {
     const popupEl = document.createElement('div');
     popupEl.classList.add('popup');
     popupEl.innerHTML = /* html */ `
@@ -6,6 +6,8 @@ const popup = (title, body, buttons = [], inputs = [], disappearsAfterMs) => new
 		<h1 class="popup-title">${title}</h1>
 		<p class="popup-body">${body}</p>
 	`;
+    // Add popup to the page
+    document.body.appendChild(popupEl);
     const getInputValues = () => {
         const inputResults = new Map();
         for (let input of inputs) {
@@ -30,17 +32,21 @@ const popup = (title, body, buttons = [], inputs = [], disappearsAfterMs) => new
     };
     for (let input of inputs) {
         const inputEl = document.createElement('input');
+        // Add it to the popup
+        popupEl.appendChild(inputEl);
         inputEl.type = input.type;
-        inputEl.placeholder = input.placeholder;
-        // Todo: fix this bug: the value is not shown
-        if (input.value != undefined) {
-            inputEl.value = input.value;
+        if (input.placeholder != undefined) {
+            inputEl.placeholder = input.placeholder;
         }
         inputEl.setAttribute('data-name', input.name);
         // Create random ID in order to find the dynamically added element later on
         const randomId = randomString(10);
         inputEl.setAttribute('data-id', randomId);
-        popupEl.appendChild(inputEl);
+        // Todo: fix this bug: the value is not shown
+        if (input.value != undefined) {
+            // html value="X" will set the default value, js el.value does not work
+            inputEl.setAttribute('value', input.value);
+        }
         popupEl.innerHTML += /* html */ `
 			<br><br>
 		`;
@@ -72,22 +78,22 @@ const popup = (title, body, buttons = [], inputs = [], disappearsAfterMs) => new
                 buttonEl.addEventListener(event, f);
             }
         }
-        buttonEl.addEventListener('click', () => {
-            const inputResults = getInputValues();
-            removePopup();
-            resolve({
-                buttonName: button.name,
-                inputs: inputResults
+        // Resolve on click
+        if (button.resolvesPopup != false) {
+            buttonEl.addEventListener('click', () => {
+                const inputResults = getInputValues();
+                removePopup();
+                resolve({
+                    buttonName: button.name,
+                    inputs: inputResults
+                });
             });
-        });
+        }
         popupEl.appendChild(buttonEl);
     }
-    // Add popup to the page
-    document.body.appendChild(popupEl);
     // Close popup when x button or escape is pressed
     popupEl.querySelector('a.popup-close-button').addEventListener('click', () => {
         removePopup();
-        reject();
     });
     const escapePressHandler = (e) => {
         if (e.key == 'Escape') {
@@ -99,12 +105,9 @@ const popup = (title, body, buttons = [], inputs = [], disappearsAfterMs) => new
     if (disappearsAfterMs != undefined) {
         setTimeout(() => {
             removePopup();
-            reject();
         }, disappearsAfterMs);
     }
 });
-const notification = (title, body, disappearsAfterMs = 3000) => new Promise((resolve) => {
-    popup(title, body, [], [], disappearsAfterMs)
-        // Buttonless popup can only reject
-        .catch(resolve);
-});
+const notification = (title, body, disappearsAfterMs = 3000) => {
+    popup(title, body, [], [], disappearsAfterMs);
+};

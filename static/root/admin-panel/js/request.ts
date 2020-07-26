@@ -1,65 +1,118 @@
-interface SocketResponse {
-	status: number
-	body: any
+interface RequestEventListeners {
+	requestUploadProgress: (e: ProgressEvent<EventTarget>) => void
+	responseDownloadProgress: (e: ProgressEvent<EventTarget>) => void 
 }
 
 const request = (
 	url: string,
 	body: Object = {},
-	files: File[] = []
-): Promise<SocketResponse> => {
+	files: File[] = [],
+	on?: RequestEventListeners
+): Promise<string> => {
 	return new Promise(async (resolve, reject) => {
-		const socket = io({
-			transportOptions: {
-				polling: {
-					extraHeaders: {
-						path: url
-					}
-				}
-			}
-		})
+		const req = new XMLHttpRequest()
 
-		socket.on('response', (res: SocketResponse) => {
-			if (res.status >= 200 && res.status < 300) {
-				resolve(res)
-			} else {
-				reject({ status: res.status, response: res.body })
-			}
-		})
+		const formData = new FormData()
 
-		// Send body
+		// Append body
 
-		socket.emit('body', body)
+		formData.append('body', JSON.stringify(body))
 
-		// Send files
+		// Append files
+
+		const fileMeta = {}
 
 		for (let file of files) {
-			// Send file meta
+			// create meta
 
-			socket.emit('file meta', {
+			fileMeta[file.name] = {
 				name: file.name,
 				lastModified: file.lastModified,
 				size: file.size,
 				type: file.type
-			})
+			}
 
-			const stream: ReadableStream<Uint8Array> = file.stream()
-			const reader = stream.getReader()
+			// Append file
 
-			while (true) {
-				const chunk = await reader.read()
+			formData.append(file.name, file)
+		}
 
-				if (!chunk.done) {
-					socket.emit('file chunk', chunk.value.buffer)
+		// Append fileMeta
+
+		formData.append('file-meta', JSON.stringify(fileMeta))
+
+		req.onreadystatechange = () => {
+			if (req.readyState == 4) {
+
+				if (req.status >= 200 && req.status < 300) {
+					resolve(req.response)
 				} else {
-					break
+					reject({ status: req.status, response: req.response })
 				}
 			}
 		}
 
-		// End the request
+		// Event listeners
 
-		socket.emit('end')
+		req.upload.onprogress = on.requestUploadProgress
+		req.onprogress = on.responseDownloadProgress
+
+		// Send the request
+
+		req.open('POST', url)
+		req.send(formData)
+
+		// const socket = io({
+		// 	transportOptions: {
+		// 		polling: {
+		// 			extraHeaders: {
+		// 				path: url
+		// 			}
+		// 		}
+		// 	}
+		// })
+
+		// socket.on('response', (res: SocketResponse) => {
+		// 	if (res.status >= 200 && res.status < 300) {
+		// 		resolve(res)
+		// 	} else {
+		// 		reject({ status: res.status, response: res.body })
+		// 	}
+		// })
+
+		// // Send body
+
+		// socket.emit('body', body)
+
+		// // Send files
+
+		// for (let file of files) {
+		// 	// Send file meta
+
+		// 	socket.emit('file meta', {
+		// 		name: file.name,
+		// 		lastModified: file.lastModified,
+		// 		size: file.size,
+		// 		type: file.type
+		// 	})
+
+		// 	const stream: ReadableStream<Uint8Array> = file.stream()
+		// 	const reader = stream.getReader()
+
+		// 	while (true) {
+		// 		const chunk = await reader.read()
+
+		// 		if (!chunk.done) {
+		// 			socket.emit('file chunk', chunk.value.buffer)
+		// 		} else {
+		// 			break
+		// 		}
+		// 	}
+		// }
+
+		// // End the request
+
+		// socket.emit('end')
 	})
 }
 

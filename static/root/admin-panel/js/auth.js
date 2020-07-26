@@ -18,7 +18,7 @@ const getSuToken = async (loginData) => {
         // Open the padlock icon
         setPadlock('unlocked');
         // Set the suToken globally
-        globalSuToken = res.body;
+        globalSuToken = res;
         return globalSuToken;
     }
     catch (res) {
@@ -102,7 +102,7 @@ const login = async (secondTry = false) => {
     const password = popupResult.inputs.get('password');
     try {
         const res = await request('/admin-panel/workers/login.node.js', { username, password });
-        Cookies.set('token', res.body);
+        Cookies.set('token', res);
         Cookies.set('username', username);
         await getSuToken({ username, password });
     }

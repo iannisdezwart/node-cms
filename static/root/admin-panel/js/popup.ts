@@ -2,13 +2,14 @@ interface PopupButton {
 	name: string
 	classes?: string[]
 	on?: {
-		[key in keyof HTMLElementEventMap]?: Function
+		[key in keyof HTMLElementEventMap]?: (e: HTMLElementEventMap[key]) => any
 	}
+	resolvesPopup?: boolean
 }
 
 interface PopupInput {
 	name: string
-	placeholder: string
+	placeholder?: string
 	value?: string
 	type: 'button' | 'checkbox' | 'color' | 'date' | 'datetime-local' | 'email' | 'file' | 'hidden' | 'image' | 'month' | 'number' | 'password' | 'radio' | 'range' | 'reset' | 'search' | 'submit' | 'tel' | 'text' | 'time' | 'url' | 'week'
 	enterTriggersButton?: string
@@ -25,7 +26,7 @@ const popup = (
 	buttons: PopupButton[] = [],
 	inputs: PopupInput[] = [],
 	disappearsAfterMs?: number
-) => new Promise<PopupResult>((resolve, reject) => {
+) => new Promise<PopupResult>(resolve => {
 	const popupEl = document.createElement('div')
 
 	popupEl.classList.add('popup')
@@ -35,6 +36,10 @@ const popup = (
 		<h1 class="popup-title">${ title }</h1>
 		<p class="popup-body">${ body }</p>
 	`
+
+	// Add popup to the page
+
+	document.body.appendChild(popupEl)
 
 	const getInputValues = () => {
 		const inputResults = new Map<string, string>()
@@ -68,13 +73,14 @@ const popup = (
 	for (let input of inputs) {
 		const inputEl = document.createElement('input')
 
+		// Add it to the popup
+
+		popupEl.appendChild(inputEl)
+
 		inputEl.type = input.type
-		inputEl.placeholder = input.placeholder
 
-		// Todo: fix this bug: the value is not shown
-
-		if (input.value != undefined) {
-			inputEl.value = input.value
+		if (input.placeholder != undefined) {
+			inputEl.placeholder = input.placeholder
 		}
 
 		inputEl.setAttribute('data-name', input.name)
@@ -83,8 +89,15 @@ const popup = (
 
 		const randomId = randomString(10)
 		inputEl.setAttribute('data-id', randomId)
-		
-		popupEl.appendChild(inputEl)
+
+		// Todo: fix this bug: the value is not shown
+
+		if (input.value != undefined) {
+			// html value="X" will set the default value, js el.value does not work
+
+			inputEl.setAttribute('value', input.value)
+		}
+
 		popupEl.innerHTML += /* html */ `
 			<br><br>
 		`
@@ -125,29 +138,29 @@ const popup = (
 			}
 		}
 
-		buttonEl.addEventListener('click', () => {
-			const inputResults = getInputValues()
+		// Resolve on click
 
-			removePopup()
-
-			resolve({
-				buttonName: button.name,
-				inputs: inputResults
+		if (button.resolvesPopup != false) {
+			buttonEl.addEventListener('click', () => {
+				const inputResults = getInputValues()
+	
+				removePopup()
+	
+				resolve({
+					buttonName: button.name,
+					inputs: inputResults
+				})
 			})
-		})
+		}
+
 
 		popupEl.appendChild(buttonEl)
 	}
-
-	// Add popup to the page
-
-	document.body.appendChild(popupEl)
 
 	// Close popup when x button or escape is pressed
 
 	popupEl.querySelector('a.popup-close-button').addEventListener('click', () => {
 		removePopup()
-		reject()
 	})
 
 	const escapePressHandler = (e: KeyboardEvent) => {
@@ -162,7 +175,6 @@ const popup = (
 	if (disappearsAfterMs != undefined) {
 		setTimeout(() => {
 			removePopup()
-			reject()
 		}, disappearsAfterMs)
 	}
 })
@@ -171,8 +183,6 @@ const notification = (
 	title: string,
 	body: string,
 	disappearsAfterMs: number = 3000
-) => new Promise<undefined>((resolve) => {
+) => {
 	popup(title, body, [], [], disappearsAfterMs)
-		// Buttonless popup can only reject
-		.catch(resolve)
-})
+}

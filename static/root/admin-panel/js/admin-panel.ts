@@ -163,7 +163,7 @@ const fetchPages = () => new Promise(async resolve => {
 		suToken
 	})
 		.then(res => {
-			pagesDB = res.body
+			pagesDB = JSON.parse(res)
 			resolve()
 		})
 		.catch(handleRequestError)
@@ -275,7 +275,7 @@ addEventListener('popstate', goBackInHistory)
 
 addEventListener('beforeunload', async () => {
 	const req = await request('/admin-panel/workers/get-refresh-token', {})
-	const refreshToken = req.body
+	const refreshToken = req
 
 	Cookies.set('refresh-token', refreshToken)
 })
@@ -859,7 +859,7 @@ const addImg = async (
 const uploadFiles = (
 	fileList: FileList,
 	path = '/'
-) => new Promise<SocketResponse>(resolve => {
+) => new Promise<string>(resolve => {
 	getSuToken()
 		.then(suToken => {
 			const files: File[] = []
@@ -1296,7 +1296,7 @@ const getFiles = (
 		path, suToken
 	})
 		.then(res => {
-			const fileArray = res.body.files as FileInfo[]
+			const fileArray = JSON.parse(res).files as FileInfo[]
 			resolve(fileArray)
 		})
 		.catch(res => {
@@ -1391,303 +1391,295 @@ const showFiles = (path = '/') => {
 
 				<br><br>
 
-				<table class="fullwidth">
+				<div class="table-container">
+					<table class="fullwidth">
 
-					<thead>
-						<tr>
-							<td class="col-checkbox">
-								<input type="checkbox" onclick="toggleAllCheckboxes()" title="Select all">
-							</td>
-							<td class="col-icon"></td>
-							<td class="col-name">Name</td>
-							<td class="col-size">Size</td>
-							<td class="col-modified">Last Modified</td>
-							<td class="col-options"></td>
-						</tr>
-					</thead>
+						<thead>
+							<tr>
+								<td class="col-checkbox">
+									<input type="checkbox" onclick="toggleAllCheckboxes()" title="Select all">
+								</td>
+								<td class="col-icon"></td>
+								<td class="col-name">Name</td>
+								<td class="col-size">Size</td>
+								<td class="col-modified">Last Modified</td>
+								<td class="col-options"></td>
+							</tr>
+						</thead>
 
-					<tbody>
-						${
-							reduceArray(files, file => {
-								const { name } = file
-								const size = file.isDirectory ? '–' : parseSize(file.size)
-								const modified = parseDate(file.modified)
+						<tbody>
+							${
+								reduceArray(files, file => {
+									const { name } = file
+									const size = file.isDirectory ? '–' : parseSize(file.size)
+									const modified = parseDate(file.modified)
 
-								const extension = (file.isDirectory)
-									? 'dir'
-									: name.slice(name.lastIndexOf('.') + 1)
+									const extension = (file.isDirectory)
+										? 'dir'
+										: name.slice(name.lastIndexOf('.') + 1)
 
-								;(window as any).toggleDropdown = (
-									el: HTMLDivElement,
-									e: MouseEvent
-								) => {
-									const isDescendant = (child: HTMLElement, parent: HTMLElement) => {
-										while (child != null) {
-											if (child == parent) {
-												return true
+									;(window as any).toggleDropdown = (
+										el: HTMLDivElement,
+										e: MouseEvent
+									) => {
+										const isDescendant = (child: HTMLElement, parent: HTMLElement) => {
+											while (child != null) {
+												if (child == parent) {
+													return true
+												}
+												child = child.parentElement
 											}
-											child = child.parentElement
+
+											return false
 										}
 
-										return false
-									}
+										if (el == e.target) {
+											el.classList.toggle('active')
+										}
 
-									if (el == e.target) {
-										el.classList.toggle('active')
-									}
-
-									setTimeout(() => {
-										const handler = (mouseEvent: MouseEvent) => {
-											if (!isDescendant(mouseEvent.target as HTMLElement, el)) {
-												el.classList.remove('active')
-												document.removeEventListener('click', handler)
+										setTimeout(() => {
+											const handler = (mouseEvent: MouseEvent) => {
+												if (!isDescendant(mouseEvent.target as HTMLElement, el)) {
+													el.classList.remove('active')
+													document.removeEventListener('click', handler)
+												}
 											}
-										}
 
-										document.addEventListener('click', handler)
-									}, 0)
-								}
-								
-								let bulkFileActionsShown = false
+											document.addEventListener('click', handler)
+										}, 0)
+									}
+									
+									let bulkFileActionsShown = false
 
-								const showBulkFileActions = () => {
-									bulkFileActionsShown = true
-									$('span.bulk-actions').classList.remove('hidden')
-								}
-
-								const hideBulkFileActions = () => {
-									bulkFileActionsShown = false
-									$('span.bulk-actions').classList.add('hidden')
-								}
-
-								;(window as any).handleFileCheckboxes = (checkboxEl: HTMLInputElement) => {
-									const selectAllCheckbox = $<HTMLInputElement>('thead .col-checkbox input[type="checkbox"]')
-
-									if (checkboxEl.checked) {
-										checkedCheckboxes++
-
-										// Check 'select all' checkbox if necessary
-
-										if (checkedCheckboxes == files.length) {
-											selectAllCheckbox.checked = true
-										}
-									} else {
-										checkedCheckboxes--
-
-										// Uncheck 'select all' checkbox if necessary
-
-										if (checkedCheckboxes == files.length - 1) {
-											selectAllCheckbox.checked = false
-										}
+									const showBulkFileActions = () => {
+										bulkFileActionsShown = true
+										$('span.bulk-actions').classList.remove('hidden')
 									}
 
-									if (checkedCheckboxes > 0) {
-										if (!bulkFileActionsShown) {
-											showBulkFileActions()
-										}
-									} else {
-										hideBulkFileActions()
+									const hideBulkFileActions = () => {
+										bulkFileActionsShown = false
+										$('span.bulk-actions').classList.add('hidden')
 									}
-								}
 
-								const getSelectedFiles = () => {
-									const tableRows = $a('tr.file-row')
-									const selectedFiles: FileInfo[] = []
-
-									for (let i = 0; i < tableRows.length; i++) {
-										const checkboxEl = tableRows[i].querySelector<HTMLInputElement>('input[type="checkbox"]')
+									;(window as any).handleFileCheckboxes = (checkboxEl: HTMLInputElement) => {
+										const selectAllCheckbox = $<HTMLInputElement>('thead .col-checkbox input[type="checkbox"]')
 
 										if (checkboxEl.checked) {
-											selectedFiles.push(files[i])
+											checkedCheckboxes++
+
+											// Check 'select all' checkbox if necessary
+
+											if (checkedCheckboxes == files.length) {
+												selectAllCheckbox.checked = true
+											}
+										} else {
+											checkedCheckboxes--
+
+											// Uncheck 'select all' checkbox if necessary
+
+											if (checkedCheckboxes == files.length - 1) {
+												selectAllCheckbox.checked = false
+											}
+										}
+
+										if (checkedCheckboxes > 0) {
+											if (!bulkFileActionsShown) {
+												showBulkFileActions()
+											}
+										} else {
+											hideBulkFileActions()
 										}
 									}
 
-									return selectedFiles
-								}
+									const getSelectedFiles = () => {
+										const tableRows = $a('tr.file-row')
+										const selectedFiles: FileInfo[] = []
 
-								// 4.4.1 Bulk Delete Files
+										for (let i = 0; i < tableRows.length; i++) {
+											const checkboxEl = tableRows[i].querySelector<HTMLInputElement>('input[type="checkbox"]')
 
-								;(window as any).bulkDeleteFiles = () => {
-									const selectedFiles = getSelectedFiles()
+											if (checkboxEl.checked) {
+												selectedFiles.push(files[i])
+											}
+										}
 
-									popup(
-										'Deleting multiple files',
-										`Are you sure you want to delete ${ numifyNoun(selectedFiles.length, 'file', 'files') }?
-										<codeblock>${ reduceArray(selectedFiles, f => f.name + '<br>') }</codeblock>`,
-										[
-											{
-												name: 'Delete',
-												classes: [ 'red' ]
-											},
-											{
-												name: 'Cancel'
-											},
-										]
-									)
-										.then(popupRes => {
-											if (popupRes.buttonName == 'Delete') {
+										return selectedFiles
+									}
+
+									// 4.4.1 Bulk Delete Files
+
+									;(window as any).bulkDeleteFiles = () => {
+										const selectedFiles = getSelectedFiles()
+
+										popup(
+											'Deleting multiple files',
+											`Are you sure you want to delete ${ numifyNoun(selectedFiles.length, 'file', 'files') }?
+											<codeblock>${ reduceArray(selectedFiles, f => f.name + '<br>') }</codeblock>`,
+											[
+												{
+													name: 'Delete',
+													classes: [ 'red' ]
+												},
+												{
+													name: 'Cancel'
+												},
+											]
+										)
+											.then(popupRes => {
+												if (popupRes.buttonName == 'Delete') {
+													getSuToken()
+														.then(suToken => {
+															const filePaths = selectedFiles.map(f => path + f.name)
+
+															request('/admin-panel/workers/delete-multiple-files.node.js', {
+																suToken,
+																filePaths
+															})
+																.then(() => {
+																	// Refresh files
+
+																	showFiles(path)
+																})
+																.catch(handleRequestError)
+														})
+												}
+											})
+									}
+
+									// 4.4.2 Bulk Copy Files
+
+									;(window as any).bulkCopyFiles = () => {
+										const selectedFiles = getSelectedFiles()
+
+										filePicker({
+											type: 'directory',
+											title: 'Copy files',
+											body: 'Select a folder to where you want to copy the files',
+											buttonText: 'Select folder'
+										}, false)
+											.then(selectedFolder => {
+
 												getSuToken()
 													.then(suToken => {
-														const filePaths = selectedFiles.map(f => path + f.name)
-
-														request('/admin-panel/workers/delete-multiple-files.node.js', {
+														request('/admin-panel/workers/copy-files.node.js', {
 															suToken,
-															filePaths
+															sources: selectedFiles.map(
+																selectedFile => selectedFile.path
+															),
+															destination: selectedFolder
 														})
 															.then(() => {
+																notification(
+																	'Copied Files',
+																	`Succesfully copied ${ numifyNoun(selectedFiles.length, 'file', 'files') } to <code>${ selectedFolder }</code>`
+																)
+
 																// Refresh files
 
 																showFiles(path)
 															})
-															.catch(handleRequestError)
+															.catch(res => {
+																// This should never happen
+
+																notification(
+																	'Unspecified Error',
+																	`status code: ${ res.status }, body: <code>${ res.response }</code>`
+																)
+															})
 													})
-											}
-										})
-										.catch(() => {
-											// User cancelled
-										})
-								}
+											})
+											.catch(() => {
+												// User cancelled
+											})
+									}
 
-								// 4.4.2 Bulk Copy Files
+									// 4.4.3 Bulk Move Files
 
-								;(window as any).bulkCopyFiles = () => {
-									const selectedFiles = getSelectedFiles()
+									;(window as any).bulkMoveFiles = () => {
+										const selectedFiles = getSelectedFiles()
 
-									filePicker({
-										type: 'directory',
-										title: 'Copy files',
-										body: 'Select a folder to where you want to copy the files',
-										buttonText: 'Select folder'
-									}, false)
-										.then(selectedFolder => {
+										filePicker({
+											type: 'directory',
+											title: 'Move Files',
+											body: 'Select a folder to where you want to move the files',
+											buttonText: 'Select folder'
+										}, false)
+											.then(selectedFolder => {
 
-											getSuToken()
-												.then(suToken => {
-													request('/admin-panel/workers/copy-files.node.js', {
-														suToken,
-														sources: selectedFiles.map(
-															selectedFile => selectedFile.path
-														),
-														destination: selectedFolder
+												getSuToken()
+													.then(suToken => {
+														request('/admin-panel/workers/move-files.node.js', {
+															suToken,
+															sources: selectedFiles.map(
+																selectedFile => selectedFile.path
+															),
+															destination: selectedFolder
+														})
+															.then(() => {
+																notification(
+																	'Moved Files',
+																	`Succesfully moved ${ numifyNoun(selectedFiles.length, 'file', 'files') } to <code>${ selectedFolder }</code>`
+																)
+
+																// Refresh files
+
+																showFiles(path)
+															})
+															.catch(res => {
+																// This should never happen
+
+																notification(
+																	'Unspecified Error',
+																	`status code: ${ res.status }, body: <code>${ res.response }</code>`
+																)
+															})
 													})
-														.then(() => {
-															notification(
-																'Copied Files',
-																`Succesfully copied ${ numifyNoun(selectedFiles.length, 'file', 'files') } to <code>${ selectedFolder }</code>`
-															)
+											})
+											.catch(() => {
+												// User cancelled
+											})
+									}
 
-															// Refresh files
+									return /* html */ `
+									<tr class="file-row">
+										<td class="col-checkbox">
+											<input type="checkbox" onchange="handleFileCheckboxes(this)">
+										</td>
 
-															showFiles(path)
-														})
-														.catch(res => {
-															// This should never happen
+										<td class="col-icon">
+											<img class="file-manager-file-icon" src="/admin-panel/img/file-icons/${ extension }.png" alt="${ extension }" onerror="
+												this.src = '${ `/admin-panel/img/file-icons/unknown.png` }'; this.onerror = null
+											">
+										</td>
 
-															notification(
-																'Unspecified Error',
-																`status code: ${ res.status }, body: <code>${ res.response }</code>`
-															)
-														})
-												})
-										})
-										.catch(() => {
-											// User cancelled
-										})
-								}
-
-								// 4.4.3 Bulk Move Files
-
-								;(window as any).bulkMoveFiles = () => {
-									const selectedFiles = getSelectedFiles()
-
-									filePicker({
-										type: 'directory',
-										title: 'Move Files',
-										body: 'Select a folder to where you want to move the files',
-										buttonText: 'Select folder'
-									}, false)
-										.then(selectedFolder => {
-
-											getSuToken()
-												.then(suToken => {
-													request('/admin-panel/workers/move-files.node.js', {
-														suToken,
-														sources: selectedFiles.map(
-															selectedFile => selectedFile.path
-														),
-														destination: selectedFolder
-													})
-														.then(() => {
-															notification(
-																'Moved Files',
-																`Succesfully moved ${ numifyNoun(selectedFiles.length, 'file', 'files') } to <code>${ selectedFolder }</code>`
-															)
-
-															// Refresh files
-
-															showFiles(path)
-														})
-														.catch(res => {
-															// This should never happen
-
-															notification(
-																'Unspecified Error',
-																`status code: ${ res.status }, body: <code>${ res.response }</code>`
-															)
-														})
-												})
-										})
-										.catch(() => {
-											// User cancelled
-										})
-								}
-
-								return /* html */ `
-								<tr class="file-row">
-									<td class="col-checkbox">
-										<input type="checkbox" onchange="handleFileCheckboxes(this)">
-									</td>
-
-									<td class="col-icon">
-										<img class="file-manager-file-icon" src="/admin-panel/img/file-icons/${ extension }.png" alt="${ extension }" onerror="
-											this.src = '${ `/admin-panel/img/file-icons/unknown.png` }'; this.onerror = null
+										<td class="col-name" onclick="
+											${ file.isDirectory } ? showFiles('${ path + file.name }/') : openFile('${ path + file.name }')
 										">
-									</td>
+											${ file.name }
+										</td>
 
-									<td class="col-name" onclick="
-										${ file.isDirectory } ? showFiles('${ path + file.name }/') : openFile('${ path + file.name }')
-									">
-										${ file.name }
-									</td>
+										<td class="col-size">
+											${ file.isDirectory ? file.filesInside + ' items' : size }
+										</td>
 
-									<td class="col-size">
-										${ file.isDirectory ? file.filesInside + ' items' : size }
-									</td>
+										<td class="col-modified">
+											${ modified }
+										</td>
 
-									<td class="col-modified">
-										${ modified }
-									</td>
+										<td class="col-options">
+											<button class="small" onclick="copyFile('${ path + file.name }')">Copy</button>
+											<button class="small" onclick="moveFile('${ path + file.name }')">Move</button>
+											<button class="small" onclick="renameFile('${ path + file.name }')">Rename</button>
+											<button class="small red" onclick="deleteFile('${ path + file.name }')">Delete</button>
+										</td>
+									</tr>
+									`
+								})
+							}
+						</tbody>
 
-									<td class="col-options">
-										<div class="dropdown-menu" onclick="toggleDropdown(this, event)">
-											<div class="dropdown-menu-content">
-												<button class="small" onclick="copyFile('${ path + file.name }')">Copy</button>
-												<br><br>
-												<button class="small" onclick="moveFile('${ path + file.name }')">Move</button>
-												<br><br>
-												<button class="small" onclick="renameFile('${ path + file.name }')">Rename</button>
-												<br><br>
-												<button class="small red" onclick="deleteFile('${ path + file.name }')">Delete</button>
-											</div>
-										</div>
-									</td>
-								</tr>
-								`
-							})
-						}
-					</tbody>
-
-				</table>
+					</table>
+				</div>
 			</div>
 			`
 
@@ -1735,9 +1727,6 @@ const deleteFile = (filePath: string) => {
 							.catch(handleRequestError)
 					})
 			}
-		})
-		.catch(() => {
-			// User cancelled
 		})
 }
 
@@ -1806,97 +1795,36 @@ const copyOrMoveFile = async (
 */
 
 const renameFile = async (sourcePath: string) => {
-	try {
-		const popupRes = await popup(
-			`Renaming File`,
-			`Enter a new name for <code>${ sourcePath.substring(sourcePath.lastIndexOf('/') + 1) }</code>`,
-			[
-				{
-					name: 'Rename'
-				}
-			],
-			[
-				{
-					name: 'new-name',
-					placeholder: 'Enter a new name...',
-					type: 'text',
-					value: sourcePath.substring(sourcePath.lastIndexOf('/') + 1),
-					enterTriggersButton: 'Rename'
-				}
-			]
-		)
-	
-		if (popupRes.buttonName == 'Rename') {
-			const newName = popupRes.inputs.get('new-name')
-			const dirPath = sourcePath.substring(0, sourcePath.lastIndexOf('/') + 1)
-			const destinationPath = dirPath + newName
+	const popupRes = await popup(
+		`Renaming File`,
+		`Enter a new name for <code>${ sourcePath.substring(sourcePath.lastIndexOf('/') + 1) }</code>`,
+		[
+			{
+				name: 'Rename'
+			}
+		],
+		[
+			{
+				name: 'new-name',
+				placeholder: 'Enter a new name...',
+				type: 'text',
+				value: sourcePath.substring(sourcePath.lastIndexOf('/') + 1),
+				enterTriggersButton: 'Rename'
+			}
+		]
+	)
 
-			const suToken = await getSuToken()
-
-			await request('/admin-panel/workers/move-file-different-name.node.js', {
-				suToken,
-				source: sourcePath,
-				destination: destinationPath
-			})
-				.catch(err => {
-					// This should never happen
-
-					notification(
-						'Unspecified Error',
-						`status code: ${ err.status }, body: <code>${ err.response }</code>`
-					)
-
-					throw err
-				})
-
-			notification(
-				`Renamed file`,
-				`Succesfully renamed file <code>${ sourcePath }</code> to <code>${ destinationPath }</code>`
-			)
-
-			// Refresh files
-
-			showFiles(new URLSearchParams(document.location.search).get('path'))
-		}
-	} catch(err) {
-		// User cancelled
-	}
-}
-
-/*
-
-	4.8 Create New Directory
-
-*/
-
-const createNewDirectory = async (parentDirectoryPath: string) => {
-	try {
-		const popupRes = await popup(
-			'New Folder',
-			`Creating a new folder in <code>${ parentDirectoryPath }</code>`,
-			[
-				{
-					name: 'Create'
-				}
-			],
-			[
-				{
-					name: 'new-dir-name',
-					placeholder: 'Enter a name...',
-					type: 'text',
-					enterTriggersButton: 'Create'
-				}
-			]
-		)
-		
-		const newDirName = popupRes.inputs.get('new-dir-name')
-		const newDirectoryPath = parentDirectoryPath + newDirName
+	if (popupRes.buttonName == 'Rename') {
+		const newName = popupRes.inputs.get('new-name')
+		const dirPath = sourcePath.substring(0, sourcePath.lastIndexOf('/') + 1)
+		const destinationPath = dirPath + newName
 
 		const suToken = await getSuToken()
 
-		await request('/admin-panel/workers/create-new-directory.node.js', {
+		await request('/admin-panel/workers/move-file-different-name.node.js', {
 			suToken,
-			newDirectoryPath
+			source: sourcePath,
+			destination: destinationPath
 		})
 			.catch(err => {
 				// This should never happen
@@ -1910,16 +1838,69 @@ const createNewDirectory = async (parentDirectoryPath: string) => {
 			})
 
 		notification(
-			`Created directory`,
-			`Succesfully created directory <code>${ newDirName }</code>`
+			`Renamed file`,
+			`Succesfully renamed file <code>${ sourcePath }</code> to <code>${ destinationPath }</code>`
 		)
 
 		// Refresh files
 
 		showFiles(new URLSearchParams(document.location.search).get('path'))
-} catch(err) {
-		// User cancelled
 	}
+}
+
+/*
+
+	4.8 Create New Directory
+
+*/
+
+const createNewDirectory = async (parentDirectoryPath: string) => {
+	const popupRes = await popup(
+		'New Folder',
+		`Creating a new folder in <code>${ parentDirectoryPath }</code>`,
+		[
+			{
+				name: 'Create'
+			}
+		],
+		[
+			{
+				name: 'new-dir-name',
+				placeholder: 'Enter a name...',
+				type: 'text',
+				enterTriggersButton: 'Create'
+			}
+		]
+	)
+	
+	const newDirName = popupRes.inputs.get('new-dir-name')
+	const newDirectoryPath = parentDirectoryPath + newDirName
+
+	const suToken = await getSuToken()
+
+	await request('/admin-panel/workers/create-new-directory.node.js', {
+		suToken,
+		newDirectoryPath
+	})
+		.catch(err => {
+			// This should never happen
+
+			notification(
+				'Unspecified Error',
+				`status code: ${ err.status }, body: <code>${ err.response }</code>`
+			)
+
+			throw err
+		})
+
+	notification(
+		`Created directory`,
+		`Succesfully created directory <code>${ newDirName }</code>`
+	)
+
+	// Refresh files
+
+	showFiles(new URLSearchParams(document.location.search).get('path'))
 }
 
 /* ===================
@@ -1986,7 +1967,7 @@ const getDatabaseList = async () => {
 		const response = await request('/admin-panel/workers/database/list.node.js', {
 			suToken
 		})
-		const databases = response.body as DB_Info[]
+		const databases = JSON.parse(response) as DB_Info[]
 
 		return databases
 
@@ -2011,30 +1992,33 @@ const showDatabaseList = async () => {
 	$('.main').innerHTML = /* html */ `
 	<h1>Databases</h1>
 
-	<table class="fullwidth databases-list">
-		<thead>
-			<td class="col-icon"></td>
-			<td>Name</td>
-			<td>Size</td>
-			<td>Last Modified</td>
-			<td>Options</td>
-		</thead>
-		<tbody>
-			${ reduceArray(databases, dbInfo => /* html */ `
-			<tr>
-				<td class="col-icon">
-					<img class="file-manager-file-icon" src="/admin-panel/img/database.png" alt="Database Icon">
-				</td>
-				<td class="col-name" onclick="showTableListOfDatabase('${ dbInfo.name }')">${ dbInfo.name.replace('.json', '') }</td>
-				<td>${ parseSize(dbInfo.size) }</td>
-				<td>${ parseDate(dbInfo.modified) }</td>
-				<td>
-					<button class="small" onclick="showTableListOfDatabase('${ dbInfo.name }')">View</button>
-				</td>
-			</tr>
-			`) }
-		</tbody>
-	</table>
+	<div class="table-container">
+		<table class="fullwidth databases-list">
+			<thead>
+				<td class="col-icon"></td>
+				<td>Name</td>
+				<td>Size</td>
+				<td>Last Modified</td>
+				<td class="col-options"></td>
+			</thead>
+			<tbody>
+				${ reduceArray(databases, dbInfo => /* html */ `
+				<tr>
+					<td class="col-icon">
+						<img class="file-manager-file-icon" src="/admin-panel/img/database.png" alt="Database Icon">
+					</td>
+					<td class="col-name" onclick="showTableListOfDatabase('${ dbInfo.name }')">${ dbInfo.name.replace('.json', '') }</td>
+					<td>${ parseSize(dbInfo.size) }</td>
+					<td>${ parseDate(dbInfo.modified) }</td>
+					<td class="col-options">
+						<button class="small" onclick="showTableListOfDatabase('${ dbInfo.name }')">View</button>
+					</td>
+				</tr>
+				`) }
+			</tbody>
+		</table>
+	</div>
+
 	`
 }
 
@@ -2059,7 +2043,7 @@ const getTableListOfDatabase = async (
 			suToken, dbName
 		})
 
-		return response.body as DB_Tables_List
+		return JSON.parse(response) as DB_Tables_List
 	} catch(err) {
 		handleRequestError(err)
 	}
@@ -2088,34 +2072,39 @@ const showTableListOfDatabase = async (
 		${ dbName.replace('.json', '') }
 	</h1>
 
-	<table class="fullwidth database-tables-list">
-		<thead>
-			<td></td>
-			<td>Table Name</td>
-			<td>Rows/Columns</td>
-			<td>Table Actions</td>
-		</thead>
-		<tbody>
-			${ reduceObject(db, tableName => {
-				const table = db[tableName]
+	<div class="table-container">
+		<table class="fullwidth database-tables-list">
+			<thead>
+				<td></td>
+				<td>Table Name</td>
+				<td>Rows</td>
+				<td>Columns</td>
+				<td class="col-options"></td>
+			</thead>
+			<tbody>
+				${ reduceObject(db, tableName => {
+					const table = db[tableName]
 
-				const { rowCount, colCount } = table
+					const { rowCount, colCount } = table
 
-				return /* html */ `
-				<tr>
-					<td class="col-icon">
-						<img class="file-manager-file-icon" src="/admin-panel/img/table.png" alt="Table Icon">
-					</td>
-					<td class="col-name" onclick="showTable('${ dbName }', '${ tableName }')">${ tableName }</td>
-					<td>${ rowCount }/${ colCount }</td>
-					<td>
-						<button class="small" onclick="showTable('${ dbName }', '${ tableName }')">View</button>
-					</td>
-				</tr>
-				`
-			}) }
-		</tbody>
-	</table>
+					return /* html */ `
+					<tr>
+						<td class="col-icon">
+							<img class="file-manager-file-icon" src="/admin-panel/img/table.png" alt="Table Icon">
+						</td>
+						<td class="col-name" onclick="showTable('${ dbName }', '${ tableName }')">${ tableName }</td>
+						<td>${ rowCount }</td>
+						<td>${ colCount }</td>
+						<td class="col-options">
+							<button class="small" onclick="showTable('${ dbName }', '${ tableName }')">View</button>
+						</td>
+					</tr>
+					`
+				}) }
+			</tbody>
+		</table>
+	</div>
+
 	`
 }
 
@@ -2135,7 +2124,7 @@ const getTable = async (
 			suToken, dbName, tableName, orderArr
 		})
 
-		return response.body as TableRepresentation
+		return JSON.parse(response) as TableRepresentation
 	} catch(err) {
 		handleRequestError(err)
 	}
@@ -2152,6 +2141,7 @@ let currentTableName: string
 let currentOrderBy = new Map<string, 'ASC' | 'DESC'>()
 let currentFilters = new Map<string, FilterFunction>()
 let currentBuiltInFilters = new Map<string, FilterFunction>()
+let currentCustomFilters: CustomFilter[]
 
 const showTable = async (
 	dbName: string,
@@ -2172,6 +2162,7 @@ const showTable = async (
 	currentOrderBy.clear()
 	currentFilters.clear()
 	currentBuiltInFilters.clear()
+	currentCustomFilters = []
 
 	const { data } = currentTable
 
@@ -2191,9 +2182,15 @@ const showTable = async (
 		<a class="underline" onclick="showTableListOfDatabase('${ currentDbName }')">${ currentDbName.replace('.json', '') }</a> > ${ currentTableName }
 	</h1>
 
+	<div class="table-action-row">
+		<button onclick="setCustomFilters()" class="small">Filter</button>
+	</div>
+
+	<br>
+
 	<div class="table-container"></div>
 
-	<br><br>
+	<h3>Built-in filters:</h3>
 
 	<div class="built-in-filters">
 		${ reduceMap(currentBuiltInFilters, filterName => /* html */ `
@@ -2207,16 +2204,17 @@ const showTable = async (
 	updateTable()
 }
 
-const updateTable = (
-	...filters: FilterFunction[]
-) => {
+const updateTable = () => {
 	let table = currentTable
 
-	// Apply each filter from the parameters
+	// Apply the current custom filter
 
-	for (let filter of filters) {
-		table = filterTable(table, filter)
+	const customFilterFunction = customFiltersToFilterFunction()
+
+	if (customFilterFunction != null) {
+		table = filterTable(table, customFilterFunction)
 	}
+
 
 	// Apply each filter from currentFilters
 
@@ -2261,7 +2259,7 @@ const updateTable = (
 				${ reduceArray(cols, col => /* html */ `
 				<td data-datatype="${ col.dataType }" data-col-name="${ col.name }" class="col">${ row[col.name] }</td>
 				`) }
-				<td>
+				<td class="col-options">
 					<button onclick="editRow('${ currentDbName }', '${ currentTableName }', ${ rowNum })" class="small edit">Edit</button>
 					<button onclick="deleteRow('${ currentDbName }', '${ currentTableName }', ${ rowNum })" class="small red">Delete</button>
 				</td>
@@ -2449,7 +2447,7 @@ const editRow = (
 
 	// Listen for the Save button click
 
-	button.addEventListener('click', async () => {
+	button.onclick = async () => {
 		// Gather inputs
 
 		const row: DB_Table_Row_Formatted = {}
@@ -2489,7 +2487,7 @@ const editRow = (
 
 		button.innerText = 'Edit'
 		button.onclick = savedOnclick
-	})
+	}
 }
 
 // 5.6.4 Update Row
@@ -2687,6 +2685,14 @@ const setOrderArrowsOfTable = () => {
 
 type FilterFunction = (row: DB_Table_Row_Formatted) => boolean
 
+interface CustomFilter {
+	colName: string
+	operator: string
+	value: string
+}
+
+// Filter a TableRepresentation with a FilterFunction
+
 const filterTable = (
 	table: TableRepresentation,
 	filter: FilterFunction
@@ -2705,6 +2711,8 @@ const filterTable = (
 	}
 }
 
+// Enable or disable a built-in filter
+
 const setTableFilter = (
 	builtInFilterName: string,
 	enabled: boolean
@@ -2719,4 +2727,264 @@ const setTableFilter = (
 	// Refresh table
 
 	updateTable()
+}
+
+// Map to convert user-friendly operators to JS operators
+
+const operatorMap = new Map<string, string>([
+	[ 'Equals ( = )', '==' ],
+	[ 'Is bigger than ( > )', '>' ],
+	[ 'Is bigger than or equal to ( >= )', '>=' ],
+	[ 'Is smaller than ( < )', '<' ],
+	[ 'Is smaller than or equal to ( <= )', '<=' ],
+])
+
+// Surround input values with quotes if needed
+
+const parseFilterInputValue = (
+	value: string,
+	colName: string
+) => {
+	const { cols } = currentTable
+
+	let dataType: DataType
+
+	for (let col of cols) {
+		if (col.name == colName) {
+			dataType = col.dataType
+			break
+		}
+	}
+
+	if (dataType == undefined) {
+		throw new Error(`Could not find column "${ colName }" in the current table`)
+	}
+
+	if ([ 'Bit', 'Boolean', 'Float', 'Int' ].includes(dataType)) {
+		return value
+	} else {
+		return `"${ value }"`
+	}
+}
+
+// Show the custom filter popup and handle the result
+
+const setCustomFilters = async () => {
+	const { cols } = currentTable
+
+	const generateInputHTML = (
+		button: 'clear' | 'delete'
+	) => /* html */ `
+	<div class="input">
+
+		<div class="search no-input-filter overflow column">
+			<input type="text" placeholder="Select column..." style="width: 150px">
+			<div class="arrow"></div>
+			<ul class="dropdown">
+				${ reduceArray(cols, col => /* html */ `
+				<li>${ col.name }</li>
+				`) }
+			</ul>
+		</div>
+
+		<div class="search no-input-filter overflow operator">
+			<input type="text" placeholder="Select operator...">
+			<div class="arrow"></div>
+			<ul class="dropdown">
+				${ reduceMap(operatorMap, userFriendlyOperator => /* html */ `
+				<li>${ userFriendlyOperator }</li>
+				`) }
+			</ul>
+		</div>
+
+		<input class="value dark" type="text" style="width: 150px" placeholder="Value">
+		
+		${ (button == 'clear') ? /* html */ `
+		<button class="red" onclick="clearFilter(this)">Clear filter</button>
+		` : /* html */ `
+		<button class="red" onclick="deleteFilter(this)">Delete filter</button>
+		` }
+
+	</div>
+	`
+
+	const popupId = randomString(10)
+
+	document.body.insertAdjacentHTML('beforeend', /* html */ `
+	<div class="popup" data-id="${ popupId }">
+		<a class="popup-close-button" onclick="removePopup()">✕</a>
+		<h1 class="popup-title">Set Filters</h1>
+
+		<div class="inputs">
+			${ generateInputHTML('clear') }
+		</div>
+
+		<br>
+		<button class="plus add-filter" onclick="addFilter(this)">Add a filter</button>
+		<br><br>
+		<button class="small" onclick="setFilters(this)">Set</button>
+	</div>
+	`)
+
+	;(window as any).addFilter = (
+		buttonEl: HTMLButtonElement
+	) => {
+		const inputContainer = buttonEl.parentElement.$('.inputs')
+
+		inputContainer.insertAdjacentHTML('beforeend', generateInputHTML('delete'))
+
+		initSearchBoxes()
+	}
+
+	;(window as any).deleteFilter = (
+		buttonEl: HTMLInputElement
+	) => {
+		const inputs = buttonEl.previousElementSibling
+
+		const lineBreak = inputs.previousElementSibling
+
+		if (lineBreak != null) {
+			lineBreak.remove()
+		}
+
+		inputs.remove()
+		buttonEl.remove()
+	}
+
+	;(window as any).clearFilter = (
+		buttonEl: HTMLInputElement
+	) => {
+		const inputContainer = buttonEl.previousElementSibling as HTMLSpanElement
+		const inputs = inputContainer.$a<HTMLInputElement>('input')
+
+		for (let input of inputs) {
+			input.value = ''
+		}
+	}
+
+	;(window as any).removePopup = () => {
+		popupEl.classList.add('closed')
+
+		setTimeout(() => {
+			popupEl.remove()
+		}, 300)
+	}
+
+	const popupEl = $(`.popup[data-id="${ popupId }"]`)
+
+	// Show existing filters
+
+	for (let i = 0; i < currentCustomFilters.length; i++) {
+		const filter = currentCustomFilters[i]
+
+		const inputRows = popupEl.$a('.inputs .input')
+		const lastInputRow = inputRows[inputRows.length - 1]
+
+		// Set values
+
+		const colInput = lastInputRow.$<HTMLInputElement>('.column input')
+		const operatorInput = lastInputRow.$<HTMLInputElement>('.operator input')
+		const valueInput = lastInputRow.$<HTMLInputElement>('input.value')
+
+		colInput.value = filter.colName
+		operatorInput.value = filter.operator
+		valueInput.value = filter.value
+
+		// Remove double quotes from stringed values
+
+		if (filter.value.startsWith('"')) {
+			valueInput.value = filter.value.substring(1, filter.value.length - 1)
+		}
+
+		// Create new input row
+
+		if (i != currentCustomFilters.length - 1) {
+			(window as any).addFilter(popupEl.$('.add-filter'))
+		}
+	}
+
+	initSearchBoxes()
+
+	;(window as any).setFilters = (
+		buttonEl: HTMLInputElement
+	) => {
+		// Get all inputs
+
+		const inputs = buttonEl.parentElement.$a<HTMLSpanElement>('.inputs .input')
+
+		// Reset current custom filters
+
+		currentCustomFilters = []
+
+		for (let i = 0; i < inputs.length; i++) {
+			const input = inputs[i]
+
+			// Get and parse input values
+			
+			const colName = input.$<HTMLInputElement>('.column input').value
+
+			// Skip if colName is empty
+
+			if (colName == '') {
+				continue
+			}
+			
+			const operator = input.$<HTMLInputElement>('.operator input').value
+			
+			const value = parseFilterInputValue(
+				input.$<HTMLInputElement>('input.value').value,
+				colName
+			)
+
+			// Push the filter to the current custom filters
+
+			currentCustomFilters.push({
+				colName, operator, value
+			})
+		}
+
+		// Remove the popup from the screen
+
+		popupEl.classList.add('closed')
+
+		setTimeout(() => {
+			popupEl.remove()
+		}, 300)
+
+		// Update the table
+
+		updateTable()
+	}
+}
+
+const customFiltersToFilterFunction = () => {
+	if (currentCustomFilters.length == 0) {
+		return null
+	}
+
+	let filterFunctionString = 'row => '
+	let amountOfFilters = 0
+
+	for (let i = 0; i < currentCustomFilters.length; i++) {
+		const filter = currentCustomFilters[i]
+
+		const { colName, value } = filter
+		const operator = operatorMap.get(filter.operator)
+
+		if (colName == '' || value == '' || operator == undefined) {
+			continue
+		}
+
+		amountOfFilters++
+
+		const suffix = (i != currentCustomFilters.length - 1) ? ' && ' : ';'
+
+		filterFunctionString += `row.${ colName } ${ operator } ${ value }${ suffix }`
+	}
+
+	if (amountOfFilters == 0) {
+		return null
+	}
+
+	return eval(filterFunctionString) as FilterFunction
 }
