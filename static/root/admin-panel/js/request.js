@@ -1,4 +1,4 @@
-const request = (url, body = {}, files = [], on) => {
+const request = (url, body = {}, files = [], eventListeners) => {
     return new Promise(async (resolve, reject) => {
         const req = new XMLHttpRequest();
         const formData = new FormData();
@@ -30,51 +30,13 @@ const request = (url, body = {}, files = [], on) => {
             }
         };
         // Event listeners
-        req.upload.onprogress = on.requestUploadProgress;
-        req.onprogress = on.responseDownloadProgress;
+        if (eventListeners != null) {
+            req.upload.onprogress = eventListeners.onRequestUploadProgress;
+            req.onprogress = eventListeners.onResponseDownloadProgress;
+        }
         // Send the request
         req.open('POST', url);
         req.send(formData);
-        // const socket = io({
-        // 	transportOptions: {
-        // 		polling: {
-        // 			extraHeaders: {
-        // 				path: url
-        // 			}
-        // 		}
-        // 	}
-        // })
-        // socket.on('response', (res: SocketResponse) => {
-        // 	if (res.status >= 200 && res.status < 300) {
-        // 		resolve(res)
-        // 	} else {
-        // 		reject({ status: res.status, response: res.body })
-        // 	}
-        // })
-        // // Send body
-        // socket.emit('body', body)
-        // // Send files
-        // for (let file of files) {
-        // 	// Send file meta
-        // 	socket.emit('file meta', {
-        // 		name: file.name,
-        // 		lastModified: file.lastModified,
-        // 		size: file.size,
-        // 		type: file.type
-        // 	})
-        // 	const stream: ReadableStream<Uint8Array> = file.stream()
-        // 	const reader = stream.getReader()
-        // 	while (true) {
-        // 		const chunk = await reader.read()
-        // 		if (!chunk.done) {
-        // 			socket.emit('file chunk', chunk.value.buffer)
-        // 		} else {
-        // 			break
-        // 		}
-        // 	}
-        // }
-        // // End the request
-        // socket.emit('end')
     });
 };
 const handleRequestError = (err) => {

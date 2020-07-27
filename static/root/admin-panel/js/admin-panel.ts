@@ -64,6 +64,7 @@
 			5.6.6 Add Row
 			5.6.7 Table Ordering
 			5.6.8 Table Filtering
+			5.6.9 Download Table to CSV
 
 */
 
@@ -876,11 +877,20 @@ const uploadFiles = (
 		
 				files.push(file)
 			}
+
+			// Create progressbar
+
+			const progressBar = new ProgressBar()
 		
 			// Send the request
 		
-			request('/admin-panel/workers/fileupload.node.js', body, files)
-				.then(resolve)
+			request('/admin-panel/workers/fileupload.node.js', body, files, {
+				onRequestUploadProgress: e => progressBar.set(e.loaded / e.total)
+			})
+				.then(() => {
+					progressBar.remove()
+					resolve()
+				})
 				.catch(handleRequestError)
 		})
 })
@@ -1382,12 +1392,12 @@ const showFiles = (path = '/') => {
 				<button class="small" onclick="showFiles(upALevel('${ path }'))">Up a level</button>
 				<button class="small" onclick="$('input[type=file]').click()">Upload Files</button>
 				<button class="small" onclick="createNewDirectory('${ path }')">New Folder</button>
-				<span class="bulk-actions hidden">
+				<div class="bulk-actions hidden">
 					Selected Files:
 					<button class="small" onclick="bulkCopyFiles()">Copy</button>
 					<button class="small" onclick="bulkMoveFiles()">Move</button>
 					<button class="small red" onclick="bulkDeleteFiles()">Delete</button>
-				</span>
+				</div>
 
 				<br><br>
 
@@ -1453,12 +1463,12 @@ const showFiles = (path = '/') => {
 
 									const showBulkFileActions = () => {
 										bulkFileActionsShown = true
-										$('span.bulk-actions').classList.remove('hidden')
+										$('.bulk-actions').classList.remove('hidden')
 									}
 
 									const hideBulkFileActions = () => {
 										bulkFileActionsShown = false
-										$('span.bulk-actions').classList.add('hidden')
+										$('.bulk-actions').classList.add('hidden')
 									}
 
 									;(window as any).handleFileCheckboxes = (checkboxEl: HTMLInputElement) => {
@@ -2124,7 +2134,13 @@ const getTable = async (
 			suToken, dbName, tableName, orderArr
 		})
 
-		return JSON.parse(response) as TableRepresentation
+		const table = JSON.parse(response) as TableRepresentation
+
+		for (let i = 0; i < table.rows.length; i++) {
+			table.rows[i].rowNum = i
+		}
+
+		return table
 	} catch(err) {
 		handleRequestError(err)
 	}
@@ -2184,6 +2200,7 @@ const showTable = async (
 
 	<div class="table-action-row">
 		<button onclick="setCustomFilters()" class="small">Filter</button>
+		<button onclick="downloadTableToCSV()" class="small">Download to CSV</button>
 	</div>
 
 	<br>
@@ -2205,22 +2222,7 @@ const showTable = async (
 }
 
 const updateTable = () => {
-	let table = currentTable
-
-	// Apply the current custom filter
-
-	const customFilterFunction = customFiltersToFilterFunction()
-
-	if (customFilterFunction != null) {
-		table = filterTable(table, customFilterFunction)
-	}
-
-
-	// Apply each filter from currentFilters
-
-	for (let [ _filterName, filterFunction ] of currentFilters) {
-		table = filterTable(table, filterFunction)
-	}
+	let table = getFilteredCurrentTable()
 
 	const { rows, cols } = table
 
@@ -2252,16 +2254,16 @@ const updateTable = () => {
 		<tbody>
 			<!-- The rows come here -->
 
-			${ reduceArray(rows, (row, rowNum) => /* html */ `
+			${ reduceArray(rows, row => /* html */ `
 			<!-- This is a row -->
 
-			<tr>
+			<tr data-row-num="${ row.rowNum }">
 				${ reduceArray(cols, col => /* html */ `
 				<td data-datatype="${ col.dataType }" data-col-name="${ col.name }" class="col">${ row[col.name] }</td>
 				`) }
 				<td class="col-options">
-					<button onclick="editRow('${ currentDbName }', '${ currentTableName }', ${ rowNum })" class="small edit">Edit</button>
-					<button onclick="deleteRow('${ currentDbName }', '${ currentTableName }', ${ rowNum })" class="small red">Delete</button>
+					<button onclick="editRow('${ currentDbName }', '${ currentTableName }', ${ row.rowNum })" class="small edit">Edit</button>
+					<button onclick="deleteRow('${ currentDbName }', '${ currentTableName }', ${ row.rowNum })" class="small red">Delete</button>
 				</td>
 			</tr>
 			`) }
@@ -2379,6 +2381,10 @@ const parseInputValue = (
 		throw new Error(`Input of '${ value }' could not be parsed to datatype '${ dataType }'`)
 	}
 
+	if (value == '') {
+		return null
+	}
+
 	if (dataType == 'Binary') {
 		return value
 	} else if (dataType == 'Bit') {
@@ -2411,7 +2417,7 @@ const editRow = (
 	tableName: string,
 	rowNum: number
 ) => {
-	const rowEl = $a('.database-table tbody tr')[rowNum]
+	const rowEl = $<HTMLTableRowElement>(`tr[data-row-num="${ rowNum }"]`)
 
 	// Change button text to 'Save'
 
@@ -2681,7 +2687,7 @@ const setOrderArrowsOfTable = () => {
 	}
 }
 
-// 5.6.7 Table Filtering
+// 5.6.8 Table Filtering
 
 type FilterFunction = (row: DB_Table_Row_Formatted) => boolean
 
@@ -2689,6 +2695,28 @@ interface CustomFilter {
 	colName: string
 	operator: string
 	value: string
+}
+
+// Get the current table with the current filters applied
+
+const getFilteredCurrentTable = () => {
+	let table = currentTable
+
+	// Apply the current custom filter
+
+	const customFilterFunction = customFiltersToFilterFunction()
+
+	if (customFilterFunction != null) {
+		table = filterTable(table, customFilterFunction)
+	}
+
+	// Apply each filter from currentFilters
+
+	for (let [ _filterName, filterFunction ] of currentFilters) {
+		table = filterTable(table, filterFunction)
+	}
+
+	return table
 }
 
 // Filter a TableRepresentation with a FilterFunction
@@ -2732,11 +2760,11 @@ const setTableFilter = (
 // Map to convert user-friendly operators to JS operators
 
 const operatorMap = new Map<string, string>([
-	[ 'Equals ( = )', '==' ],
-	[ 'Is bigger than ( > )', '>' ],
-	[ 'Is bigger than or equal to ( >= )', '>=' ],
-	[ 'Is smaller than ( < )', '<' ],
-	[ 'Is smaller than or equal to ( <= )', '<=' ],
+	[ 'Equals', '==' ],
+	[ 'Is bigger than', '>' ],
+	[ 'Is bigger than or equal to', '>=' ],
+	[ 'Is smaller than', '<' ],
+	[ 'Is smaller than or equal to', '<=' ],
 ])
 
 // Surround input values with quotes if needed
@@ -2854,7 +2882,7 @@ const setCustomFilters = async () => {
 	;(window as any).clearFilter = (
 		buttonEl: HTMLInputElement
 	) => {
-		const inputContainer = buttonEl.previousElementSibling as HTMLSpanElement
+		const inputContainer = buttonEl.parentElement as HTMLSpanElement
 		const inputs = inputContainer.$a<HTMLInputElement>('input')
 
 		for (let input of inputs) {
@@ -2910,7 +2938,7 @@ const setCustomFilters = async () => {
 	) => {
 		// Get all inputs
 
-		const inputs = buttonEl.parentElement.$a<HTMLSpanElement>('.inputs .input')
+		const inputs = buttonEl.parentElement.$a<HTMLDivElement>('.inputs .input')
 
 		// Reset current custom filters
 
@@ -2987,4 +3015,78 @@ const customFiltersToFilterFunction = () => {
 	}
 
 	return eval(filterFunctionString) as FilterFunction
+}
+
+// 5.6.9 Download Table to CSV
+
+const toCSVValue = (
+	value: any,
+	dataType: DataType
+): string => {
+	if ([ 'Binary', 'Hex', 'DateTime', 'String', 'Char', 'JSON' ].includes(dataType)) {
+		return `"${ value }"`
+	} else if ([ 'Int', 'Float', 'Bit' ].includes(dataType)) {
+		return value.toString()
+	} else if ([ 'Boolean' ].includes(dataType)) {
+		return value ? '"true"' : '"false"'
+	} else {
+		throw new Error(`Datatype '${ dataType }' not handled`)
+	}
+}
+
+const currentTableToCSV = () => {
+	const table = getFilteredCurrentTable()
+
+	const { rows, cols } = table
+
+	let csv = ''
+
+	// Add columns
+
+	for (let i = 0; i < cols.length; i++) {
+		const delimiter = (i == cols.length - 1) ? '\n' : ','
+		const col = cols[i]
+
+		csv += col.name + delimiter
+	}
+
+	// Add rows
+
+	for (let row of rows) {
+		for (let i = 0; i < cols.length; i++) {
+			const delimiter = (i == cols.length - 1) ? '\n' : ','
+			const col = cols[i]
+			const value = toCSVValue(row[col.name], col.dataType)
+
+			csv += value + delimiter
+		}
+	}
+
+	return csv
+}
+
+const downloadTableToCSV = () => {
+	const csv = currentTableToCSV()
+
+	// Create a File from the csv string
+
+	const file = new File([ csv ], `csv-download.csv`, { type: 'text/csv' })
+
+	// Create fake download button
+
+	const downloadButton = document.createElement('a')
+	downloadButton.href = URL.createObjectURL(file)
+	downloadButton.download = 'csv-download.csv'
+
+	// Add the fake download button to the page
+
+	document.body.appendChild(downloadButton)
+
+	// Click the fake download button
+
+	downloadButton.click()
+
+	// Remove the fake download button from the page
+
+	downloadButton.remove()
 }

@@ -186,3 +186,34 @@ const notification = (
 ) => {
 	popup(title, body, [], [], disappearsAfterMs)
 }
+
+class ProgressBar {
+	el: HTMLDivElement
+	inner: HTMLDivElement
+
+	constructor(startingRatio = 0) {
+		// Create progress bar element
+
+		this.el = document.createElement('div')
+		this.el.classList.add('progress-bar')
+
+		// Create inner
+
+		this.inner = document.createElement('div')
+		this.inner.classList.add('inner')
+		this.inner.style.width = `${ startingRatio * 100 }%`
+
+		// Add to body
+
+		this.el.appendChild(this.inner)
+		document.body.appendChild(this.el)
+	}
+
+	set(newRatio: number) {
+		this.inner.style.width = `${ newRatio * 100 }%`
+	}
+
+	remove() {
+		this.el.remove()
+	}
+}

@@ -16,6 +16,7 @@
 		4.6 Popup
 		4.7 Code
 		4.8 Image Array
+		4.9 Progress Bar
 */
 
 /* ===================
@@ -298,20 +299,23 @@ table.fullwidth td {
 
 /* Column widths */
 
-table.fullwidth .col-checkbox {
-	width: 1px; /* Set width to minimum */
-}
-
-table.fullwidth .col-icon {
-	width: 1px; /* Set width to minimum */ 
-}
-
-table.fullwidth tbody .col-name {
+tbody .col-name {
+	min-width: min(300px, 40vw);
 	cursor: pointer;
 }
 
-table.fullwidth .col-options {
+/* Fit-content columns */
+
+tbody .col-checkbox,
+tbody .col-icon {
 	width: 1px;
+}
+
+/* Non-breaking columns */
+
+tbody .col-size,
+tbody .col-modified,
+tbody .col-options {
 	white-space: nowrap;
 }
 
@@ -337,8 +341,8 @@ img.file-manager-file-icon {
 	pointer-events: none;
 }
 
-span.bulk-actions {
-	margin-left: 2em;
+.bulk-actions {
+	margin-top: .5em;
 }
 
 .file-list-container {
@@ -440,7 +444,7 @@ a.add-page-button {
 }
 
 a.add-page-button::after {
-	content: '+';
+	content: "+";
 	position: absolute;
 	top: 50%;
 	left: 50%;
@@ -605,7 +609,7 @@ input.small.red {
 }
 
 .search .arrow {
-  content: '';
+  content: "";
   background-image: url('/admin-panel/img/arrow-down.png');
   background-size: contain;
   position: absolute;
@@ -942,7 +946,33 @@ codeblock {
 	border-radius: 50%;
 }
 
+/* 
+	4.9 Progress Bar
+*/
+
+.progress-bar {
+	position: absolute;
+	left: 0;
+	bottom: 0;
+	z-index: 99;
+
+	width: 100%;
+	height: 2px;
+}
+
+.progress-bar .inner {
+	position: absolute;
+
+	height: 100%;
+	width: 0;
+
+	background-color: var(--accent);
+	
+	transition: width 300ms ease;
+}
+
 /* Remove Tiny MCE warning */
+
 .tox-notifications-container {
 	display: none !important;
 }
