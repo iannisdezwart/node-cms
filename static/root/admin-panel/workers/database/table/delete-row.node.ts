@@ -8,7 +8,7 @@ const rowNum = req.body.rowNum as number
 queryTable(
 	dbName,
 	tableName,
-	table => table.delete(row => row.rowNum == rowNum)
+	table => table.deleteAt(rowNum)
 )
 	.then(() => {
 		res.send('Row deleted')

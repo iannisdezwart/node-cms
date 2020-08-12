@@ -1604,11 +1604,7 @@ const updateTable = () => {
 			<td></td>
 		</thead>
 		<tbody>
-			<!-- The rows come here -->
-
 			${reduceArray(rows, row => /* html */ `
-			<!-- This is a row -->
-
 			<tr data-row-num="${row.rowNum}">
 				${reduceArray(cols, col => /* html */ `
 				<td data-datatype="${col.dataType}" data-col-name="${col.name}" class="col">${row[col.name]}</td>
@@ -1621,8 +1617,6 @@ const updateTable = () => {
 			`)}
 		</tbody>
 		<tfoot>
-			<!-- User can add rows here -->
-
 			${reduceArray(cols, col => /* html */ `
 			<td data-datatype="${col.dataType}" data-col-name="${col.name}" class="col">
 				${createInputElFromDataType(col.dataType).outerHTML}
@@ -1827,13 +1821,15 @@ const updateRow = async (dbName, tableName, rowNum, newRow) => {
 const deleteRow = async (dbName, tableName, rowNum) => {
     const suToken = await getSuToken();
     try {
+        const rowEl = $(`tr[data-row-num="${rowNum}"]`);
+        // Todo: show loader
         await request('/admin-panel/workers/database/table/delete-row.node.js', {
             suToken, dbName, tableName, rowNum
         });
         // Refetch the table
         currentTable = await getTable(dbName, tableName);
-        // Reload the table
-        updateTable();
+        // Remove the row visually
+        rowEl.remove();
     }
     catch (err) {
         handleRequestError(err);
@@ -1860,8 +1856,21 @@ const addRow = async (dbName, tableName) => {
         });
         // Refetch the table
         currentTable = await getTable(dbName, tableName);
-        // Reload the table
-        updateTable();
+        const { rows, cols } = currentTable;
+        const row = rows[rows.length - 1];
+        // Todo: What if the new row doesn't go through the current filters?
+        // Add the row visually
+        $('tbody').insertAdjacentHTML('beforeend', /* html */ `
+		<tr data-row-num="${row.rowNum}">
+			${reduceArray(cols, col => /* html */ `
+			<td data-datatype="${col.dataType}" data-col-name="${col.name}" class="col">${row[col.name]}</td>
+			`)}
+			<td class="col-options">
+				<button onclick="editRow('${currentDbName}', '${currentTableName}', ${row.rowNum})" class="small edit">Edit</button>
+				<button onclick="deleteRow('${currentDbName}', '${currentTableName}', ${row.rowNum})" class="small red">Delete</button>
+			</td>
+		</tr>
+		`);
     }
     catch (err) {
         handleRequestError(err);
@@ -2072,13 +2081,8 @@ const setCustomFilters = async () => {
         initSearchBoxes();
     };
     window.deleteFilter = (buttonEl) => {
-        const inputs = buttonEl.previousElementSibling;
-        const lineBreak = inputs.previousElementSibling;
-        if (lineBreak != null) {
-            lineBreak.remove();
-        }
+        const inputs = buttonEl.parentElement;
         inputs.remove();
-        buttonEl.remove();
     };
     window.clearFilter = (buttonEl) => {
         const inputContainer = buttonEl.parentElement;

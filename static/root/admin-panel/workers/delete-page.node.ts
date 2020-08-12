@@ -21,7 +21,7 @@ authenticateSuToken(suToken)
 
 			// Delete the page from the database
 
-			pagesTable.delete(row => row.id == pageId)
+			pagesTable.deleteWhere(row => row.id == pageId)
 
 			// Compile the website
 

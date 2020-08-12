@@ -15,7 +15,7 @@ authenticate_su_token_1.authenticateSuToken(suToken)
         const pagesDB = node_json_database_1.db(__dirname + '/../../../pages.json');
         const pagesTable = pagesDB.table('pages');
         // Delete the page from the database
-        pagesTable.delete(row => row.id == pageId);
+        pagesTable.deleteWhere(row => row.id == pageId);
         // Compile the website
         compile_1.compile()
             .then(() => {
