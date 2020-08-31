@@ -223,6 +223,17 @@ ul > li > a {
 	}
 }
 
+ @media screen and (max-width: 370px) {
+	 .menu {
+		overflow-x: auto;
+		overflow-y: hidden;
+	 }
+
+	 .menu ul {
+		 justify-content: flex-start;
+	 }
+ }
+
 /* ===================
 	3. Page-specific Styles
 =================== */
@@ -285,6 +296,10 @@ table.fullwidth tr {
 	transition: background-color 300ms ease;
 }
 
+table.fullwidth tr.thick-border {
+	border-top: 4px solid var(--background);
+}
+
 table.fullwidth tr:hover {
 	background-color: rgba(192, 192, 192, 0.1);
 }
@@ -307,7 +322,8 @@ tbody .col-name {
 /* Fit-content columns */
 
 tbody .col-checkbox,
-tbody .col-icon {
+tbody .col-icon,
+tbody .col-min-width {
 	width: 1px;
 }
 

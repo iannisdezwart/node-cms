@@ -66,6 +66,12 @@
             5.6.8 Table Filtering
             5.6.9 Download Table to CSV
 
+    6. User Management
+        6.1 Fetch Users
+        6.2 Show User Management Panel
+        6.3 Change User's Password
+        6.4 Delete user
+        6.5 Add User
 */
 /* ===================
     1. On-load setup
@@ -202,6 +208,9 @@ const goToTheRightPage = () => {
         const tableName = searchParams.get('table-name');
         showTable(dbName, tableName);
     }
+    else if (tab == 'user-management') {
+        showUserManagement();
+    }
 };
 // Handle back- and forward button
 addEventListener('popstate', goBackInHistory);
@@ -260,54 +269,60 @@ const showPages = () => {
         .then(() => {
         const { pages, pageTypes } = pagesDB;
         $('.main').innerHTML = /* html */ `
-			<ul class="pages">
-				${reduceArray(pageTypes, pageType => {
+			<h1>Pages</h1>
+
+			<div class="table-container">
+				<table class="fullwidth">
+					<thead>
+						<tr>
+							<td class="col-name">Page Name</td>
+							<td class="col-options"></td>
+							<td></td>
+							<td></td>
+						</tr>
+					</thead>
+					<tbody>
+					${reduceArray(pageTypes, pageType => {
             const pagesOfCurrentType = pages.filter(page => page.pageType == pageType.name);
             return /* html */ `
-					<li>
-						<h1>${captitalise(pageType.name)}:</h1>
-						<table class="pages">
-							<thead>
-								<tr>
-									<td>Page Title:</td>
-								</tr>
-							</thead>
-							<tbody>
-								${reduceArray(pagesOfCurrentType, (page, i) => /* html */ `
-								<tr>
-									<td><span>${page.pageContent.title}</span></td>
-									<td>
-										<button class="small" onclick="editPage(${page.id})">Edit</button>
-										${(pageType.canAdd) ? /* html */ `
-										<button class="small red" onclick="deletePage(${page.id})">Delete</button>
-										` : ''}
-									</td>
-									<td>
-										${(i != 0) ? /* html */ `
-										<img class="clickable-icon" src="/admin-panel/img/arrow-up.png" alt="up" title="move up" style="margin-right: .5em" onclick="movePage('UP', '${pageType.name}', ${i})">
-										` : ''}
-									</td>
-									<td>
-										${(i != pagesOfCurrentType.length - 1) ? /* html */ `
-										<img class="clickable-icon" src="/admin-panel/img/arrow-down.png" alt="down" title="move down" onclick="movePage('DOWN', '${pageType.name}', ${i})">
-										` : ''}
-									</td>
-								</tr>
-								`)
-                +
-                    (() => (pageType.canAdd) ? /* html */ `
-									<tr>
-										<td>
-											<button class="small" onclick="addPage('${pageType.name}')">Add page</button>
-										</td>
-									</tr>
-								` : '')()}
-							</tbody>
-						</table>
-					</li>
-				`;
+						${pageType.canAdd ? /* html */ `
+						<tr class="thick-border">
+							<td>${captitalise(pageType.name)}</td>
+							<td class="col-options">
+								<button class="small" onclick="addPage('${pageType.name}')">Add page</button>
+							</td>
+							<td></td>
+							<td></td>
+						</tr>
+						` : ''}
+						${reduceArray(pagesOfCurrentType, (page, i) => /* html */ `
+						<tr class="page-row ${!pageType.canAdd ? 'thick-border' : ''}">
+							<td>
+								${pageType.canAdd ? `${'&nbsp;'.repeat(pageType.name.length)} > ${page.pageContent.title}` : captitalise(pageType.name)}
+							</td>
+							<td class="col-options">
+								<button class="small" onclick="editPage(${page.id})">Edit</button>
+								${pageType.canAdd ? /* html */ `
+								<button class="small red" onclick="deletePage(${page.id})">Delete</button>
+								` : ''}
+							</td>
+							<td>
+								${(i != 0) ? /* html */ `
+								<img class="clickable-icon" src="/admin-panel/img/arrow-up.png" alt="up" title="move up" style="margin-right: .5em" onclick="movePage('UP', '${pageType.name}', ${i})">
+								` : ''}
+							</td>
+							<td>
+								${(i != pagesOfCurrentType.length - 1) ? /* html */ `
+								<img class="clickable-icon" src="/admin-panel/img/arrow-down.png" alt="down" title="move down" onclick="movePage('DOWN', '${pageType.name}', ${i})">
+								` : ''}
+							</td>
+						</tr>
+						`)}
+						`;
         })}
-				</ul>
+					</tbody>
+				</table>
+			</div>
 			`;
         window.movePage = async (direction, pageTypeName, index) => {
             const pagesOfCurrentType = pages.filter(_page => _page.pageType == pageTypeName);
@@ -2221,4 +2236,167 @@ const downloadTableToCSV = () => {
     downloadButton.click();
     // Remove the fake download button from the page
     downloadButton.remove();
+};
+/*
+    6.1 Fetch Users
+*/
+const fetchUsers = async () => {
+    const suToken = await getSuToken();
+    const result = await request('/admin-panel/workers/user-management/get-users.node.js', {
+        suToken
+    });
+    return JSON.parse(result);
+};
+/*
+    6.2 Show User Management Panel
+*/
+const showUserManagement = async () => {
+    showLoader();
+    const users = await fetchUsers();
+    $('.main').innerHTML = /* html */ `
+	<h1>Users</h1>
+
+	<div class="table-container">
+		<table class="fullwidth">
+			<thead>
+				<tr>
+					<td class="col-id">User ID</td>
+					<td class="col-name">Username</td>
+					<td class="col-options"></td>
+				</tr>
+			</thead>
+			<tbody>
+			${reduceArray(users, user => /* html */ `
+				<tr>
+					<td class="col-id">${user.id}</td>
+					<td class="col-name">${user.name}</td>
+					<td class="col-options">
+						<button class="small" onclick="changePassword(${user.id}, '${user.name}')">Change Password</button>
+						<button class="small red" onclick="deleteUser(${user.id}, '${user.name}')">Delete</button>
+					</td>
+				</tr>
+				`)}
+			</tbody>
+		</table>
+	</div>
+	<br>
+	<button class="small" onclick="addUser()">Add User</button>
+	`;
+    setSearchParams({
+        tab: 'user-management'
+    });
+};
+/*
+    6.3 Change User's Password
+*/
+const changePassword = async (userID, userName) => {
+    const suToken = await getSuToken();
+    const popupRes = await popup('Changing Password', `Enter a new password for user ${userName}`, [
+        {
+            name: 'Enter'
+        }
+    ], [
+        {
+            name: 'old-password',
+            placeholder: 'Enter the user\'s current password...',
+            type: 'password'
+        },
+        {
+            name: 'password',
+            placeholder: 'Enter a new password...',
+            type: 'password'
+        },
+        {
+            name: 'confirmed-password',
+            placeholder: 'Confirm the new password...',
+            type: 'password',
+            enterTriggersButton: 'Enter'
+        }
+    ]);
+    const oldPassword = popupRes.inputs.get('old-password');
+    const newPassword = popupRes.inputs.get('password');
+    const confirmedPassword = popupRes.inputs.get('confirmed-password');
+    if (newPassword == confirmedPassword) {
+        try {
+            await request('/admin-panel/workers/user-management/change-user-password.node.js', {
+                suToken, userID, oldPassword, newPassword
+            });
+        }
+        catch (err) {
+            handleRequestError(err);
+        }
+    }
+    else {
+        notification('Error', 'The passwords you entered did not match. Please try again.');
+    }
+};
+/*
+    6.4 Delete User
+*/
+const deleteUser = async (userID, userName) => {
+    const suToken = await getSuToken();
+    const popupRes = await popup('Deleting User', `Are you sure you want to delete user ${userName}?`, [
+        {
+            name: 'Delete User',
+            classes: ['red']
+        },
+        {
+            name: 'Cancel'
+        }
+    ]);
+    if (popupRes.buttonName == 'Delete User') {
+        try {
+            await request('/admin-panel/workers/user-management/delete-user.node.js', {
+                suToken, userID
+            });
+            showUserManagement();
+        }
+        catch (err) {
+            handleRequestError(err);
+        }
+    }
+};
+/*
+    6.5 Add User
+*/
+const addUser = async () => {
+    const suToken = await getSuToken();
+    const popupRes = await popup('Adding User', 'Please fill out the details of the new user.', [
+        {
+            name: 'Add User'
+        }
+    ], [
+        {
+            name: 'username',
+            type: 'text',
+            placeholder: 'Enter username...'
+        },
+        {
+            name: 'password',
+            type: 'password',
+            placeholder: 'Enter password...'
+        },
+        {
+            name: 'confirmed-password',
+            type: 'password',
+            placeholder: 'Confirm password...'
+        }
+    ]);
+    const username = popupRes.inputs.get('username');
+    const password = popupRes.inputs.get('password');
+    const confirmedPassword = popupRes.inputs.get('confirmed-password');
+    if (password == confirmedPassword) {
+        try {
+            await request('/admin-panel/workers/user-management/add-user.node.js', {
+                suToken, username, password
+            });
+            showUserManagement();
+        }
+        catch (err) {
+            handleRequestError(err);
+        }
+    }
+    else {
+        notification('Error', 'The passwords you entered did not match. Please try again.');
+    }
 };
