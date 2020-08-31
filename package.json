@@ -1,6 +1,6 @@
 {
   "name": "@iannisz/node-cms",
-  "version": "0.0.48",
+  "version": "0.0.51",
   "description": "Node CMS",
   "main": "index.js",
   "scripts": {
@@ -13,9 +13,9 @@
     "@types/bcrypt": "^3.0.0",
     "@types/js-cookie": "^2.2.6",
     "@types/jsonwebtoken": "^8.5.0",
-    "@types/node": "^14.0.27",
+    "@types/node": "^14.6.2",
     "@types/socket.io-client": "^1.4.33",
-    "apache-js-workers": "^0.0.13",
+    "apache-js-workers": "0.0.17",
     "bcrypt": "^5.0.0",
     "chalk": "^4.1.0",
     "jsonwebtoken": "^8.5.1",
