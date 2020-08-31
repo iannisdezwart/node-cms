@@ -26,7 +26,6 @@ authenticate_su_token_1.authenticateSuToken(suToken)
             apache_js_workers_1.res.send('Succesfully stored page!');
         })
             .catch(err => {
-            console.log(err);
             throw err;
         });
     }
@@ -34,7 +33,7 @@ authenticate_su_token_1.authenticateSuToken(suToken)
         // Send 500 error
         apache_js_workers_1.res.statusCode = 500;
         apache_js_workers_1.res.send('An internal server error occured while updating the page');
-        throw err;
+        apache_js_workers_1.log('e', err);
     }
 })
     .catch(() => {

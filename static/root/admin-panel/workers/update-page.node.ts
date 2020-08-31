@@ -1,4 +1,4 @@
-import { req, res } from 'apache-js-workers'
+import { req, res, log } from 'apache-js-workers'
 import { db } from 'node-json-database'
 import { authenticateSuToken } from './../../../private-workers/authenticate-su-token'
 import { compile }  from './../../../private-workers/compile'
@@ -36,7 +36,6 @@ authenticateSuToken(suToken)
 					res.send('Succesfully stored page!')
 				})
 				.catch(err => {
-					console.log(err)
 					throw err
 				})
 		} catch(err) {
@@ -45,7 +44,7 @@ authenticateSuToken(suToken)
 			res.statusCode = 500
 			res.send('An internal server error occured while updating the page')
 
-			throw err
+			log('e', err)
 		}
 	})
 	.catch(() => {
