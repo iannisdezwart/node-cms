@@ -13,6 +13,7 @@
     "@types/bcrypt": "^3.0.0",
     "@types/js-cookie": "^2.2.6",
     "@types/jsonwebtoken": "^8.5.0",
+    "@types/ncp": "^2.0.4",
     "@types/node": "^14.6.2",
     "@types/socket.io-client": "^1.4.33",
     "apache-js-workers": "0.0.17",
