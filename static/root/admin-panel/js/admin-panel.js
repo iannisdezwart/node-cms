@@ -471,30 +471,42 @@ const deletePage = async (id) => {
         'page-id': id
     });
 };
+/*
+
+    3.5 Page Template Input To HTML
+
+*/
 const pageTemplateInputToHTML = (inputType, inputName, inputContent) => {
-    if (inputType == 'text') {
-        // text
-        return /* html */ `
-		<textarea id="${inputName}" data-input="${inputName}">
-			${inputContent}
-		</textarea>
-		`;
-    }
-    else if (inputType == 'string') {
-        // string
-        return /* html */ `
-		<input id="${inputName}" data-input="${inputName}" type="text" value="${inputContent}" />
-		`;
-    }
-    else if (inputType == 'img[]') {
-        // img[]
-        const imgs = inputContent;
-        return /* html */ `
-		<div class="img-array" id="${inputName}" data-input="${inputName}">
-			${reduceArray(imgs, (img, i) => generateImgArrayImg(img, (i != 0), (i != imgs.length - 1)))}
-			<div class="img-array-plus" onclick="addImg('${inputName}')"></div>
-		</div>
-		`;
+    switch (inputType) {
+        case 'text': {
+            return /* html */ `
+			<textarea id="${inputName}" data-input="${inputName}">
+				${inputContent}
+			</textarea>
+			`;
+        }
+        case 'string': {
+            return /* html */ `
+			<input id="${inputName}" data-input="${inputName}" type="text" value="${inputContent}" />
+			`;
+        }
+        case 'img[]': {
+            const imgs = inputContent;
+            return /* html */ `
+			<div class="img-array" id="${inputName}" data-input="${inputName}">
+				${reduceArray(imgs, (img, i) => generateImgArrayImg(img, (i != 0), (i != imgs.length - 1)))}
+				<div class="img-array-plus" onclick="addImg('${inputName}')"></div>
+			</div>
+			`;
+        }
+        case 'img': {
+            const img = inputContent;
+            return /* html */ `
+			<div class="img-array">
+				${generateImgArrayImg(img, false, false)}
+			</div>
+			`;
+        }
     }
 };
 // 3.5.1 Generate .img-array-img Element
@@ -529,17 +541,24 @@ const collectInputs = (template) => {
         const inputKey = elements[i].getAttribute('data-input');
         const inputType = template[inputKey];
         let inputValue;
-        if (inputType == 'text') {
-            inputValue = tinyMCE.get(inputKey).getContent();
-        }
-        else if (inputType == 'string') {
-            inputValue = elements[i].value.trim();
-        }
-        else if (inputType == 'img[]') {
-            inputValue = [];
-            const imgs = elements[i].querySelectorAll('.img');
-            for (let j = 0; j < imgs.length; j++) {
-                inputValue[j] = imgs[j].getAttribute('data-path');
+        switch (inputType) {
+            case 'text': {
+                inputValue = tinyMCE.get(inputKey).getContent();
+            }
+            case 'string': {
+                inputValue = elements[i].value.trim();
+            }
+            case 'img[]': {
+                inputValue = [];
+                const imgs = elements[i].querySelectorAll('.img');
+                for (let j = 0; j < imgs.length; j++) {
+                    inputValue[j] = imgs[j].getAttribute('data-path');
+                }
+            }
+            case 'img': {
+                inputValue = elements[i]
+                    .querySelector('.img')
+                    .getAttribute('data-path');
             }
         }
         pageContent[inputKey] = inputValue;
