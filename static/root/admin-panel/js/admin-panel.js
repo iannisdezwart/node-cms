@@ -541,25 +541,23 @@ const collectInputs = (template) => {
         const inputKey = elements[i].getAttribute('data-input');
         const inputType = template[inputKey];
         let inputValue;
-        switch (inputType) {
-            case 'text': {
-                inputValue = tinyMCE.get(inputKey).getContent();
+        if (inputType == 'text') {
+            inputValue = tinyMCE.get(inputKey).getContent();
+        }
+        else if (inputType == 'string') {
+            inputValue = elements[i].value.trim();
+        }
+        else if (inputType == 'img[]') {
+            inputValue = [];
+            const imgs = elements[i].querySelectorAll('.img');
+            for (let j = 0; j < imgs.length; j++) {
+                inputValue[j] = imgs[j].getAttribute('data-path');
             }
-            case 'string': {
-                inputValue = elements[i].value.trim();
-            }
-            case 'img[]': {
-                inputValue = [];
-                const imgs = elements[i].querySelectorAll('.img');
-                for (let j = 0; j < imgs.length; j++) {
-                    inputValue[j] = imgs[j].getAttribute('data-path');
-                }
-            }
-            case 'img': {
-                inputValue = elements[i]
-                    .querySelector('.img')
-                    .getAttribute('data-path');
-            }
+        }
+        else if (inputType == 'img') {
+            inputValue = elements[i]
+                .querySelector('.img')
+                .getAttribute('data-path');
         }
         pageContent[inputKey] = inputValue;
     }
