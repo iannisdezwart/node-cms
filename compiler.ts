@@ -1,9 +1,9 @@
 import * as fs from 'fs'
 import * as chalk from 'chalk'
-import { db } from 'node-json-database'
+import { db, Table } from 'node-json-database'
 import { spawn } from 'child_process'
 
-type PageCompiler = (pageContent: Object, pages: Object) => {
+type PageCompiler = (pageContent: Object, pages: Table) => {
 	html: string
 	path: string
 }
@@ -14,7 +14,7 @@ interface ObjectOf<T> {
 
 export const compile = async (pageCompilers: ObjectOf<PageCompiler>) => {
 	// Store start time
-	
+
 	const start = Date.now()
 
 	// Write the ./root directory if it does not exist
@@ -24,7 +24,7 @@ export const compile = async (pageCompilers: ObjectOf<PageCompiler>) => {
 	}
 
 	// Create database if it does not exist
-	
+
 	const pagesDB = db('pages.json')
 
 	if (!pagesDB.exists) {
@@ -38,7 +38,7 @@ export const compile = async (pageCompilers: ObjectOf<PageCompiler>) => {
 	}
 
 	// Get tables
-	
+
 	const pageTypesTable = pagesDB.table('pageTypes').get()
 	const pagesTable = pagesDB.table('pages').get()
 
@@ -46,9 +46,9 @@ export const compile = async (pageCompilers: ObjectOf<PageCompiler>) => {
 
 	const compilePage = (page: ReturnType<PageCompiler>) => {
 		// Create directory, if needed
-	
+
 		const directory = getDirectory('./root' + page.path)
-	
+
 		if (!fs.existsSync(directory)) {
 			fs.mkdirSync(directory)
 			console.log(`${ chalk.green('✔') } Created directory: ${ chalk.yellow(directory) }`)
@@ -59,7 +59,7 @@ export const compile = async (pageCompilers: ObjectOf<PageCompiler>) => {
 		fs.writeFileSync('./root' + page.path, page.html)
 		console.log(`${ chalk.green('✔') } Wrote file: ${ chalk.yellow('./root' + page.path) }`)
 	}
-	
+
 	for (let pageType of pageTypesTable.rows) {
 		const pageCompiler = pageCompilers[pageType.name]
 
