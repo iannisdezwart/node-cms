@@ -40,17 +40,15 @@ exports.compile = async (pageCompilers) => {
     };
     for (let pageType of pageTypesTable.rows) {
         const pageCompiler = pageCompilers[pageType.name];
-        if (!pageType.canAdd || pageType.compileSubPages) {
-            // Compile all subpages
-            const pages = pagesTable.where(row => row.pageType == pageType.name).rows;
-            for (let i = 0; i < pages.length; i++) {
-                const page = pageCompiler(pages[i].pageContent, pagesTable);
-                compilePage(page);
-            }
+        const pages = pagesTable.where(row => row.pageType == pageType.name);
+        if (pageType.compilePageType) {
+            // Compile page type individually
+            const page = pageCompiler(null, pages);
+            compilePage(page);
         }
-        else {
-            // Compile as one page
-            const page = pageCompiler({}, pagesTable);
+        // Compile all subpages
+        for (let i = 0; i < pages.rows.length; i++) {
+            const page = pageCompiler(pages.rows[i].pageContent, pages);
             compilePage(page);
         }
     }

@@ -62,20 +62,19 @@ export const compile = async (pageCompilers: ObjectOf<PageCompiler>) => {
 
 	for (let pageType of pageTypesTable.rows) {
 		const pageCompiler = pageCompilers[pageType.name]
+		const pages = pagesTable.where(row => row.pageType == pageType.name)
 
-		if (!pageType.canAdd || pageType.compileSubPages) {
-			// Compile all subpages
+		if (pageType.compilePageType) {
+			// Compile page type individually
 
-			const pages = pagesTable.where(row => row.pageType == pageType.name).rows
+			const page = pageCompiler(null, pages)
+			compilePage(page)
+		}
 
-			for (let i = 0; i < pages.length; i++) {
-				const page = pageCompiler(pages[i].pageContent, pagesTable)
-				compilePage(page)
-			}
-		} else {
-			// Compile as one page
+		// Compile all subpages
 
-			const page = pageCompiler({}, pagesTable)
+		for (let i = 0; i < pages.rows.length; i++) {
+			const page = pageCompiler(pages.rows[i].pageContent, pages)
 			compilePage(page)
 		}
 	}

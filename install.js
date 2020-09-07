@@ -203,7 +203,7 @@ if (!pagesDB.table('pageTypes').exists) {
             ]
         },
         {
-            name: 'compileSubPages',
+            name: 'compilePageType',
             dataType: 'Boolean',
             constraints: [
                 'notNull'
