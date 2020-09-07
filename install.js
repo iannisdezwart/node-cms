@@ -201,7 +201,14 @@ if (!pagesDB.table('pageTypes').exists) {
             constraints: [
                 'notNull'
             ]
-        }
+        },
+        {
+            name: 'compileSubPages',
+            dataType: 'Boolean',
+            constraints: [
+                'notNull'
+            ]
+        },
     ]);
 }
 // Create pages table if it does not exist

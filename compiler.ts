@@ -12,12 +12,12 @@ interface ObjectOf<T> {
 	[key: string]: T
 }
 
-export const compile = async (compilePage: ObjectOf<PageCompiler>) => {
+export const compile = async (pageCompilers: ObjectOf<PageCompiler>) => {
 	// Store start time
 	
 	const start = Date.now()
 
-// Write the ./root directory if it does not exist
+	// Write the ./root directory if it does not exist
 
 	if (!fs.existsSync('root')) {
 		fs.mkdirSync('root')
@@ -43,27 +43,40 @@ export const compile = async (compilePage: ObjectOf<PageCompiler>) => {
 	const pagesTable = pagesDB.table('pages').get()
 
 	// Compile all pages
+
+	const compilePage = (page: ReturnType<PageCompiler>) => {
+		// Create directory, if needed
+	
+		const directory = getDirectory('./root' + page.path)
+	
+		if (!fs.existsSync(directory)) {
+			fs.mkdirSync(directory)
+			console.log(`${ chalk.green('✔') } Created directory: ${ chalk.yellow(directory) }`)
+		}
+
+		// Write the file
+
+		fs.writeFileSync('./root' + page.path, page.html)
+		console.log(`${ chalk.green('✔') } Wrote file: ${ chalk.yellow('./root' + page.path) }`)
+	}
 	
 	for (let pageType of pageTypesTable.rows) {
-		const pages = pagesTable.where(row => row.pageType == pageType.name).rows
+		const pageCompiler = pageCompilers[pageType.name]
 
-		for (let i = 0; i < pages.length; i++) {
-			const pageCompiler = compilePage[pageType.name]
-			const page = pageCompiler(pages[i].pageContent, pagesTable)
+		if (!pageType.canAdd || pageType.compileSubPages) {
+			// Compile all subpages
 
-			// Create directory, if needed
+			const pages = pagesTable.where(row => row.pageType == pageType.name).rows
 
-			const directory = getDirectory('./root' + page.path)
-
-			if (!fs.existsSync(directory)) {
-				fs.mkdirSync(directory)
-				console.log(`${ chalk.green('✔') } Created directory: ${ chalk.yellow(directory) }`)
+			for (let i = 0; i < pages.length; i++) {
+				const page = pageCompiler(pages[i].pageContent, pagesTable)
+				compilePage(page)
 			}
+		} else {
+			// Compile as one page
 
-			// Write the file
-
-			fs.writeFileSync('./root' + page.path, page.html)
-			console.log(`${ chalk.green('✔') } Wrote file: ${ chalk.yellow('./root' + page.path) }`)
+			const page = pageCompiler({}, pagesTable)
+			compilePage(page)
 		}
 	}
 
