@@ -4,15 +4,7 @@ const apache_js_workers_1 = require("apache-js-workers");
 const path_1 = require("path");
 const fs = require("fs");
 const authenticate_su_token_1 = require("./../../../private-workers/authenticate-su-token");
-// Dot-dot-slash attack prevention
-const dotDotSlashAttack = (path) => {
-    const resolvedPath = path_1.resolve(path);
-    const rootPath = path_1.resolve(__dirname + '/../../content');
-    if (!resolvedPath.startsWith(rootPath)) {
-        return true;
-    }
-    return false;
-};
+const security_1 = require("./../../../private-workers/security");
 // Get the suToken from the request
 const suToken = apache_js_workers_1.req.body.suToken;
 // Verify the suToken
@@ -21,7 +13,7 @@ authenticate_su_token_1.authenticateSuToken(suToken)
     // Authenticated
     const reqPath = apache_js_workers_1.req.body.path;
     const path = path_1.resolve(__dirname + '/../../content' + reqPath);
-    if (dotDotSlashAttack(path)) {
+    if (!security_1.filePathIsSafe(path, __dirname + '/../../')) {
         // Send 403 error
         apache_js_workers_1.res.statusCode = 403;
         apache_js_workers_1.res.send('Forbidden');

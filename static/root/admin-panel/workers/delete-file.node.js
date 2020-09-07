@@ -4,15 +4,7 @@ const apache_js_workers_1 = require("apache-js-workers");
 const path_1 = require("path");
 const fs = require("fs");
 const authenticate_su_token_1 = require("./../../../private-workers/authenticate-su-token");
-// Dot-dot-slash attack prevention
-const dotDotSlashAttack = (path) => {
-    const resolvedPath = path_1.resolve(path);
-    const rootPath = path_1.resolve(__dirname + '/../../content');
-    if (!resolvedPath.startsWith(rootPath)) {
-        return true;
-    }
-    return false;
-};
+const security_1 = require("./../../../private-workers/security");
 // Recursive rimraf
 const rimraf = (parentPath) => {
     if (fs.existsSync(parentPath)) {
@@ -38,7 +30,7 @@ authenticate_su_token_1.authenticateSuToken(suToken)
     // Authenticated, try to delete the file
     try {
         const filePath = path_1.resolve(`${__dirname}/../../content${apache_js_workers_1.req.body.filePath}`);
-        if (dotDotSlashAttack(filePath)) {
+        if (!security_1.filePathIsSafe(filePath, __dirname + '/../../')) {
             // Send 403 error
             apache_js_workers_1.res.statusCode = 403;
             apache_js_workers_1.res.send('Forbidden');

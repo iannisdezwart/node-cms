@@ -5,15 +5,7 @@ const path_1 = require("path");
 const fs = require("fs");
 const authenticate_su_token_1 = require("./../../../private-workers/authenticate-su-token");
 const qcd = require("queued-copy-dir");
-// Dot-dot-slash attack prevention
-const dotDotSlashAttack = (path) => {
-    const resolvedPath = path_1.resolve(path);
-    const rootPath = path_1.resolve(__dirname + '/../../content');
-    if (!resolvedPath.startsWith(rootPath)) {
-        return true;
-    }
-    return false;
-};
+const security_1 = require("./../../../private-workers/security");
 // Get the suToken from the request
 const suToken = apache_js_workers_1.req.body.suToken;
 // Authenticate
@@ -30,14 +22,14 @@ authenticate_su_token_1.authenticateSuToken(suToken)
         const sourcePath = path_1.resolve(__dirname + '/../../content' + source);
         const destinationPath = path_1.resolve(__dirname + '/../../content' + destination);
         // Security
-        if (dotDotSlashAttack(sourcePath)) {
+        if (!security_1.filePathIsSafe(sourcePath, __dirname + '/../../')) {
             // Send 403 error
             apache_js_workers_1.res.statusCode = 403;
             apache_js_workers_1.res.send('Forbidden');
             console.warn(`POSSIBLE DOT-DOT-SLASH ATTACK! user tried to copy this file: ${sourcePath}`);
             return;
         }
-        if (dotDotSlashAttack(destinationPath)) {
+        if (!security_1.filePathIsSafe(destinationPath, __dirname + '/../../')) {
             // Send 403 error
             apache_js_workers_1.res.statusCode = 403;
             apache_js_workers_1.res.send('Forbidden');

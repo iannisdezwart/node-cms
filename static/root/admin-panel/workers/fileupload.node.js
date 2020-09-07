@@ -4,15 +4,7 @@ const apache_js_workers_1 = require("apache-js-workers");
 const path_1 = require("path");
 const fs = require("fs");
 const authenticate_su_token_1 = require("./../../../private-workers/authenticate-su-token");
-// Dot-dot-slash attack prevention
-const dotDotSlashAttack = (path) => {
-    const resolvedPath = path_1.resolve(path);
-    const rootPath = path_1.resolve(__dirname + '/../../content');
-    if (!resolvedPath.startsWith(rootPath)) {
-        return true;
-    }
-    return false;
-};
+const security_1 = require("./../../../private-workers/security");
 // Get the suToken from the request
 const suToken = apache_js_workers_1.req.body.suToken;
 // Authenticate
@@ -36,7 +28,7 @@ authenticate_su_token_1.authenticateSuToken(suToken)
                 if (fs.existsSync(filePath)) {
                     continue;
                 }
-                if (dotDotSlashAttack(filePath)) {
+                if (!security_1.filePathIsSafe(filePath, __dirname + '/../../')) {
                     // Send 403 error
                     apache_js_workers_1.res.statusCode = 403;
                     apache_js_workers_1.res.send('Forbidden');
@@ -53,7 +45,6 @@ authenticate_su_token_1.authenticateSuToken(suToken)
         // Send 500 error if anything goes wrong and throw the error
         apache_js_workers_1.res.statusCode = 500;
         apache_js_workers_1.res.send('An internal server error occured while uploading the files');
-        throw err;
     }
 })
     .catch(() => {

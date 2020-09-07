@@ -3,19 +3,7 @@ import { resolve as resolvePath } from 'path'
 import * as fs from 'fs'
 import { authenticateSuToken } from './../../../private-workers/authenticate-su-token'
 import * as qcd from 'queued-copy-dir'
-
-// Dot-dot-slash attack prevention
-
-const dotDotSlashAttack = (path: string) => {
-	const resolvedPath = resolvePath(path)
-	const rootPath = resolvePath(__dirname + '/../../content')
-
-	if (!resolvedPath.startsWith(rootPath)) {
-		return true
-	}
-
-	return false
-}
+import { filePathIsSafe } from './../../../private-workers/security'
 
 // Recursive rimraf
 
@@ -63,7 +51,7 @@ authenticateSuToken(suToken)
 
 			// Security
 
-			if (dotDotSlashAttack(sourcePath)) {
+			if (!filePathIsSafe(sourcePath, __dirname + '/../../')) {
 				// Send 403 error
 
 				res.statusCode = 403
@@ -74,7 +62,7 @@ authenticateSuToken(suToken)
 				return
 			}
 
-			if (dotDotSlashAttack(destinationPath)) {
+			if (!filePathIsSafe(destinationPath, __dirname + '/../../')) {
 				// Send 403 error
 
 				res.statusCode = 403

@@ -5,15 +5,7 @@ const path_1 = require("path");
 const fs = require("fs");
 const authenticate_su_token_1 = require("./../../../private-workers/authenticate-su-token");
 const ncp = require("ncp");
-// Dot-dot-slash attack prevention
-const dotDotSlashAttack = (path) => {
-    const resolvedPath = path_1.resolve(path);
-    const rootPath = path_1.resolve(__dirname + '/../../content');
-    if (!resolvedPath.startsWith(rootPath)) {
-        return true;
-    }
-    return false;
-};
+const security_1 = require("./../../../private-workers/security");
 // Get the suToken from the request
 const suToken = apache_js_workers_1.req.body.suToken;
 // Authenticate
@@ -28,7 +20,7 @@ authenticate_su_token_1.authenticateSuToken(suToken)
         }
         // Parse destination path
         const destinationDirPath = path_1.resolve(__dirname + '/../../content' + destination);
-        if (dotDotSlashAttack(destinationDirPath)) {
+        if (!security_1.filePathIsSafe(destinationDirPath, __dirname + '/../../')) {
             // Send 403 error
             apache_js_workers_1.res.statusCode = 403;
             apache_js_workers_1.res.send('Forbidden');
@@ -41,14 +33,14 @@ authenticate_su_token_1.authenticateSuToken(suToken)
             const sourcePath = path_1.resolve(__dirname + '/../../content' + source);
             const sourceFileName = source.substring(source.lastIndexOf('/') + 1);
             const destinationFilePath = path_1.resolve(destinationDirPath + '/' + sourceFileName);
-            if (dotDotSlashAttack(sourcePath)) {
+            if (!security_1.filePathIsSafe(sourcePath, __dirname + '/../../')) {
                 // Send 403 error
                 apache_js_workers_1.res.statusCode = 403;
                 apache_js_workers_1.res.send('Forbidden');
                 console.warn(`POSSIBLE DOT-DOT-SLASH ATTACK! user tried to copy this file: ${sourcePath}`);
                 return;
             }
-            if (dotDotSlashAttack(destinationFilePath)) {
+            if (!security_1.filePathIsSafe(destinationFilePath, __dirname + '/../../')) {
                 // Send 403 error
                 apache_js_workers_1.res.statusCode = 403;
                 apache_js_workers_1.res.send('Forbidden');

@@ -3,19 +3,7 @@ import { resolve as resolvePath } from 'path'
 import * as fs from 'fs'
 import { authenticateSuToken } from './../../../private-workers/authenticate-su-token'
 import * as ncp from 'ncp'
-
-// Dot-dot-slash attack prevention
-
-const dotDotSlashAttack = (path: string) => {
-	const resolvedPath = resolvePath(path)
-	const rootPath = resolvePath(__dirname + '/../../content')
-
-	if (!resolvedPath.startsWith(rootPath)) {
-		return true
-	}
-
-	return false
-}
+import { filePathIsSafe } from './../../../private-workers/security'
 
 // Recursive rimraf
 
@@ -60,7 +48,7 @@ authenticateSuToken(suToken)
 
 			const destinationDirPath = resolvePath(__dirname + '/../../content' + destination)
 
-			if (dotDotSlashAttack(destinationDirPath)) {
+			if (!filePathIsSafe(destinationDirPath, __dirname + '/../../')) {
 				// Send 403 error
 		
 				res.statusCode = 403
@@ -80,7 +68,7 @@ authenticateSuToken(suToken)
 				const sourceFileName = source.substring(source.lastIndexOf('/') + 1)
 				const destinationFilePath = resolvePath(destinationDirPath + '/' + sourceFileName)
 
-				if (dotDotSlashAttack(sourcePath)) {
+				if (!filePathIsSafe(sourcePath, __dirname + '/../../')) {
 					// Send 403 error
 
 					res.statusCode = 403
@@ -91,7 +79,7 @@ authenticateSuToken(suToken)
 					return
 				}
 
-				if (dotDotSlashAttack(destinationFilePath)) {
+				if (!filePathIsSafe(destinationFilePath, __dirname + '/../../')) {
 					// Send 403 error
 
 					res.statusCode = 403

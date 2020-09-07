@@ -2,6 +2,7 @@ import { req, res } from 'apache-js-workers'
 import { resolve as resolvePath } from 'path'
 import * as fs from 'fs'
 import { authenticateSuToken } from './../../../private-workers/authenticate-su-token'
+import { filePathIsSafe } from './../../../private-workers/security'
 
 interface FileInfo {
 	name: string
@@ -10,19 +11,6 @@ interface FileInfo {
 	filesInside: number
 	size: number
 	modified: Date
-}
-
-// Dot-dot-slash attack prevention
-
-const dotDotSlashAttack = (path: string) => {
-	const resolvedPath = resolvePath(path)
-	const rootPath = resolvePath(__dirname + '/../../content')
-
-	if (!resolvedPath.startsWith(rootPath)) {
-		return true
-	}
-
-	return false
 }
 
 // Get the suToken from the request
@@ -38,7 +26,7 @@ authenticateSuToken(suToken)
 		const reqPath = req.body.path as string
 		const path = resolvePath(__dirname + '/../../content' + reqPath)
 
-		if (dotDotSlashAttack(path)) {
+		if (!filePathIsSafe(path, __dirname + '/../../')) {
 			// Send 403 error
 
 			res.statusCode = 403
