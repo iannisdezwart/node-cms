@@ -171,7 +171,7 @@ if (!adminsTable.exists) {
     ]);
 }
 /*
-    3.1 Create Pages Database
+    3.2 Create Pages Database
 */
 const pagesDB = node_json_database_1.db('pages.json');
 if (!pagesDB.exists) {

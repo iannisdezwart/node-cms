@@ -225,7 +225,7 @@ if (!adminsTable.exists) {
 }
 
 /*
-	3.1 Create Pages Database
+	3.2 Create Pages Database
 */
 
 const pagesDB = db('pages.json')
