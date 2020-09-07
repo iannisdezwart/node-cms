@@ -502,7 +502,7 @@ const pageTemplateInputToHTML = (inputType, inputName, inputContent) => {
         case 'img': {
             const img = inputContent;
             return /* html */ `
-			<div class="img-array">
+			<div class="img-array" id="${inputName}" data-input="${inputName}">
 				${generateImgArrayImg(img, false, false)}
 			</div>
 			`;
