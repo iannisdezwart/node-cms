@@ -511,7 +511,7 @@ const pageTemplateInputToHTML = (inputType, inputName, inputContent) => {
         case 'video': {
             const videoPath = inputContent;
             return /* html */ `
-			<video src="${videoPath}" data-path=${videoPath} height="200"></video>
+			<video src="${videoPath}" data-input="${inputName}" data-path=${videoPath} height="200" autoplay muted controls></video>
 			<button class="small" onclick="editVideoPath(this)">Edit</button>
 			`;
         }
