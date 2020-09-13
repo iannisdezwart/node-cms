@@ -145,7 +145,7 @@ interface PageTemplate {
 	[key: string]: ContentType
 }
 
-type ContentType = 'string' | 'text' | 'img[]' | 'img'
+type ContentType = 'string' | 'text' | 'img[]' | 'img' | 'date'
 
 interface Page {
 	id: number
@@ -681,6 +681,15 @@ const pageTemplateInputToHTML = (
 			</div>
 			`
 		}
+
+		case 'date': {
+			const date = new Date(inputContent)
+			const dateString = `${ date.getFullYear() }-${ date.getMonth() + 1 }-${ date.getDate() }`
+
+			return /* html */ `
+			<input id="${ inputName }" data-input="${ inputName }" type="date" value="${ dateString }">
+			`
+		}
 	}
 }
 
@@ -740,8 +749,10 @@ const collectInputs = (template: PageTemplate) => {
 			}
 		} else if (inputType == 'img') {
 			inputValue = elements[i]
-			.querySelector<HTMLImageElement>('.img')
-			.getAttribute('data-path')
+				.querySelector<HTMLImageElement>('.img')
+				.getAttribute('data-path')
+		} else if (inputType == 'date') {
+			inputValue = new Date(elements[i].value).getTime()
 		}
 
 		pageContent[inputKey] = inputValue

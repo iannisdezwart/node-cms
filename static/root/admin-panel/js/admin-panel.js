@@ -507,6 +507,13 @@ const pageTemplateInputToHTML = (inputType, inputName, inputContent) => {
 			</div>
 			`;
         }
+        case 'date': {
+            const date = new Date(inputContent);
+            const dateString = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+            return /* html */ `
+			<input id="${inputName}" data-input="${inputName}" type="date" value="${dateString}">
+			`;
+        }
     }
 };
 // 3.5.1 Generate .img-array-img Element
@@ -558,6 +565,9 @@ const collectInputs = (template) => {
             inputValue = elements[i]
                 .querySelector('.img')
                 .getAttribute('data-path');
+        }
+        else if (inputType == 'date') {
+            inputValue = new Date(elements[i].value).getTime();
         }
         pageContent[inputKey] = inputValue;
     }
