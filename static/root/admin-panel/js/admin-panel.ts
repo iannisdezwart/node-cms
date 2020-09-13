@@ -481,10 +481,12 @@ const editPage = async (id: number) => {
 	await fetchPages()
 
 	const page = pagesDB.pages.find(el => el.id == id)
-	const { template } = pagesDB.pageTypes.find(el => el.name == page.pageType)
+	const { template, canAdd } = pagesDB.pageTypes.find(el => el.name == page.pageType)
+
+	const pageTitle = canAdd ? page.pageContent.title : page.pageType
 
 	$('.main').innerHTML = /* html */ `
-	<h1>Editing page "${ page.pageContent.title }"</h1>
+	<h1>Editing page "${ pageTitle }"</h1>
 
 	${ reduceObject(template, input => /* html */ `
 	<br/><br/>
