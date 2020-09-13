@@ -23,6 +23,7 @@
 		3.4 Delete Page
 		3.5 Page Template Input To HTML
 			3.5.1 Generate .img-array-img Element
+			3.5.2 Edit Video Path
 		3.6 Collect Page Template Inputs
 		3.7 img[] Functions
 			3.7.1 Move Image
@@ -145,7 +146,7 @@ interface PageTemplate {
 	[key: string]: ContentType
 }
 
-type ContentType = 'string' | 'text' | 'img[]' | 'img' | 'date'
+type ContentType = 'string' | 'text' | 'img[]' | 'img' | 'video' | 'date'
 
 interface Page {
 	id: number
@@ -216,9 +217,9 @@ const goBackInHistory = () => {
 
 	if (pageHistory.size > 0) {
 		const prevUrl = pageHistory.pop()
-	
+
 		// Set the URL of the page without reloading it
-	
+
 		window.history.pushState({ path: prevUrl }, '', prevUrl)
 		goToTheRightPage()
 	}
@@ -250,7 +251,7 @@ const goToTheRightPage = () => {
 		}
 	} else if (tab == 'add-page') {
 		const pageType = searchParams.get('page-type')
-		
+
 		if (pageType == null) {
 			showPages()
 		} else {
@@ -295,7 +296,7 @@ const goToHomepage = () => {
 	setSearchParams({})
 
 	$('.main').innerHTML = /* html */ `
-		
+
 	`
 }
 
@@ -317,11 +318,11 @@ const reduceObject = (
 	f: (currentKey: string) => string
 ) => {
 	let output = ''
-	
+
 	for (let i in obj) {
 		if (obj.hasOwnProperty(i)) {
 			output += f(i)
-		}		
+		}
 	}
 
 	return output
@@ -460,7 +461,7 @@ const showPages = () => {
 
 				showPages()
 			}
-			
+
 			setSearchParams({
 				tab: 'pages'
 			})
@@ -524,7 +525,7 @@ const editPage = async (id: number) => {
 		savePage(pageContent, page.id)
 			.then(() => {
 				notification('Saved page', `Successfully saved page "${ page.pageContent.title }"!`)
-					
+
 				if (!keepEditing) {
 					showPages()
 				}
@@ -549,9 +550,9 @@ const addPage = async (pageType: string) => {
 	showLoader()
 
 	await fetchPages()
-	
+
 	const { template } = pagesDB.pageTypes.find(el => el.name == pageType)
-	
+
 	$('.main').innerHTML = /* html */ `
 	<h1>Creating new page of type "${ pageType }"</h1>
 
@@ -682,6 +683,15 @@ const pageTemplateInputToHTML = (
 			`
 		}
 
+		case 'video': {
+			const videoPath = inputContent as string
+
+			return /* html */ `
+			<video src="${ videoPath }" data-path=${ videoPath } height="200"></video>
+			<button class="small" onclick="editVideoPath(this)">Edit</button>
+			`
+		}
+
 		case 'date': {
 			const date = new Date(inputContent)
 			const dateString = `${ date.getFullYear() }-${ date.getMonth() + 1 }-${ date.getDate() }`
@@ -717,6 +727,32 @@ const generateImgArrayImg = (
 </div>
 `
 
+// 3.5.2 Edit Video Path
+
+const editVideoPath = async (
+	buttonEl: HTMLButtonElement
+) => {
+	// Select a new video
+
+	const newVideoPath = await filePicker({
+		type: 'file',
+		title: 'Edit video',
+		body: 'Select a new video',
+		buttonText: 'Select',
+		extensions: videoExtensions
+	}, false)
+		.catch(() => {
+			throw new Error(`User cancelled`)
+		})
+
+	// Update the old video
+
+	const videoEl = buttonEl.parentElement.querySelector<HTMLVideoElement>('video')
+
+	videoEl.setAttribute('data-path', `/content${ newVideoPath }`)
+	videoEl.src = `/content${ newVideoPath }`
+}
+
 /*
 
 	3.6 Collect Page Template Inputs
@@ -751,6 +787,8 @@ const collectInputs = (template: PageTemplate) => {
 			inputValue = elements[i]
 				.querySelector<HTMLImageElement>('.img')
 				.getAttribute('data-path')
+		} else if (inputType == 'video') {
+			inputValue = elements[i].getAttribute('data-path')
 		} else if (inputType == 'date') {
 			inputValue = new Date(elements[i].value).getTime()
 		}
@@ -906,26 +944,26 @@ const uploadFiles = (
 	getSuToken()
 		.then(suToken => {
 			const files: File[] = []
-		
+
 			const body = {
 				suToken,
 				path
 			}
-		
+
 			for (let i = 0; i < fileList.length; i++) {
 				const file = fileList[i]
-		
+
 				// Add each file to the files array
-		
+
 				files.push(file)
 			}
 
 			// Create progressbar
 
 			const progressBar = new ProgressBar()
-		
+
 			// Send the request
-		
+
 			request('/admin-panel/workers/fileupload.node.js', body, files, {
 				onRequestUploadProgress: e => progressBar.set(e.loaded / e.total)
 			})
@@ -1093,22 +1131,22 @@ const filePicker: FilePickerOverload = (
 				}
 
 				// Create file-list UL
-	
+
 				const fileListEl = document.createElement('ul')
 
 				fileListEl.classList.add('file-list')
-				
+
 				// Add each file to the file-list UL
-	
+
 				for (let file of files) {
 					const { name } = file
-	
+
 					const extension = (file.isDirectory)
 						? 'dir'
 						: name.slice(name.lastIndexOf('.') + 1)
-					
+
 					// Create the child LI
-	
+
 					fileListEl.innerHTML += /* html */ `
 					<li class="file-list-item" onclick="selectLI(this)" onmouseover="hoverLI(this)" onmouseleave="hoverLI(this, false)" data-path="${
 						(file.isDirectory) ? path + file.name + '/' : path + file.name
@@ -1140,7 +1178,7 @@ const filePicker: FilePickerOverload = (
 						})
 
 						dispatchEvent(hoverChangeEvent)
-						
+
 						addEventListener('hoverchange', (
 							e: CustomEventInit<{ target: HTMLLIElement }>
 						) => {
@@ -1211,7 +1249,7 @@ const filePicker: FilePickerOverload = (
 							// Traverse backwards
 
 							currentLi = currentLi.parentElement.parentElement
-							
+
 							// Break if we reached the root
 
 							if (!currentLi.classList.contains('file-list-item')) {
@@ -1236,11 +1274,11 @@ const filePicker: FilePickerOverload = (
 									// Increment files inside
 
 									currentLi.style.setProperty('--files-inside', (filesInside + childElementCount).toString())
-									
+
 									// Traverse backwards
 
 									currentLi = currentLi.parentElement.parentElement
-																
+
 									// Break if we reached the root
 
 									if (!currentLi.classList.contains('file-list-item')) {
@@ -1500,7 +1538,7 @@ const showFiles = (path = '/') => {
 											document.addEventListener('click', handler)
 										}, 0)
 									}
-									
+
 									let bulkFileActionsShown = false
 
 									const showBulkFileActions = () => {
@@ -1924,7 +1962,7 @@ const createNewDirectory = async (parentDirectoryPath: string) => {
 			}
 		]
 	)
-	
+
 	const newDirName = popupRes.inputs.get('new-dir-name')
 	const newDirectoryPath = parentDirectoryPath + newDirName
 
@@ -2212,7 +2250,7 @@ const showTable = async (
 		'db-name': dbName,
 		'table-name': tableName
 	})
-	
+
 	currentTable = await getTable(dbName, tableName)
 	currentDbName = dbName
 	currentTableName = tableName
@@ -2687,9 +2725,9 @@ const toggleOrderTable = async (
 	}
 
 	/*
-	
+
 		Actual ordering
-	
+
 	*/
 
 	if (direction == 'unset') {
@@ -2720,24 +2758,24 @@ const orderCurrentTable = async () => {
 const setOrderArrowsOfTable = () => {
 	for (let [ colName, ordering ] of currentOrderBy) {
 		// Get element
-	
+
 		const orderArrow = $<HTMLImageElement>(`[data-col-name="${ colName }"] img.order-direction`)
 
 		// Set new direction
 
 		const direction = (ordering == 'ASC') ? 'down' : 'up'
-	
+
 		orderArrow.setAttribute('data-direction', direction)
 		orderArrow.title = captitalise(direction)
-	
+
 		// Set right image and style
-	
+
 		if (direction == 'up') {
 			orderArrow.src = '/admin-panel/img/arrow-up.png'
 		} else {
 			orderArrow.src = '/admin-panel/img/arrow-down.png'
 		}
-	
+
 		orderArrow.classList.remove('hidden')
 	}
 }
@@ -2881,7 +2919,7 @@ const setCustomFilters = async () => {
 		</div>
 
 		<input class="value dark" type="text" style="width: 150px" placeholder="Value">
-		
+
 		${ (button == 'clear') ? /* html */ `
 		<button class="red" onclick="clearFilter(this)">Clear filter</button>
 		` : /* html */ `
@@ -2995,7 +3033,7 @@ const setCustomFilters = async () => {
 			const input = inputs[i]
 
 			// Get and parse input values
-			
+
 			const colName = input.$<HTMLInputElement>('.column input').value
 
 			// Skip if colName is empty
@@ -3003,9 +3041,9 @@ const setCustomFilters = async () => {
 			if (colName == '') {
 				continue
 			}
-			
+
 			const operator = input.$<HTMLInputElement>('.operator input').value
-			
+
 			const value = parseFilterInputValue(
 				input.$<HTMLInputElement>('input.value').value,
 				colName

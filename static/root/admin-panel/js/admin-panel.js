@@ -23,6 +23,7 @@
         3.4 Delete Page
         3.5 Page Template Input To HTML
             3.5.1 Generate .img-array-img Element
+            3.5.2 Edit Video Path
         3.6 Collect Page Template Inputs
         3.7 img[] Functions
             3.7.1 Move Image
@@ -224,7 +225,7 @@ const goToHomepage = () => {
     // Todo: make homepage
     setSearchParams({});
     $('.main').innerHTML = /* html */ `
-		
+
 	`;
 };
 const reduceArray = (arr, f) => {
@@ -507,6 +508,13 @@ const pageTemplateInputToHTML = (inputType, inputName, inputContent) => {
 			</div>
 			`;
         }
+        case 'video': {
+            const videoPath = inputContent;
+            return /* html */ `
+			<video src="${videoPath}" data-path=${videoPath} height="200"></video>
+			<button class="small" onclick="editVideoPath(this)">Edit</button>
+			`;
+        }
         case 'date': {
             const date = new Date(inputContent);
             const dateString = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
@@ -534,6 +542,24 @@ const generateImgArrayImg = (imgSrc, hasLeftArrow, hasRightArrow) => /* html */ 
 	<img class="img" data-path="${imgSrc}" src="${imgSrc}">
 </div>
 `;
+// 3.5.2 Edit Video Path
+const editVideoPath = async (buttonEl) => {
+    // Select a new video
+    const newVideoPath = await filePicker({
+        type: 'file',
+        title: 'Edit video',
+        body: 'Select a new video',
+        buttonText: 'Select',
+        extensions: videoExtensions
+    }, false)
+        .catch(() => {
+        throw new Error(`User cancelled`);
+    });
+    // Update the old video
+    const videoEl = buttonEl.parentElement.querySelector('video');
+    videoEl.setAttribute('data-path', `/content${newVideoPath}`);
+    videoEl.src = `/content${newVideoPath}`;
+};
 /*
 
     3.6 Collect Page Template Inputs
@@ -565,6 +591,9 @@ const collectInputs = (template) => {
             inputValue = elements[i]
                 .querySelector('.img')
                 .getAttribute('data-path');
+        }
+        else if (inputType == 'video') {
+            inputValue = elements[i].getAttribute('data-path');
         }
         else if (inputType == 'date') {
             inputValue = new Date(elements[i].value).getTime();
@@ -1957,9 +1986,9 @@ const toggleOrderTable = async (orderArrow, colName) => {
         orderArrow.classList.remove('hidden');
     }
     /*
-    
+
         Actual ordering
-    
+
     */
     if (direction == 'unset') {
         currentOrderBy.delete(colName);
@@ -2092,7 +2121,7 @@ const setCustomFilters = async () => {
 		</div>
 
 		<input class="value dark" type="text" style="width: 150px" placeholder="Value">
-		
+
 		${(button == 'clear') ? /* html */ `
 		<button class="red" onclick="clearFilter(this)">Clear filter</button>
 		` : /* html */ `
