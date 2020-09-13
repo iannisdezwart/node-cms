@@ -647,16 +647,20 @@ const pageTemplateInputToHTML = (
 ) => {
 	switch (inputType) {
 		case 'text': {
+			const value = (inputContent as string).replace(/"/g, '&quot;')
+
 			return /* html */ `
 			<textarea id="${ inputName }" data-input="${ inputName }">
-				${ inputContent }
+				${ value }
 			</textarea>
 			`
 		}
 
 		case 'string': {
+			const value = (inputContent as string).replace(/"/g, '&quot;')
+
 			return /* html */ `
-			<input id="${ inputName }" data-input="${ inputName }" type="text" value="${ inputContent }" />
+			<input id="${ inputName }" data-input="${ inputName }" type="text" value="${ value }" />
 			`
 		}
 

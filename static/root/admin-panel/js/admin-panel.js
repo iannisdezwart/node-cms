@@ -480,15 +480,17 @@ const deletePage = async (id) => {
 const pageTemplateInputToHTML = (inputType, inputName, inputContent) => {
     switch (inputType) {
         case 'text': {
+            const value = inputContent.replace(/"/g, '&quot;');
             return /* html */ `
 			<textarea id="${inputName}" data-input="${inputName}">
-				${inputContent}
+				${value}
 			</textarea>
 			`;
         }
         case 'string': {
+            const value = inputContent.replace(/"/g, '&quot;');
             return /* html */ `
-			<input id="${inputName}" data-input="${inputName}" type="text" value="${inputContent}" />
+			<input id="${inputName}" data-input="${inputName}" type="text" value="${value}" />
 			`;
         }
         case 'img[]': {
