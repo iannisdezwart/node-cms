@@ -700,7 +700,11 @@ const pageTemplateInputToHTML = (
 
 		case 'date': {
 			const date = new Date(inputContent)
-			const dateString = `${ date.getFullYear() }-${ date.getMonth() + 1 }-${ date.getDate() }`
+			const yyyy = date.getFullYear().toString().padStart(4, '0')
+			const mm = (date.getMonth() + 1).toString().padStart(2, '0')
+			const dd = date.getDate().toString().padStart(2, '0')
+
+			const dateString = `${ yyyy }-${ mm }-${ dd }`
 
 			return /* html */ `
 			<input id="${ inputName }" data-input="${ inputName }" type="date" value="${ dateString }">
