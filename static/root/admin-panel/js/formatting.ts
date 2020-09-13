@@ -177,3 +177,9 @@ const getExtension = (filePath: string) => {
 const imageExtensions = new Set([
 	'jpeg', 'jpg', 'gif', 'png', 'apng', 'svg', 'bmp', 'ico', 'webp'
 ])
+
+// Video extensions
+
+const videoExtensions = new Set([
+	'webm', 'mkv', 'flv', 'ogg', 'gif', 'gifv', 'avi', 'mp4'
+])
