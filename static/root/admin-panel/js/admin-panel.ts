@@ -94,11 +94,6 @@ window.onload = async () => {
 
 	const greetingLI = $<HTMLLIElement>('#greeting')
 	greetingLI.innerText = `Welcome, ${ Cookies.get('username') }!`
-
-	// Add logout button
-
-	const logoutLI = $<HTMLLIElement>('#logout')
-	logoutLI.innerText = `Logout`
 }
 
 /* ===================
