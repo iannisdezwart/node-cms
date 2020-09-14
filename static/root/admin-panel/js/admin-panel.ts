@@ -526,7 +526,7 @@ const editPage = async (id: number) => {
 
 		savePage(pageContent, page.id)
 			.then(() => {
-				notification('Saved page', `Successfully saved page "${ page.pageContent.title }"!`)
+				notification('Saved page', `Successfully saved page "${ pageTitle }"!`)
 
 				if (!keepEditing) {
 					showPages()
@@ -605,9 +605,12 @@ const deletePage = async (id: number) => {
 	await fetchPages()
 
 	const page = pagesDB.pages.find(el => el.id == id)
+	const { canAdd } = pagesDB.pageTypes.find(el => el.name == page.pageType)
+
+	const pageTitle = canAdd ? page.pageContent.title : page.pageType
 
 	await popup(
-		`Deleting page "${ page.pageContent.title }"`,
+		`Deleting page "${ pageTitle }"`,
 		'Are you sure you want to delete this page?',
 		[
 			{
@@ -624,7 +627,7 @@ const deletePage = async (id: number) => {
 		pageId: page.id
 	})
 		.then(() => {
-			notification('Deleted page', `Successfully deleted page "${ page.pageContent.title }"!`)
+			notification('Deleted page', `Successfully deleted page "${ pageTitle }"!`)
 
 			showPages()
 		})
