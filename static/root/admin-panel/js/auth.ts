@@ -153,3 +153,9 @@ const login = async (
 		}
 	}
 }
+
+const logout = () => {
+	Cookies.remove('username')
+	Cookies.remove('token')
+	window.location.reload()
+}
