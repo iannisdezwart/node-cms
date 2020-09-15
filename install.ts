@@ -315,11 +315,7 @@ if (!pagesDB.table('compiled_pages').exists) {
 	table.columns.add([
 		{
 			name: 'id',
-			dataType: 'Int',
-			foreignKey: {
-				table: 'pages',
-				column: 'id'
-			}
+			dataType: 'Int'
 		},
 		{
 			name: 'path',
