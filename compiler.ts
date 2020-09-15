@@ -163,7 +163,7 @@ const deleteEmptyDirectories = (dirPath: string) => {
 
 		for (let file of files) {
 			if (fs.statSync(file).isDirectory()) {
-				deleteEmptyDirectories(file)
+				deleteEmptyDirectories(`${ dirPath }/${ file }`)
 			}
 		}
 	}
