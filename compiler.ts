@@ -162,8 +162,10 @@ const deleteEmptyDirectories = (dirPath: string) => {
 		// Recursively call deleteEmptyDirectories on any subdirectory
 
 		for (let file of files) {
-			if (fs.statSync(file).isDirectory()) {
-				deleteEmptyDirectories(`${ dirPath }/${ file }`)
+			const subDirPath = `${ dirPath }/${ file }`
+
+			if (fs.statSync(subDirPath).isDirectory()) {
+				deleteEmptyDirectories(subDirPath)
 			}
 		}
 	}
