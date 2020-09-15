@@ -130,7 +130,13 @@ export const compile = async (pageCompilers: ObjectOf<PageCompiler>) => {
 				throw new Error(`Malicious user input detected. Page compiler prevented deletion of ${ resolvePath(pagePath) }.`)
 			}
 
+			// Delete file
+
 			fs.unlinkSync(pagePath)
+
+			// Delete path from compiled_pages table
+
+			pagesDB.table('compiled_pages').deleteWhere(row => row.path == pageToRemove)
 
 			console.log(`${ chalk.green('✔') } Deleted unnecessary file: ${ chalk.red(resolvePath(pagePath)) }`)
 		}
