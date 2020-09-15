@@ -121,16 +121,18 @@ export const compile = async (pageCompilers: ObjectOf<PageCompiler>) => {
 	// Remove all unnecessary pages
 
 	for (let pageToRemove of pagesToRemove) {
-		if (fs.existsSync(pageToRemove)) {
+		const pagePath = `./root/${ pageToRemove }`
+
+		if (fs.existsSync(pagePath)) {
 			// Check for malicious user input
 
-			if (dotDotSlashAttack(pageToRemove, __dirname)) {
-				throw new Error(`Malicious user input detected. Page compiler prevented deletion of ${ resolvePath(pageToRemove) }.`)
+			if (dotDotSlashAttack(pagePath, __dirname)) {
+				throw new Error(`Malicious user input detected. Page compiler prevented deletion of ${ resolvePath(pagePath) }.`)
 			}
 
-			fs.unlinkSync(pageToRemove)
+			fs.unlinkSync(pagePath)
 
-			console.log(`${ chalk.green('✔') } Deleted unnecessary file: ${ chalk.red(resolvePath(pageToRemove)) }`)
+			console.log(`${ chalk.green('✔') } Deleted unnecessary file: ${ chalk.red(resolvePath(pagePath)) }`)
 		}
 	}
 
