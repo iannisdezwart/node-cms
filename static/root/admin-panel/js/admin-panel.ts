@@ -3305,6 +3305,11 @@ const changePassword = async (
 			await request('/admin-panel/workers/user-management/change-user-password.node.js', {
 				suToken, userID, oldPassword, newPassword
 			})
+
+			notification(
+				'Changed Password',
+				`Successfully changed ${ userName }'s password!`
+			)
 		} catch(err) {
 			handleRequestError(err)
 		}
