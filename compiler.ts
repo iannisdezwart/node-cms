@@ -126,7 +126,7 @@ export const compile = async (pageCompilers: ObjectOf<PageCompiler>) => {
 		if (fs.existsSync(pagePath)) {
 			// Check for malicious user input
 
-			if (dotDotSlashAttack(pagePath, __dirname)) {
+			if (dotDotSlashAttack(pagePath, './root')) {
 				throw new Error(`Malicious user input detected. Page compiler prevented deletion of ${ resolvePath(pagePath) }.`)
 			}
 
