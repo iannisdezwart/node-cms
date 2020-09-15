@@ -44,7 +44,10 @@ export const compile = async (pageCompilers: ObjectOf<PageCompiler>) => {
 
 	// Compile all pages
 
-	const compilePage = (page: ReturnType<PageCompiler>) => {
+	const compilePage = (
+		page: ReturnType<PageCompiler>,
+		pageID: number
+	) => {
 		// Create directory, if needed
 
 		const directory = getDirectory('./root' + page.path)
@@ -58,6 +61,20 @@ export const compile = async (pageCompilers: ObjectOf<PageCompiler>) => {
 
 		fs.writeFileSync('./root' + page.path, page.html)
 		console.log(`${ chalk.green('✔') } Wrote file: ${ chalk.yellow('./root' + page.path) }`)
+
+		// Store the page path in the database
+
+		const compiledPages = pagesDB.table('compiled_pages')
+		const alreadyCompiledPages = compiledPages
+			.get()
+			.where(row => row.path == page.path)
+			.rows
+
+		// Only store if the path does not exist yet
+
+		if (alreadyCompiledPages.length == 0) {
+			compiledPages.insert([{ id: pageID, path: page.path }])
+		}
 	}
 
 	for (let pageType of pageTypesTable.rows) {
@@ -68,14 +85,14 @@ export const compile = async (pageCompilers: ObjectOf<PageCompiler>) => {
 			// Compile page type individually
 
 			const page = pageCompiler(null, pages)
-			compilePage(page)
+			compilePage(page, null /* Todo: what to do with this? */)
 		}
 
 		// Compile all subpages
 
 		for (let i = 0; i < pages.rows.length; i++) {
 			const page = pageCompiler(pages.rows[i].pageContent, pages)
-			compilePage(page)
+			compilePage(page, pages.rows[i].id)
 		}
 	}
 
