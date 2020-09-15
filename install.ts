@@ -301,6 +301,25 @@ if (!pagesDB.table('pages').exists) {
 			constraints: [
 				'notNull'
 			]
+		}
+	])
+}
+
+// Create compiled_pages table if it does not exist
+
+if (!pagesDB.table('compiled_pages').exists) {
+	const table = pagesDB.table('compiled_pages')
+
+	table.create()
+
+	table.columns.add([
+		{
+			name: 'id',
+			dataType: 'Int',
+			foreignKey: {
+				table: 'pages',
+				column: 'id'
+			}
 		},
 		{
 			name: 'path',
