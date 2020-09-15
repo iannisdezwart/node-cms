@@ -134,6 +134,8 @@ export const compile = async (pageCompilers: ObjectOf<PageCompiler>) => {
 		}
 	}
 
+	deleteEmptyDirectories('./root')
+
 	console.log(`${ chalk.green('✔') } Finished compilation in ${ Date.now() - start }ms`)
 }
 
@@ -146,6 +148,26 @@ const getDirectory = (path: string) => {
 	}
 
 	return path
+}
+
+const deleteEmptyDirectories = (dirPath: string) => {
+	const files = fs.readdirSync(dirPath)
+
+	if (files.length == 0) {
+		// This directory is empty, delete it
+
+		fs.rmdirSync(dirPath)
+		console.log(`${ chalk.green('✔') } Deleted empty directory: ${ chalk.red(resolvePath(dirPath)) }`)
+	} else {
+		// Recursively call deleteEmptyDirectories on any subdirectory
+
+		for (let file of files) {
+			if (fs.statSync(file).isDirectory()) {
+				deleteEmptyDirectories(file)
+			}
+		}
+	}
+
 }
 
 const install = () => new Promise<void>(resolve => {
