@@ -134,12 +134,12 @@ export const compile = async (pageCompilers: ObjectOf<PageCompiler>) => {
 
 			fs.unlinkSync(pagePath)
 
-			// Delete path from compiled_pages table
-
-			pagesDB.table('compiled_pages').deleteWhere(row => row.path == pageToRemove)
-
 			console.log(`${ chalk.green('✔') } Deleted unnecessary file: ${ chalk.red(resolvePath(pagePath)) }`)
 		}
+
+		// Delete path from compiled_pages table
+
+		pagesDB.table('compiled_pages').deleteWhere(row => row.path == pageToRemove)
 	}
 
 	deleteEmptyDirectories('./root')
