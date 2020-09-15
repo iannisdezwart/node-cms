@@ -2,6 +2,8 @@ import * as fs from 'fs'
 import * as chalk from 'chalk'
 import { db, Table } from 'node-json-database'
 import { spawn } from 'child_process'
+import { resolve as resolvePath } from 'path'
+import { dotDotSlashAttack } from './static/private-workers/security'
 
 type PageCompiler = (pageContent: Object, pages: Table) => {
 	html: string
@@ -42,6 +44,16 @@ export const compile = async (pageCompilers: ObjectOf<PageCompiler>) => {
 	const pageTypesTable = pagesDB.table('pageTypes').get()
 	const pagesTable = pagesDB.table('pages').get()
 
+	// Store all already compiled pages in a Set
+	// We will remove all compiled pages that we don't need anymore later on
+
+	const pagesToRemove = new Set<string>()
+	const compiledPages = pagesDB.table('compiled_pages').get().rows
+
+	for (let compiledPage of compiledPages) {
+		pagesToRemove.add(compiledPage.path)
+	}
+
 	// Compile all pages
 
 	const compilePage = (
@@ -57,10 +69,20 @@ export const compile = async (pageCompilers: ObjectOf<PageCompiler>) => {
 			console.log(`${ chalk.green('✔') } Created directory: ${ chalk.yellow(directory) }`)
 		}
 
+		// Check for malicious user input
+
+		if (dotDotSlashAttack(`./root/${ page.path }`, './root')) {
+			throw new Error(`Malicious user input detected. Page compiler prevented creation of ${ resolvePath(`./root/${ page.path }`) }.`)
+		}
+
 		// Write the file
 
 		fs.writeFileSync('./root' + page.path, page.html)
-		console.log(`${ chalk.green('✔') } Wrote file: ${ chalk.yellow('./root' + page.path) }`)
+		console.log(`${ chalk.green('✔') } Wrote file: ${ chalk.yellow(resolvePath('./root' + page.path)) }`)
+
+		// Remove the page path from pagesToRemove
+
+		pagesToRemove.delete(page.path)
 
 		// Store the page path in the database
 
@@ -85,7 +107,7 @@ export const compile = async (pageCompilers: ObjectOf<PageCompiler>) => {
 			// Compile page type individually
 
 			const page = pageCompiler(null, pages)
-			compilePage(page, null /* Todo: what to do with this? */)
+			compilePage(page, null /* Todo: what to do with the PageID? */)
 		}
 
 		// Compile all subpages
@@ -93,6 +115,22 @@ export const compile = async (pageCompilers: ObjectOf<PageCompiler>) => {
 		for (let i = 0; i < pages.rows.length; i++) {
 			const page = pageCompiler(pages.rows[i].pageContent, pages)
 			compilePage(page, pages.rows[i].id)
+		}
+	}
+
+	// Remove all unnecessary pages
+
+	for (let pageToRemove of pagesToRemove) {
+		if (fs.existsSync(pageToRemove)) {
+			// Check for malicious user input
+
+			if (dotDotSlashAttack(pageToRemove, __dirname)) {
+				throw new Error(`Malicious user input detected. Page compiler prevented deletion of ${ resolvePath(pageToRemove) }.`)
+			}
+
+			fs.unlinkSync(pageToRemove)
+
+			console.log(`${ chalk.green('✔') } Deleted unnecessary file: ${ chalk.red(resolvePath(pageToRemove)) }`)
 		}
 	}
 
