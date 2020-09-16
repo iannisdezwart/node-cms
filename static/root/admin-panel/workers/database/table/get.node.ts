@@ -12,20 +12,20 @@ let filterArr = req.body.filterArr as Filter[] ?? []
 let orderArr = req.body.orderArr as (string | [ string, 'ASC' | 'DESC' ])[] ?? []
 
 interface Filter {
-	column: string
+	colName: string
 	operator: string
 	value: string
 }
 
 const generateFilterFunction = (filter: Filter) => {
-	const { column, operator, value } = filter
+	const { colName, operator, value } = filter
 
 	switch (operator) {
-		case '==': return (row: DB_Table_Row_Formatted) => row[column] == value
-		case '>': return (row: DB_Table_Row_Formatted) => row[column] > value
-		case '>=': return (row: DB_Table_Row_Formatted) => row[column] >= value
-		case '<': return (row: DB_Table_Row_Formatted) => row[column] < value
-		case '<=': return (row: DB_Table_Row_Formatted) => row[column] <= value
+		case '==': return (row: DB_Table_Row_Formatted) => row[colName] == value
+		case '>': return (row: DB_Table_Row_Formatted) => row[colName] > value
+		case '>=': return (row: DB_Table_Row_Formatted) => row[colName] >= value
+		case '<': return (row: DB_Table_Row_Formatted) => row[colName] < value
+		case '<=': return (row: DB_Table_Row_Formatted) => row[colName] <= value
 	}
 
 	throw new Error(`Unrecognised operator ${ operator }`)
