@@ -27,6 +27,8 @@ const generateFilterFunction = (filter: Filter) => {
 		case '<': return (row: DB_Table_Row_Formatted) => row[column] < value
 		case '<=': return (row: DB_Table_Row_Formatted) => row[column] <= value
 	}
+
+	throw new Error(`Unrecognised operator ${ operator }`)
 }
 
 queryTable(
