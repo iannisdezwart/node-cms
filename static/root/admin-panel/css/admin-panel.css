@@ -624,6 +624,11 @@ input.small.short {
 	width: 60px;
 }
 
+img.checkbox {
+	width: 14px;
+	height: 14px;
+}
+
 /* Searchbox */
 
 .search {
