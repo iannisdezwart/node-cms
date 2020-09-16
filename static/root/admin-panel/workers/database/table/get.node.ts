@@ -7,10 +7,9 @@ const tableName = req.body.tableName as string
 let from = req.body.from as number
 let to = req.body.to as number
 
-let filterArr = req.body.filterArr as Filter[]
+let filterArr = req.body.filterArr as Filter[] ?? []
 
-let orderArr = req.body.orderArr as (string | [ string, 'ASC' | 'DESC' ])[]
-if (orderArr == undefined) orderArr = []
+let orderArr = req.body.orderArr as (string | [ string, 'ASC' | 'DESC' ])[] ?? []
 
 interface Filter {
 	column: string
