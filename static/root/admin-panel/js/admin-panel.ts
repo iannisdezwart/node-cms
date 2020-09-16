@@ -2348,7 +2348,7 @@ const updateTable = () => {
 			${ reduceArray(rows, row => /* html */ `
 			<tr data-row-num="${ row.rowNum }">
 				${ reduceArray(cols, col => /* html */ `
-				<td data-datatype="${ col.dataType }" data-col-name="${ col.name }" class="col">${ row[col.name] }</td>
+				<td data-datatype="${ col.dataType }" data-col-name="${ col.name }" class="col">${ parseOutputValue(row[col.name], col.dataType) }</td>
 				`) }
 				<td class="col-options">
 					<button onclick="editRow('${ currentDbName }', '${ currentTableName }', ${ row.rowNum })" class="small edit">Edit</button>
@@ -2430,7 +2430,7 @@ const createInputElFromDataType = (
 		})
 	} else if (dataType == 'DateTime') {
 		inputEl.type = 'datetime-local'
-		inputEl.value = data // Todo: see if this is the right thing to do
+		inputEl.value = new Date(data).toISOString()
 	} else if (dataType == 'Float') {
 		inputEl.type = 'number'
 		inputEl.value = data
