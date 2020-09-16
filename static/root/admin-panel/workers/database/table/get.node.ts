@@ -1,19 +1,49 @@
 import { queryTable, handleError } from './../../../../../private-workers/database-query'
 import { req, res } from 'apache-js-workers'
+import { DB_Table_Row_Formatted } from 'node-json-database'
 
 const dbName = req.body.dbName as string
 const tableName = req.body.tableName as string
 let from = req.body.from as number
 let to = req.body.to as number
 
+let filterArr = req.body.filterArr as Filter[]
+
 let orderArr = req.body.orderArr as (string | [ string, 'ASC' | 'DESC' ])[]
 if (orderArr == undefined) orderArr = []
+
+interface Filter {
+	column: string
+	operator: string
+	value: string
+}
+
+const generateFilterFunction = (filter: Filter) => {
+	const { column, operator, value } = filter
+
+	switch (operator) {
+		case '==': return (row: DB_Table_Row_Formatted) => row[column] == value
+		case '>': return (row: DB_Table_Row_Formatted) => row[column] > value
+		case '>=': return (row: DB_Table_Row_Formatted) => row[column] >= value
+		case '<': return (row: DB_Table_Row_Formatted) => row[column] < value
+		case '<=': return (row: DB_Table_Row_Formatted) => row[column] <= value
+	}
+}
 
 queryTable(
 	dbName,
 	tableName,
 	tableFn => {
 		let table = tableFn.get()
+
+		// Filter table
+
+		if (filterArr.length) {
+			for (let filter of filterArr) {
+				table = table.where(generateFilterFunction(filter))
+			}
+		}
+
 		const totalRows = table.length
 
 		// Order table
@@ -32,8 +62,7 @@ queryTable(
 		const { data } = tableFn
 
 		res.send({ rows, cols, data, totalRows })
-	}
-)
+	})
 	.catch(err => {
 		handleError(err)
 	})
