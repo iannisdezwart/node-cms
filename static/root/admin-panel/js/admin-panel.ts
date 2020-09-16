@@ -2218,13 +2218,15 @@ const showTableListOfDatabase = async (
 const getTable = async (
 	dbName: string,
 	tableName: string,
-	orderArr: (string | [ string, 'ASC' | 'DESC' ])[] = []
+	orderArr: (string | [ string, 'ASC' | 'DESC' ])[] = [],
+	from: number = null,
+	to: number = null
 ) => {
 	const suToken = await getSuToken()
 
 	try {
 		const response = await request('/admin-panel/workers/database/table/get.node.js', {
-			suToken, dbName, tableName, orderArr
+			suToken, dbName, tableName, orderArr, from, to
 		})
 
 		const table = JSON.parse(response) as TableRepresentation
