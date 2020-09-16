@@ -14,6 +14,7 @@ queryTable(
 	tableName,
 	tableFn => {
 		let table = tableFn.get()
+		const totalRows = table.length
 
 		// Order table
 
@@ -30,7 +31,7 @@ queryTable(
 		const { rows, cols } = table
 		const { data } = tableFn
 
-		res.send({ rows, cols, data })
+		res.send({ rows, cols, data, totalRows })
 	}
 )
 	.catch(err => {
