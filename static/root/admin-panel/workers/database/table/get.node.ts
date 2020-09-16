@@ -37,6 +37,14 @@ queryTable(
 	tableFn => {
 		let table = tableFn.get()
 
+		// Add rowNum to each row
+
+		let i = 0
+
+		for (let row of table.rows) {
+			row.rowNum = i++
+		}
+
 		// Filter table
 
 		if (filterArr.length) {
