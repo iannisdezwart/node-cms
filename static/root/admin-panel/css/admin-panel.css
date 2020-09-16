@@ -275,6 +275,13 @@ table.fullwidth {
 	overflow: auto;
 }
 
+.table-rows-selector {
+	margin-top: 1em;
+	background-color: #444;
+	padding: .5em;
+	box-sizing: border-box;
+}
+
 table.fullwidth thead td {
 	position: sticky;
 	top: 0;
@@ -611,6 +618,10 @@ input.small {
 
 input.small.red {
 	border-bottom: 2px solid #cc5858;
+}
+
+input.small.short {
+	width: 60px;
 }
 
 /* Searchbox */
