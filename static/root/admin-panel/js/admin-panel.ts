@@ -2360,7 +2360,7 @@ const updateTable = () => {
 		<tfoot>
 			${ reduceArray(cols, col => /* html */ `
 			<td data-datatype="${ col.dataType }" data-col-name="${ col.name }" class="col">
-				${ createInputElFromDataType(col.dataType).outerHTML }
+				${ createInputElFromDataType(col.dataType, null).outerHTML }
 			</td>
 			`) }
 			<td>
@@ -2373,12 +2373,16 @@ const updateTable = () => {
 
 // 5.6.1 Create Input Element From Datatype
 
-const createInputElFromDataType = (dataType: DataType) => {
+const createInputElFromDataType = (
+	dataType: DataType,
+	data: string
+) => {
 	const inputEl = document.createElement('input')
 	inputEl.classList.add('small')
 
 	if (dataType == 'Binary') {
 		inputEl.type = 'text'
+		inputEl.value = data
 
 		inputEl.addEventListener('input', () => {
 			const { value } = inputEl
@@ -2393,6 +2397,7 @@ const createInputElFromDataType = (dataType: DataType) => {
 		})
 	} else if (dataType == 'Bit') {
 		inputEl.type = 'text'
+		inputEl.value = data
 
 		inputEl.addEventListener('input', () => {
 			const { value } = inputEl
@@ -2407,8 +2412,10 @@ const createInputElFromDataType = (dataType: DataType) => {
 		})
 	} else if (dataType == 'Boolean') {
 		inputEl.type = 'checkbox'
+		inputEl.checked = (data == 'true')
 	} else if (dataType == 'Char') {
 		inputEl.type = 'text'
+		inputEl.value = data
 
 		inputEl.addEventListener('input', () => {
 			const { value } = inputEl
@@ -2423,11 +2430,14 @@ const createInputElFromDataType = (dataType: DataType) => {
 		})
 	} else if (dataType == 'DateTime') {
 		inputEl.type = 'datetime-local'
+		inputEl.value = data // Todo: see if this is the right thing to do
 	} else if (dataType == 'Float') {
 		inputEl.type = 'number'
+		inputEl.value = data
 		inputEl.step = 'any'
 	} else if (dataType == 'Hex') {
 		inputEl.type = 'text'
+		inputEl.value = data
 
 		inputEl.addEventListener('input', () => {
 			const { value } = inputEl
@@ -2442,11 +2452,14 @@ const createInputElFromDataType = (dataType: DataType) => {
 		})
 	} else if (dataType == 'Int') {
 		inputEl.type = 'number'
+		inputEl.value = data
 		inputEl.step = '1'
 	} else if (dataType == 'JSON') {
 		inputEl.type = 'text'
+		inputEl.value = data
 	} else if (dataType == 'String') {
 		inputEl.type = 'text'
+		inputEl.value = data
 	} else {
 		throw new Error(`Datatype '${ dataType }' not handled`)
 	}
@@ -2565,10 +2578,8 @@ const editRow = (
 
 		// Add the input
 
-		const input = createInputElFromDataType(dataType)
+		const input = createInputElFromDataType(dataType, data)
 		cell.appendChild(input)
-
-		input.value = data
 	})
 
 	// Listen for the Save button click
