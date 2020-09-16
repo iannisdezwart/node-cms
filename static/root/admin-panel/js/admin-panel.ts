@@ -58,7 +58,7 @@
 		5.5 Get Table
 		5.6 Show Table
 			5.6.1 Create Input Element From Datatype
-			5.6.2 Parse Input Value
+			5.6.2 Parse Input/Output Value
 			5.6.3 Edit Row
 			5.6.4 Update Row
 			5.6.5 Delete Row
@@ -2454,7 +2454,7 @@ const createInputElFromDataType = (dataType: DataType) => {
 	return inputEl
 }
 
-// 5.6.2 Parse Input Value
+// 5.6.2 Parse Input/Output Value
 
 const parseInputValue = (
 	input: HTMLInputElement,
@@ -2488,6 +2488,39 @@ const parseInputValue = (
 		return value
 	} else if (dataType == 'Int') {
 		return parseInt(value)
+	} else if (dataType == 'JSON') {
+		return value
+	} else if (dataType == 'String') {
+		return value
+	} else {
+		throw new Error(`Datatype '${ dataType }' not handled`)
+	}
+}
+
+const parseOutputValue = (
+	value: any,
+	dataType: DataType
+) => {
+	if (value == null) {
+		return ''
+	}
+
+	if (dataType == 'Binary') {
+		return value
+	} else if (dataType == 'Bit') {
+		return value.toString()
+	} else if (dataType == 'Boolean') {
+		return value.toString()
+	} else if (dataType == 'Char') {
+		return value
+	} else if (dataType == 'DateTime') {
+		return value.toISOString() // Todo: See if this is the right thing to do
+	} else if (dataType == 'Float') {
+		return value.toString()
+	} else if (dataType == 'Hex') {
+		return value
+	} else if (dataType == 'Int') {
+		return value.toString()
 	} else if (dataType == 'JSON') {
 		return value
 	} else if (dataType == 'String') {
@@ -2560,6 +2593,7 @@ const editRow = (
 
 		fields.forEach(cell => {
 			const colName = cell.getAttribute('data-col-name')
+			const dataType = cell.getAttribute('data-datatype') as DataType
 			const input = cell.querySelector('input')
 
 			// Remove the input
@@ -2568,7 +2602,7 @@ const editRow = (
 
 			// Add the plain data back in the cell
 
-			cell.innerText = row[colName].toString()
+			cell.innerText = parseOutputValue(row[colName], dataType)
 		})
 
 		// Update the value in the database
