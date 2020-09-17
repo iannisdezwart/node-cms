@@ -2918,7 +2918,7 @@ const operatorMap = new Map<string, string>([
 	[ 'Ends with', 'endsWith' ],
 	[ 'Does not end with', '!endsWith' ],
 	[ 'Contains', 'contains' ],
-	[ 'Does not contains', '!contains' ],
+	[ 'Does not contain', '!contains' ],
 	[ 'Is empty', 'null' ],
 	[ 'Is not empty', '!null' ],
 ])
