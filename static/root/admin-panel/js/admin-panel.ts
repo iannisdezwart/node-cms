@@ -2908,10 +2908,19 @@ const setTableFilter = async (
 
 const operatorMap = new Map<string, string>([
 	[ 'Equals', '==' ],
+	[ 'Is not equal to', '!=' ],
 	[ 'Is bigger than', '>' ],
 	[ 'Is bigger than or equal to', '>=' ],
 	[ 'Is smaller than', '<' ],
 	[ 'Is smaller than or equal to', '<=' ],
+	[ 'Starts with', 'startsWith' ],
+	[ 'Does not start with', '!startsWith' ],
+	[ 'Ends with', 'endsWith' ],
+	[ 'Does not end with', '!endsWith' ],
+	[ 'Contains', 'contains' ],
+	[ 'Does not contains', '!contains' ],
+	[ 'Is empty', 'null' ],
+	[ 'Is not empty', '!null' ],
 ])
 
 const reverseOperatorMap = new Map<string, string>()

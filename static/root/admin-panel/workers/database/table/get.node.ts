@@ -1,6 +1,6 @@
 import { queryTable, handleError } from './../../../../../private-workers/database-query'
 import { req, res } from 'apache-js-workers'
-import { DB_Table_Row_Formatted } from 'node-json-database'
+import { DB_Table_Row_Formatted as Row } from 'node-json-database'
 
 const dbName = req.body.dbName as string
 const tableName = req.body.tableName as string
@@ -21,11 +21,20 @@ const generateFilterFunction = (filter: Filter) => {
 	const { colName, operator, value } = filter
 
 	switch (operator) {
-		case '==': return (row: DB_Table_Row_Formatted) => row[colName] == value
-		case '>': return (row: DB_Table_Row_Formatted) => row[colName] > value
-		case '>=': return (row: DB_Table_Row_Formatted) => row[colName] >= value
-		case '<': return (row: DB_Table_Row_Formatted) => row[colName] < value
-		case '<=': return (row: DB_Table_Row_Formatted) => row[colName] <= value
+		case '==': return (row: Row) => row[colName] == value
+		case '!=': return (row: Row) => row[colName] != value
+		case '>': return (row: Row) => row[colName] > value
+		case '>=': return (row: Row) => row[colName] >= value
+		case '<': return (row: Row) => row[colName] < value
+		case '<=': return (row: Row) => row[colName] <= value
+		case 'startsWith': return (row: Row) => row[colName].startsWith(value)
+		case '!startsWith': return (row: Row) => !row[colName].startsWith(value)
+		case 'endsWith': return (row: Row) => row[colName].endsWith(value)
+		case '!endsWith': return (row: Row) => !row[colName].endsWith(value)
+		case 'contains': return (row: Row) => row[colName].includes(value)
+		case '!contains': return (row: Row) => !row[colName].includes(value)
+		case 'null': return (row: Row) => row[colName] == null
+		case '!null': return (row: Row) => row[colName] != null
 	}
 
 	throw new Error(`Unrecognised operator ${ operator }`)
