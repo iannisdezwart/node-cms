@@ -8,8 +8,8 @@ let from = req.body.from as number
 let to = req.body.to as number
 
 let filterArr = req.body.filterArr as Filter[] ?? []
-
 let orderArr = req.body.orderArr as (string | [ string, 'ASC' | 'DESC' ])[] ?? []
+let builtInFilterArr = req.body.builtInFilterArr as string[]
 
 interface Filter {
 	colName: string
@@ -41,9 +41,7 @@ queryTable(
 
 		let i = 0
 
-		for (let row of table.rows) {
-			row.rowNum = i++
-		}
+		for (let row of table.rows) row.rowNum = i++
 
 		// Filter table
 
@@ -52,6 +50,19 @@ queryTable(
 				table = table.where(generateFilterFunction(filter))
 			}
 		}
+
+		for (let filter of builtInFilterArr) {
+			// Never let the user input a built-in filter function
+
+			const filterFunction = eval(tableFn.data.filters[filter])
+			console.log(filterFunction)
+
+			if (filterFunction != null) {
+				table = table.where(filterFunction)
+			}
+		}
+
+		// Store the number of total rows
 
 		const totalRows = table.length
 
