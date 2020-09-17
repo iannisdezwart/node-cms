@@ -66,6 +66,7 @@
 			5.6.7 Table Ordering
 			5.6.8 Table Filtering
 			5.6.9 Download Table to CSV
+			5.6.10 Update Row Bounds
 
 	6. User Management
 		6.1 Fetch Users
@@ -323,6 +324,19 @@ const reduceObject = (
 		if (obj.hasOwnProperty(i)) {
 			output += f(i)
 		}
+	}
+
+	return output
+}
+
+const reduceSet = <V>(
+	set: Set<V>,
+	f: (value: V) => string
+) => {
+	let output = ''
+
+	for (let value of set) {
+		output += f(value)
 	}
 
 	return output
@@ -2043,6 +2057,7 @@ interface TableRepresentation {
 	cols: DB_Table_Col[]
 	rows: DB_Table_Row_Formatted[]
 	data?: any
+	totalRows: number
 }
 
 interface Link {
@@ -2218,24 +2233,20 @@ const showTableListOfDatabase = async (
 const getTable = async (
 	dbName: string,
 	tableName: string,
-	orderArr: (string | [ string, 'ASC' | 'DESC' ])[] = [],
-	from: number = null,
-	to: number = null
+	orderArr: (string | [ string, 'ASC' | 'DESC' ])[] = []
 ) => {
 	const suToken = await getSuToken()
 
 	try {
+		const { from, to } = currentBounds
+		const filterArr = currentCustomFilters
+		const builtInFilterArr = Array.from(currentActiveBuiltInFilters)
+
 		const response = await request('/admin-panel/workers/database/table/get.node.js', {
-			suToken, dbName, tableName, orderArr, from, to
+			suToken, dbName, tableName, orderArr, filterArr, builtInFilterArr, from, to
 		})
 
-		const table = JSON.parse(response) as TableRepresentation
-
-		for (let i = 0; i < table.rows.length; i++) {
-			table.rows[i].rowNum = i
-		}
-
-		return table
+		return JSON.parse(response) as TableRepresentation
 	} catch(err) {
 		handleRequestError(err)
 	}
@@ -2250,9 +2261,14 @@ let currentDbName: string
 let currentTableName: string
 
 let currentOrderBy = new Map<string, 'ASC' | 'DESC'>()
-let currentFilters = new Map<string, FilterFunction>()
-let currentBuiltInFilters = new Map<string, FilterFunction>()
-let currentCustomFilters: CustomFilter[]
+let currentBuiltInFilters = new Set<string>()
+let currentActiveBuiltInFilters = new Set<string>()
+let currentCustomFilters: CustomFilter[] = []
+
+let currentBounds = {
+	from: 0,
+	to: 19
+}
 
 const showTable = async (
 	dbName: string,
@@ -2266,12 +2282,12 @@ const showTable = async (
 		'table-name': tableName
 	})
 
-	currentTable = await getTable(dbName, tableName)
+	currentTable = await getTable(dbName, tableName, [])
 	currentDbName = dbName
 	currentTableName = tableName
 
 	currentOrderBy.clear()
-	currentFilters.clear()
+	currentActiveBuiltInFilters.clear()
 	currentBuiltInFilters.clear()
 	currentCustomFilters = []
 
@@ -2282,7 +2298,7 @@ const showTable = async (
 	if (data != undefined) {
 		if (data.filters != undefined) {
 			for (let filterName in data.filters) {
-				currentBuiltInFilters.set(filterName, eval(data.filters[filterName]))
+				currentBuiltInFilters.add(filterName)
 			}
 		}
 	}
@@ -2302,10 +2318,19 @@ const showTable = async (
 
 	<div class="table-container"></div>
 
+	<div class="table-rows-selector">
+		Showing rows
+		<input type="number" id="lower-row-bound" class="small short" value="${ currentBounds.from + 1 }">
+		-
+		<input type="number" id="upper-row-bound" class="small short" value="${ currentBounds.to + 1 }">
+		of <span id="total-rows">${ currentTable.totalRows }</span>.
+		<button class="small" onclick="updateRowBounds()">Update</button>
+	</div>
+
 	<h3>Built-in filters:</h3>
 
 	<div class="built-in-filters">
-		${ reduceMap(currentBuiltInFilters, filterName => /* html */ `
+		${ reduceSet(currentBuiltInFilters, filterName => /* html */ `
 		<input type="checkbox" onchange="setTableFilter('${ filterName }', this.checked)">
 		${ filterName }
 		<br>
@@ -2317,7 +2342,7 @@ const showTable = async (
 }
 
 const updateTable = () => {
-	let table = getFilteredCurrentTable()
+	let table = currentTable
 
 	const { rows, cols } = table
 
@@ -2371,13 +2396,17 @@ const updateTable = () => {
 		</tfoot>
 	</table>
 	`
+
+	// Update total rows
+
+	$('#total-rows').innerText = table.totalRows.toString()
 }
 
 // 5.6.1 Create Input Element From Datatype
 
 const createInputElFromDataType = (
 	dataType: DataType,
-	data: string
+	data: any
 ) => {
 	const inputEl = document.createElement('input')
 	inputEl.classList.add('small')
@@ -2414,7 +2443,8 @@ const createInputElFromDataType = (
 		})
 	} else if (dataType == 'Boolean') {
 		inputEl.type = 'checkbox'
-		inputEl.checked = (data == 'true')
+		inputEl.classList.remove('small')
+		inputEl.checked = data
 	} else if (dataType == 'Char') {
 		inputEl.type = 'text'
 		inputEl.value = data
@@ -2525,7 +2555,11 @@ const parseOutputValue = (
 	} else if (dataType == 'Bit') {
 		return value.toString()
 	} else if (dataType == 'Boolean') {
-		return value.toString()
+		return value ? /* html */ `
+		<img class="checkbox" src="/admin-panel/img/checkbox-checked.png" alt="true">
+		` : /* html */ `
+		<img class="checkbox" src="/admin-panel/img/checkbox-unchecked.png" alt="false">
+		`
 	} else if (dataType == 'Char') {
 		return value
 	} else if (dataType == 'DateTime') {
@@ -2553,6 +2587,8 @@ const editRow = (
 	rowNum: number
 ) => {
 	const rowEl = $<HTMLTableRowElement>(`tr[data-row-num="${ rowNum }"]`)
+	const affectedIndex = currentTable.rows.findIndex(row => row.rowNum == rowNum)
+	const affectedRow = currentTable.rows[affectedIndex]
 
 	// Change button text to 'Save'
 
@@ -2566,9 +2602,10 @@ const editRow = (
 	const fields = rowEl.querySelectorAll<HTMLTableCellElement>('.col')
 
 	fields.forEach(cell => {
-		// Get data from cell
+		// Get data
 
-		const data = cell.innerText
+		const colName = cell.getAttribute('data-col-name')
+		const data = currentTable.rows.find(row => row.rowNum == rowNum)[colName]
 
 		// Clear the text
 
@@ -2589,8 +2626,6 @@ const editRow = (
 	button.onclick = async () => {
 		// Gather inputs
 
-		const row: DB_Table_Row_Formatted = {}
-
 		fields.forEach(cell => {
 			const colName = cell.getAttribute('data-col-name')
 			const dataType = cell.getAttribute('data-datatype') as DataType
@@ -2599,7 +2634,7 @@ const editRow = (
 			// Store the input value
 
 			const value = parseInputValue(input, dataType)
-			row[colName] = value
+			affectedRow[colName] = value
 		})
 
 		// Remove the inputs and add the plain data back in the cells
@@ -2615,12 +2650,14 @@ const editRow = (
 
 			// Add the plain data back in the cell
 
-			cell.innerText = parseOutputValue(row[colName], dataType)
+			cell.innerHTML = parseOutputValue(affectedRow[colName], dataType)
 		})
 
 		// Update the value in the database
 
-		await updateRow(dbName, tableName, rowNum, row)
+		await updateRow(dbName, tableName, rowNum, affectedRow)
+
+		// Update the value in our local database
 
 		// Todo: Show loader
 		// Reset button text to edit
@@ -2669,7 +2706,7 @@ const deleteRow = async (
 
 		// Refetch the table
 
-		currentTable = await getTable(dbName, tableName)
+		currentTable = await getTable(dbName, tableName, [])
 
 		// Remove the row visually
 
@@ -2713,7 +2750,7 @@ const addRow = async (
 
 		// Refetch the table
 
-		currentTable = await getTable(dbName, tableName)
+		currentTable = await getTable(dbName, tableName, [])
 
 		const { rows, cols } = currentTable
 		const row = rows[rows.length - 1]
@@ -2810,7 +2847,7 @@ const orderCurrentTable = async () => {
 		orderArr.push([ colName, ordering ])
 	}
 
-	// Send request
+	// Update table
 
 	currentTable = await getTable(currentDbName, currentTableName, orderArr)
 }
@@ -2842,70 +2879,27 @@ const setOrderArrowsOfTable = () => {
 
 // 5.6.8 Table Filtering
 
-type FilterFunction = (row: DB_Table_Row_Formatted) => boolean
-
 interface CustomFilter {
 	colName: string
 	operator: string
-	value: string
-}
-
-// Get the current table with the current filters applied
-
-const getFilteredCurrentTable = () => {
-	let table = currentTable
-
-	// Apply the current custom filter
-
-	const customFilterFunction = customFiltersToFilterFunction()
-
-	if (customFilterFunction != null) {
-		table = filterTable(table, customFilterFunction)
-	}
-
-	// Apply each filter from currentFilters
-
-	for (let [ _filterName, filterFunction ] of currentFilters) {
-		table = filterTable(table, filterFunction)
-	}
-
-	return table
-}
-
-// Filter a TableRepresentation with a FilterFunction
-
-const filterTable = (
-	table: TableRepresentation,
-	filter: FilterFunction
-): TableRepresentation => {
-	const rowsOut: DB_Table_Row_Formatted[] = []
-
-	for (let row of table.rows) {
-		if (filter(row)) {
-			rowsOut.push(row)
-		}
-	}
-
-	return {
-		...table,
-		rows: rowsOut
-	}
+	value: any
 }
 
 // Enable or disable a built-in filter
 
-const setTableFilter = (
+const setTableFilter = async (
 	builtInFilterName: string,
 	enabled: boolean
 ) => {
 	if (enabled) {
-		const filterFunction = currentBuiltInFilters.get(builtInFilterName)
-		currentFilters.set(builtInFilterName, filterFunction)
+		currentActiveBuiltInFilters.add(builtInFilterName)
 	} else {
-		currentFilters.delete(builtInFilterName)
+		currentActiveBuiltInFilters.delete(builtInFilterName)
 	}
 
 	// Refresh table
+
+	currentTable = await getTable(currentDbName, currentTableName)
 
 	updateTable()
 }
@@ -2919,6 +2913,12 @@ const operatorMap = new Map<string, string>([
 	[ 'Is smaller than', '<' ],
 	[ 'Is smaller than or equal to', '<=' ],
 ])
+
+const reverseOperatorMap = new Map<string, string>()
+
+for (let [ friendlyName, operator ] of operatorMap) {
+	reverseOperatorMap.set(operator, friendlyName)
+}
 
 // Surround input values with quotes if needed
 
@@ -2941,10 +2941,14 @@ const parseFilterInputValue = (
 		throw new Error(`Could not find column "${ colName }" in the current table`)
 	}
 
-	if ([ 'Bit', 'Boolean', 'Float', 'Int' ].includes(dataType)) {
-		return value
+	if (dataType == 'Bit' || dataType == 'Int') {
+		return parseInt(value)
+	} else if (dataType == 'Float') {
+		return parseFloat(value)
+	} else if (dataType == 'Boolean') {
+		return value == 'true'
 	} else {
-		return `"${ value }"`
+		return value
 	}
 }
 
@@ -3060,14 +3064,8 @@ const setCustomFilters = async () => {
 		const valueInput = lastInputRow.$<HTMLInputElement>('input.value')
 
 		colInput.value = filter.colName
-		operatorInput.value = filter.operator
+		operatorInput.value = reverseOperatorMap.get(filter.operator)
 		valueInput.value = filter.value
-
-		// Remove double quotes from stringed values
-
-		if (filter.value.startsWith('"')) {
-			valueInput.value = filter.value.substring(1, filter.value.length - 1)
-		}
 
 		// Create new input row
 
@@ -3078,7 +3076,7 @@ const setCustomFilters = async () => {
 
 	initSearchBoxes()
 
-	;(window as any).setFilters = (
+	;(window as any).setFilters = async (
 		buttonEl: HTMLInputElement
 	) => {
 		// Get all inputs
@@ -3102,7 +3100,7 @@ const setCustomFilters = async () => {
 				continue
 			}
 
-			const operator = input.$<HTMLInputElement>('.operator input').value
+			const operator = operatorMap.get(input.$<HTMLInputElement>('.operator input').value)
 
 			const value = parseFilterInputValue(
 				input.$<HTMLInputElement>('input.value').value,
@@ -3126,40 +3124,10 @@ const setCustomFilters = async () => {
 
 		// Update the table
 
+		currentTable = await getTable(currentDbName, currentTableName, [])
+
 		updateTable()
 	}
-}
-
-const customFiltersToFilterFunction = () => {
-	if (currentCustomFilters.length == 0) {
-		return null
-	}
-
-	let filterFunctionString = 'row => '
-	let amountOfFilters = 0
-
-	for (let i = 0; i < currentCustomFilters.length; i++) {
-		const filter = currentCustomFilters[i]
-
-		const { colName, value } = filter
-		const operator = operatorMap.get(filter.operator)
-
-		if (colName == '' || value == '' || operator == undefined) {
-			continue
-		}
-
-		amountOfFilters++
-
-		const suffix = (i != currentCustomFilters.length - 1) ? ' && ' : ';'
-
-		filterFunctionString += `row.${ colName } ${ operator } ${ value }${ suffix }`
-	}
-
-	if (amountOfFilters == 0) {
-		return null
-	}
-
-	return eval(filterFunctionString) as FilterFunction
 }
 
 // 5.6.9 Download Table to CSV
@@ -3180,7 +3148,7 @@ const toCSVValue = (
 }
 
 const currentTableToCSV = () => {
-	const table = getFilteredCurrentTable()
+	const table = currentTable
 
 	const { rows, cols } = table
 
@@ -3234,6 +3202,21 @@ const downloadTableToCSV = () => {
 	// Remove the fake download button from the page
 
 	downloadButton.remove()
+}
+
+// 5.6.10 Update Row Bounds
+
+const updateRowBounds = async () => {
+	const lowerBound = +$<HTMLInputElement>('#lower-row-bound').value
+	const upperBound = +$<HTMLInputElement>('#upper-row-bound').value
+
+	currentBounds = { from: lowerBound - 1, to: upperBound - 1 }
+
+	// Refetch the table
+
+	currentTable = await getTable(currentDbName, currentTableName, [])
+
+	updateTable()
 }
 
 /* ===================
