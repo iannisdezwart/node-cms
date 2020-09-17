@@ -3147,11 +3147,41 @@ const toCSVValue = (
 	}
 }
 
-const currentTableToCSV = () => {
-	const table = currentTable
+const currentTableToCSV = async () => {
+	let table = currentTable
 
-	const { rows, cols } = table
+	const { totalRows } = table
+	const { from, to } = currentBounds
 
+	const popupRes = await popup(
+		'Download CSV',
+		`Do you want to download all ${ totalRows } rows, or only your current view (${ from } - ${ to })?`,
+		[
+			{
+				name: 'All Rows'
+			},
+			{
+				name: 'Current View'
+			}
+		]
+	)
+
+	if (popupRes.buttonName == 'All Rows') {
+		// Get the whole current table
+
+		currentBounds = {
+			from: null,
+			to: null
+		}
+
+		table = await getTable(currentDbName, currentTableName)
+
+		// Reset the bounds
+
+		currentBounds = { from, to }
+	}
+
+	const { cols, rows } = table
 	let csv = ''
 
 	// Add columns
@@ -3178,8 +3208,8 @@ const currentTableToCSV = () => {
 	return csv
 }
 
-const downloadTableToCSV = () => {
-	const csv = currentTableToCSV()
+const downloadTableToCSV = async () => {
+	const csv = await currentTableToCSV()
 
 	// Create a File from the csv string
 
