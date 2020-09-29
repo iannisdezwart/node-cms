@@ -1497,7 +1497,7 @@ const showFiles = (path = '/') => {
 				<h1>Folder: ${ path }</h1>
 
 				<button class="small" onclick="showFiles(upALevel('${ path }'))">Up a level</button>
-				<button class="small" onclick="window.$('input[type=file]').click()">Upload Files</button>
+				<button class="small" onclick="openFileInput()">Upload Files</button>
 				<button class="small" onclick="createNewDirectory('${ path }')">New Folder</button>
 				<div class="bulk-actions hidden">
 					Selected Files:
@@ -1799,6 +1799,10 @@ const showFiles = (path = '/') => {
 				</div>
 			</div>
 			`
+
+			;(window as any).openFileInput = () => {
+				$('input[type=file]').click()
+			}
 
 			initDropArea(path)
 				.then(() => {
