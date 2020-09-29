@@ -1688,7 +1688,7 @@ const showFiles = (path = '/') => {
 															.then(() => {
 																notification(
 																	'Copied Files',
-																	`Succesfully copied ${ numifyNoun(selectedFiles.length, 'file', 'files') } to <code>${ selectedFolder }</code>`
+																	`successfully copied ${ numifyNoun(selectedFiles.length, 'file', 'files') } to <code>${ selectedFolder }</code>`
 																)
 
 																// Refresh files
@@ -1735,7 +1735,7 @@ const showFiles = (path = '/') => {
 															.then(() => {
 																notification(
 																	'Moved Files',
-																	`Succesfully moved ${ numifyNoun(selectedFiles.length, 'file', 'files') } to <code>${ selectedFolder }</code>`
+																	`successfully moved ${ numifyNoun(selectedFiles.length, 'file', 'files') } to <code>${ selectedFolder }</code>`
 																)
 
 																// Refresh files
@@ -1894,7 +1894,7 @@ const copyOrMoveFile = async (
 
 		notification(
 			`${ captitalise(pastSimpleVerb) } File`,
-			`Succesfully ${ pastSimpleVerb } file <code>${ sourcePath }</code> to <code>${ destinationPath }</code>`
+			`successfully ${ pastSimpleVerb } file <code>${ sourcePath }</code> to <code>${ destinationPath }</code>`
 		)
 
 		// Refresh files
@@ -1956,7 +1956,7 @@ const renameFile = async (sourcePath: string) => {
 
 		notification(
 			`Renamed file`,
-			`Succesfully renamed file <code>${ sourcePath }</code> to <code>${ destinationPath }</code>`
+			`successfully renamed file <code>${ sourcePath }</code> to <code>${ destinationPath }</code>`
 		)
 
 		// Refresh files
@@ -2012,7 +2012,7 @@ const createNewDirectory = async (parentDirectoryPath: string) => {
 
 	notification(
 		`Created directory`,
-		`Succesfully created directory <code>${ newDirName }</code>`
+		`successfully created directory <code>${ newDirName }</code>`
 	)
 
 	// Refresh files
@@ -2905,6 +2905,8 @@ const setTableFilter = async (
 }
 
 // Map to convert user-friendly operators to JS operators
+// Todo: Make sure the functions can only be accessed on strings
+// Todo: Disable the input:text when is empty is selected
 
 const operatorMap = new Map<string, string>([
 	[ 'Equals', '==' ],

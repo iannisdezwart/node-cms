@@ -16,7 +16,7 @@ authenticateSuToken(suToken)
 		try {
 			const pageType = req.body.pageType as string
 			const pageContent = req.body.pageContent as Object
-	
+
 			const pagesDB = db(__dirname + '/../../../pages.json')
 			const pagesTable = pagesDB.table('pages')
 
