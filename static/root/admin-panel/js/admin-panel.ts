@@ -1688,7 +1688,7 @@ const showFiles = (path = '/') => {
 															.then(() => {
 																notification(
 																	'Copied Files',
-																	`successfully copied ${ numifyNoun(selectedFiles.length, 'file', 'files') } to <code>${ selectedFolder }</code>`
+																	`Successfully copied ${ numifyNoun(selectedFiles.length, 'file', 'files') } to <code>${ selectedFolder }</code>`
 																)
 
 																// Refresh files
@@ -1735,7 +1735,7 @@ const showFiles = (path = '/') => {
 															.then(() => {
 																notification(
 																	'Moved Files',
-																	`successfully moved ${ numifyNoun(selectedFiles.length, 'file', 'files') } to <code>${ selectedFolder }</code>`
+																	`Successfully moved ${ numifyNoun(selectedFiles.length, 'file', 'files') } to <code>${ selectedFolder }</code>`
 																)
 
 																// Refresh files
@@ -1894,7 +1894,7 @@ const copyOrMoveFile = async (
 
 		notification(
 			`${ captitalise(pastSimpleVerb) } File`,
-			`successfully ${ pastSimpleVerb } file <code>${ sourcePath }</code> to <code>${ destinationPath }</code>`
+			`Successfully ${ pastSimpleVerb } file <code>${ sourcePath }</code> to <code>${ destinationPath }</code>`
 		)
 
 		// Refresh files
@@ -1956,7 +1956,7 @@ const renameFile = async (sourcePath: string) => {
 
 		notification(
 			`Renamed file`,
-			`successfully renamed file <code>${ sourcePath }</code> to <code>${ destinationPath }</code>`
+			`Successfully renamed file <code>${ sourcePath }</code> to <code>${ destinationPath }</code>`
 		)
 
 		// Refresh files
@@ -2012,7 +2012,7 @@ const createNewDirectory = async (parentDirectoryPath: string) => {
 
 	notification(
 		`Created directory`,
-		`successfully created directory <code>${ newDirName }</code>`
+		`Successfully created directory <code>${ newDirName }</code>`
 	)
 
 	// Refresh files
