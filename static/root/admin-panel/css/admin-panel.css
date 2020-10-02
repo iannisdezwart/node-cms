@@ -140,6 +140,12 @@ body {
 	height: 100%;
 }
 
+@media (max-width: 500px) {
+	.header #greeting {
+		display: none;
+	}
+}
+
 .logo {
 	color: var(--accent);
 	font-weight: 800;
