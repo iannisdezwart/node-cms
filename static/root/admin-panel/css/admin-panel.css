@@ -838,6 +838,18 @@ div.input:first-child {
 	transition: opacity 300ms ease;
 }
 
+@media (max-width: 400px) {
+	.popup {
+		margin: 2em;
+	}
+}
+
+@media (max-width: 320px) {
+	.popup {
+		margin: 2em 1em;
+	}
+}
+
 .popup.closed {
 	opacity: 0;
 }
