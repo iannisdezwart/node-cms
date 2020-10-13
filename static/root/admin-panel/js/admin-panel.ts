@@ -2153,10 +2153,13 @@ const showDatabaseList = async () => {
 */
 
 interface DB_Tables_List {
-	[tableName: string]: {
-		rowCount: number
-		colCount: number
-	}
+	tables: {
+		[tableName: string]: {
+			rowCount: number
+			colCount: number
+		}
+	},
+	views: string[]
 }
 
 const getTableListOfDatabase = async (
@@ -2190,25 +2193,30 @@ const showTableListOfDatabase = async (
 		'db-name': dbName
 	})
 
-	const tables = await getTableListOfDatabase(dbName)
+	const tablesAndViews = await getTableListOfDatabase(dbName)
 
 	const createTableRow = (
-		tableName: string,
+		name: string,
 		rowCount: number,
-		colCount: number
-	) => /* html */ `
-	<tr>
-		<td class="col-icon">
-			<img class="file-manager-file-icon" src="/admin-panel/img/table.png" alt="Table Icon">
-		</td>
-		<td class="col-name" onclick="showTable('${ dbName }', '${ tableName }')">${ tableName }</td>
-		<td>${ rowCount }</td>
-		<td>${ colCount }</td>
-		<td class="col-options">
-			<button class="small" onclick="showTable('${ dbName }', '${ tableName }')">View</button>
-		</td>
-	</tr>
-	`
+		colCount: number,
+		isView = false
+	) => {
+		const displayName = isView ? `${ name } (view)` : name
+
+		return /* html */ `
+		<tr>
+			<td class="col-icon">
+				<img class="file-manager-file-icon" src="/admin-panel/img/table.png" alt="Table Icon">
+			</td>
+			<td class="col-name" onclick="showTable('${ dbName }', '${ name }')">${ displayName }</td>
+			<td>${ isView ? '' : rowCount }</td>
+			<td>${ isView ? '' : colCount }</td>
+			<td class="col-options">
+				<button class="small" onclick="showTable('${ dbName }', '${ name }')">View</button>
+			</td>
+		</tr>
+		`
+	}
 
 	$('.main').innerHTML = /* html */ `
 	<h1>
@@ -2226,10 +2234,13 @@ const showTableListOfDatabase = async (
 				<td class="col-options"></td>
 			</thead>
 			<tbody>
-				${ reduceObject(tables, tableName => {
-					const { rowCount, colCount } = tables[tableName]
+				${ reduceObject(tablesAndViews.tables, tableName => {
+					const { rowCount, colCount } = tablesAndViews.tables[tableName]
 
 					return createTableRow(tableName, rowCount, colCount)
+				}) }
+				${ reduceArray(tablesAndViews.views, viewName => {
+					return createTableRow(viewName, null, null, true)
 				}) }
 			</tbody>
 		</table>
@@ -2245,7 +2256,8 @@ const showTableListOfDatabase = async (
 const getTable = async (
 	dbName: string,
 	tableName: string,
-	orderArr: (string | [ string, 'ASC' | 'DESC' ])[] = []
+	orderArr: (string | [ string, 'ASC' | 'DESC' ])[] = [],
+	isView = false
 ) => {
 	const suToken = await getSuToken()
 
@@ -2255,7 +2267,7 @@ const getTable = async (
 		const builtInFilterArr = Array.from(currentActiveBuiltInFilters)
 
 		const response = await request('/admin-panel/workers/database/table/get.node.js', {
-			suToken, dbName, tableName, orderArr, filterArr, builtInFilterArr, from, to
+			suToken, dbName, tableName, isView, orderArr, filterArr, builtInFilterArr, from, to
 		})
 
 		return JSON.parse(response) as TableRepresentation
@@ -2284,7 +2296,8 @@ let currentBounds = {
 
 const showTable = async (
 	dbName: string,
-	tableName: string
+	tableName: string,
+	isView = false
 ) => {
 	showLoader()
 
@@ -2294,7 +2307,7 @@ const showTable = async (
 		'table-name': tableName
 	})
 
-	currentTable = await getTable(dbName, tableName, [])
+	currentTable = await getTable(dbName, tableName, [], isView)
 	currentDbName = dbName
 	currentTableName = tableName
 
