@@ -112,7 +112,7 @@ authenticateSuToken(suToken)
 
 				if (views.includes(tableName)) {
 					try {
-						const { createView } = require(`./../../../../../../${ tableName }`)
+						const { createView } = require(`./../../../../../../${ tableName }.js`)
 						const view = createView(db) as View
 
 						sendTable(view.table, view.data)
