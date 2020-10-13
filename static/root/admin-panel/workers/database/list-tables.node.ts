@@ -1,13 +1,6 @@
 import { queryDatabase, handleError } from '../../../../private-workers/database-query'
 import { req, res } from 'apache-js-workers'
 
-interface DB_Tables_List {
-	[tableName: string]: {
-		rowCount: number
-		colCount: number
-	}
-}
-
 const dbName = req.body.dbName as string
 
 queryDatabase(
