@@ -2470,7 +2470,7 @@ const createInputElFromDataType = (
 		})
 	} else if (dataType == 'DateTime') {
 		inputEl.type = 'datetime-local'
-		inputEl.value = new Date(data).toISOString()
+		inputEl.value = parseDateTimeToInput(new Date(data))
 	} else if (dataType == 'Float') {
 		inputEl.type = 'number'
 		inputEl.value = data
@@ -2534,7 +2534,7 @@ const parseInputValue = (
 	} else if (dataType == 'Char') {
 		return value
 	} else if (dataType == 'DateTime') {
-		return new Date(value)
+		return parseDateTimeToInput(new Date(value))
 	} else if (dataType == 'Float') {
 		return parseFloat(value)
 	} else if (dataType == 'Hex') {
@@ -2571,7 +2571,7 @@ const parseOutputValue = (
 	} else if (dataType == 'Char') {
 		return value
 	} else if (dataType == 'DateTime') {
-		return value.toISOString() // Todo: See if this is the right thing to do
+		return parseDateTimeToOutput(new Date(value))
 	} else if (dataType == 'Float') {
 		return value.toString()
 	} else if (dataType == 'Hex') {
