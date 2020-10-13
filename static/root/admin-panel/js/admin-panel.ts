@@ -65,8 +65,9 @@
 			5.6.6 Add Row
 			5.6.7 Table Ordering
 			5.6.8 Table Filtering
-			5.6.9 Download Table to CSV
-			5.6.10 Update Row Bounds
+			5.6.9 Update Row Bounds
+			5.6.10 Download Table to CSV
+			5.6.11 Import to Table from CSV
 
 	6. User Management
 		6.1 Fetch Users
@@ -2316,6 +2317,9 @@ const showTable = async (
 	<div class="table-action-row">
 		<button onclick="setCustomFilters()" class="small">Filter</button>
 		<button onclick="downloadTableToCSV()" class="small">Download to CSV</button>
+		${ (currentTable.data?.importScript != null) ? /* html */ `
+		<button onclick="importRowsFromCSV()" class="small">Import Rows from CSV</button>
+		` : '' }
 	</div>
 
 	<br>
@@ -3145,7 +3149,21 @@ const setCustomFilters = async () => {
 	}
 }
 
-// 5.6.9 Download Table to CSV
+// 5.6.9 Update Row Bounds
+
+const updateRowBounds = async () => {
+	const lowerBound = +$<HTMLInputElement>('#lower-row-bound').value
+	const upperBound = +$<HTMLInputElement>('#upper-row-bound').value
+
+	currentBounds = { from: lowerBound - 1, to: upperBound - 1 }
+
+	// Refetch the table
+
+	currentTable = await getTable(currentDbName, currentTableName, [])
+	updateTable()
+}
+
+// 5.6.10 Download Table to CSV
 
 const toCSVValue = (
 	value: any,
@@ -3249,19 +3267,47 @@ const downloadTableToCSV = async () => {
 	downloadButton.remove()
 }
 
-// 5.6.10 Update Row Bounds
+// 5.6.11 Import to Table from CSV
 
-const updateRowBounds = async () => {
-	const lowerBound = +$<HTMLInputElement>('#lower-row-bound').value
-	const upperBound = +$<HTMLInputElement>('#upper-row-bound').value
+const importRowsFromCSV = () => {
+	// Create fake upload button
 
-	currentBounds = { from: lowerBound - 1, to: upperBound - 1 }
+	const uploadButton = document.createElement('input')
+	uploadButton.type = 'file'
+	uploadButton.style.display = 'none'
 
-	// Refetch the table
+	// Add the fake upload button to the page
 
-	currentTable = await getTable(currentDbName, currentTableName, [])
+	document.body.appendChild(uploadButton)
 
-	updateTable()
+	// Click the fake upload button
+
+	uploadButton.click()
+
+	// Handle the uploaded file
+
+	uploadButton.addEventListener('change', async () => {
+		const file = uploadButton.files[0]
+
+		if (file != null) {
+			const suToken = await getSuToken()
+			const dbName = currentDbName
+			const tableName = currentTableName
+
+			await request('/admin-panel/workers/database/table/import-from-csv.node.js', {
+				suToken, dbName, tableName
+			}, [ file ])
+
+			// Refetch the table
+
+			currentTable = await getTable(currentDbName, currentTableName, [])
+			updateTable()
+		}
+
+		// Remove the fake upload button
+
+		uploadButton.remove()
+	})
 }
 
 /* ===================
