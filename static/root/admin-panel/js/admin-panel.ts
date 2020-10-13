@@ -2193,7 +2193,7 @@ const showTableListOfDatabase = async (
 		colCount: number,
 		isView = false
 	) => {
-		const displayName = isView ? `${ name } (view)` : name
+		const displayName = isView ? `${ name } <em class="green-colour">(view)</em>` : name
 
 		return /* html */ `
 		<tr>
