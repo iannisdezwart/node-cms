@@ -2704,8 +2704,6 @@ const deleteRow = async (
 	const suToken = await getSuToken()
 
 	try {
-		const rowEl = $(`tr[data-row-num="${ rowNum }"]`)
-
 		// Todo: show loader
 
 		await request('/admin-panel/workers/database/table/delete-row.node.js', {
@@ -2715,10 +2713,7 @@ const deleteRow = async (
 		// Refetch the table
 
 		currentTable = await getTable(dbName, tableName, [])
-
-		// Remove the row visually
-
-		rowEl.remove()
+		updateTable()
 	} catch(err) {
 		handleRequestError(err)
 	}
