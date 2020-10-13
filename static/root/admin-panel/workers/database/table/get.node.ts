@@ -1,7 +1,9 @@
 import { queryTable, handleError } from './../../../../../private-workers/database-query'
 import { req, res } from 'apache-js-workers'
 import { DB_Table_Row_Formatted as Row } from 'node-json-database'
+import { authenticateSuToken } from '../../../../../private-workers/authenticate-su-token'
 
+const suToken = req.body.suToken as string
 const dbName = req.body.dbName as string
 const tableName = req.body.tableName as string
 let from = req.body.from as number
@@ -40,58 +42,64 @@ const generateFilterFunction = (filter: Filter) => {
 	throw new Error(`Unrecognised operator ${ operator }`)
 }
 
-queryTable(
-	dbName,
-	tableName,
-	tableFn => {
-		let table = tableFn.get()
+authenticateSuToken(suToken)
+	.then(() => {
+		queryTable(dbName, tableName, tableFn => {
+				let table = tableFn.get()
 
-		// Add rowNum to each row
+				// Add rowNum to each row
 
-		let i = 0
+				let i = 0
 
-		for (let row of table.rows) row.rowNum = i++
+				for (let row of table.rows) row.rowNum = i++
 
-		// Filter table
+				// Filter table
 
-		if (filterArr.length) {
-			for (let filter of filterArr) {
-				table = table.where(generateFilterFunction(filter))
-			}
-		}
+				if (filterArr.length) {
+					for (let filter of filterArr) {
+						table = table.where(generateFilterFunction(filter))
+					}
+				}
 
-		for (let filter of builtInFilterArr) {
-			// Never let the user input a built-in filter function
+				for (let filter of builtInFilterArr) {
+					// Never let the user input a built-in filter function
 
-			const filterFunction = eval(tableFn.data.filters[filter])
-			console.log(filterFunction)
+					const filterFunction = eval(tableFn.data.filters[filter])
+					console.log(filterFunction)
 
-			if (filterFunction != null) {
-				table = table.where(filterFunction)
-			}
-		}
+					if (filterFunction != null) {
+						table = table.where(filterFunction)
+					}
+				}
 
-		// Store the number of total rows
+				// Store the number of total rows
 
-		const totalRows = table.length
+				const totalRows = table.length
 
-		// Order table
+				// Order table
 
-		if (orderArr.length) table = table.orderBy(orderArr)
+				if (orderArr.length) table = table.orderBy(orderArr)
 
-		// Get rows between indices
+				// Get rows between indices
 
-		if (from == null) from = 0
-		if (to == null) to = table.length - 1
-		if (from != 0 || to != table.length - 1) table = table.between(from, to)
+				if (from == null) from = 0
+				if (to == null) to = table.length - 1
+				if (from != 0 || to != table.length - 1) table = table.between(from, to)
 
-		// Send the table
+				// Send the table
 
-		const { rows, cols } = table
-		const { data } = tableFn
+				const { rows, cols } = table
+				const { data } = tableFn
 
-		res.send({ rows, cols, data, totalRows })
+				res.send({ rows, cols, data, totalRows })
+			})
+			.catch(err => {
+				handleError(err)
+			})
 	})
-	.catch(err => {
-		handleError(err)
+	.catch(() => {
+		// Send 403 error
+
+		res.statusCode = 403
+		res.send('Forbidden')
 	})
