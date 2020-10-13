@@ -284,15 +284,6 @@ const goToTheRightPage = () => {
 
 addEventListener('popstate', goBackInHistory)
 
-// Handle reload
-
-addEventListener('beforeunload', async () => {
-	const req = await request('/admin-panel/workers/get-refresh-token', {})
-	const refreshToken = req
-
-	Cookies.set('refresh-token', refreshToken)
-})
-
 const goToHomepage = () => {
 	// Todo: make homepage
 
