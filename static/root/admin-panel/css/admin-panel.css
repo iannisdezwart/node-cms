@@ -626,6 +626,10 @@ input.small.red {
 	border-bottom: 2px solid #cc5858;
 }
 
+input.small[type="datetime-local"] {
+	width: 200px;
+}
+
 input.small.short {
 	width: 60px;
 }
