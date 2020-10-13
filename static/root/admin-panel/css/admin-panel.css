@@ -90,6 +90,10 @@ body {
 	cursor: pointer;
 }
 
+.green-colour {
+	color: var(--accent);
+}
+
 /* ===================
 	2. Layout
 =================== */
