@@ -2248,8 +2248,7 @@ const showTableListOfDatabase = async (
 const getTable = async (
 	dbName: string,
 	tableName: string,
-	orderArr: (string | [ string, 'ASC' | 'DESC' ])[] = [],
-	isView = false
+	orderArr: (string | [ string, 'ASC' | 'DESC' ])[] = []
 ) => {
 	const suToken = await getSuToken()
 
@@ -2257,6 +2256,7 @@ const getTable = async (
 		const { from, to } = currentBounds
 		const filterArr = currentCustomFilters
 		const builtInFilterArr = Array.from(currentActiveBuiltInFilters)
+		const isView = currentTableIsView
 
 		const response = await request('/admin-panel/workers/database/table/get.node.js', {
 			suToken, dbName, tableName, isView, orderArr, filterArr, builtInFilterArr, from, to
@@ -2301,10 +2301,10 @@ const showTable = async (
 		'is-view': isView.toString()
 	})
 
-	currentTable = await getTable(dbName, tableName, [], isView)
+	currentTableIsView = isView
+	currentTable = await getTable(dbName, tableName, [])
 	currentDbName = dbName
 	currentTableName = tableName
-	currentTableIsView = isView
 
 	currentOrderBy.clear()
 	currentActiveBuiltInFilters.clear()
