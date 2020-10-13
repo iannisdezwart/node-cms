@@ -2754,25 +2754,7 @@ const addRow = async (
 		// Refetch the table
 
 		currentTable = await getTable(dbName, tableName, [])
-
-		const { rows, cols } = currentTable
-		const row = rows[rows.length - 1]
-
-		// Todo: What if the new row doesn't go through the current filters?
-
-		// Add the row visually
-
-		$('tbody').insertAdjacentHTML('beforeend', /* html */ `
-		<tr data-row-num="${ row.rowNum }">
-			${ reduceArray(cols, col => /* html */ `
-			<td data-datatype="${ col.dataType }" data-col-name="${ col.name }" class="col">${ row[col.name] }</td>
-			`) }
-			<td class="col-options">
-				<button onclick="editRow('${ currentDbName }', '${ currentTableName }', ${ row.rowNum })" class="small edit">Edit</button>
-				<button onclick="deleteRow('${ currentDbName }', '${ currentTableName }', ${ row.rowNum })" class="small red">Delete</button>
-			</td>
-		</tr>
-		`)
+		updateTable()
 	} catch(err) {
 		handleRequestError(err)
 	}
