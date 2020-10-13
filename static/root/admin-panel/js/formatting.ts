@@ -88,6 +88,27 @@ const parseDate = (dateString: string) => {
 	return `${ getMonthName(parsedDate) } ${ getOrdinalDate(parsedDate) } ${ parsedDate.getFullYear() }`
 }
 
+// Datetime input
+
+const parseDateTimeToInput = (date: Date) => {
+	const isoString = date.toISOString()
+	return isoString.substring(0, isoString.length - 1)
+}
+
+// Datetime output
+
+const parseDateTimeToOutput = (date: Date) => {
+	const dd = date.getDate().toString().padStart(2, '0')
+	const MM = (date.getMonth() + 1).toString().padStart(2, '0')
+	const yyyy = date.getFullYear().toString().padStart(4, '0')
+
+	const hh = date.getHours().toString().padStart(2, '0')
+	const mm = date.getMinutes().toString().padStart(2, '0')
+	const ss = date.getSeconds().toString().padStart(2, '0')
+
+	return `${ dd }/${ MM }/${ yyyy } ${ hh }:${ mm }:${ ss }`
+}
+
 // Singular, Plural
 
 const numifyNoun = (number: number, singularForm: string, pluralForm: string) => {
