@@ -2038,6 +2038,9 @@ interface DB_Info {
 interface DB {
 	tables: {
 		[tableName: string]: DB_Table
+	},
+	data?: {
+		[key: string]: any
 	}
 }
 
@@ -2187,7 +2190,25 @@ const showTableListOfDatabase = async (
 		'db-name': dbName
 	})
 
-	const db = await getTableListOfDatabase(dbName)
+	const tables = await getTableListOfDatabase(dbName)
+
+	const createTableRow = (
+		tableName: string,
+		rowCount: number,
+		colCount: number
+	) => /* html */ `
+	<tr>
+		<td class="col-icon">
+			<img class="file-manager-file-icon" src="/admin-panel/img/table.png" alt="Table Icon">
+		</td>
+		<td class="col-name" onclick="showTable('${ dbName }', '${ tableName }')">${ tableName }</td>
+		<td>${ rowCount }</td>
+		<td>${ colCount }</td>
+		<td class="col-options">
+			<button class="small" onclick="showTable('${ dbName }', '${ tableName }')">View</button>
+		</td>
+	</tr>
+	`
 
 	$('.main').innerHTML = /* html */ `
 	<h1>
@@ -2205,24 +2226,10 @@ const showTableListOfDatabase = async (
 				<td class="col-options"></td>
 			</thead>
 			<tbody>
-				${ reduceObject(db, tableName => {
-					const table = db[tableName]
+				${ reduceObject(tables, tableName => {
+					const { rowCount, colCount } = tables[tableName]
 
-					const { rowCount, colCount } = table
-
-					return /* html */ `
-					<tr>
-						<td class="col-icon">
-							<img class="file-manager-file-icon" src="/admin-panel/img/table.png" alt="Table Icon">
-						</td>
-						<td class="col-name" onclick="showTable('${ dbName }', '${ tableName }')">${ tableName }</td>
-						<td>${ rowCount }</td>
-						<td>${ colCount }</td>
-						<td class="col-options">
-							<button class="small" onclick="showTable('${ dbName }', '${ tableName }')">View</button>
-						</td>
-					</tr>
-					`
+					return createTableRow(tableName, rowCount, colCount)
 				}) }
 			</tbody>
 		</table>
