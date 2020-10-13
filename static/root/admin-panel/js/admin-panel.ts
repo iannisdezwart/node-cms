@@ -2208,11 +2208,11 @@ const showTableListOfDatabase = async (
 			<td class="col-icon">
 				<img class="file-manager-file-icon" src="/admin-panel/img/table.png" alt="Table Icon">
 			</td>
-			<td class="col-name" onclick="showTable('${ dbName }', '${ name }')">${ displayName }</td>
+			<td class="col-name" onclick="showTable('${ dbName }', '${ name }', ${ isView })">${ displayName }</td>
 			<td>${ isView ? '' : rowCount }</td>
 			<td>${ isView ? '' : colCount }</td>
 			<td class="col-options">
-				<button class="small" onclick="showTable('${ dbName }', '${ name }')">View</button>
+				<button class="small" onclick="showTable('${ dbName }', '${ name }', ${ isView })">View</button>
 			</td>
 		</tr>
 		`
