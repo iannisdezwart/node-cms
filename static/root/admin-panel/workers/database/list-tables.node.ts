@@ -7,12 +7,12 @@ queryDatabase(
 	dbName,
 	db => {
 		const tables = db.getTables()
-		const info: DB_Tables_List = {}
+		const info: DB_Tables_List = { tables: {}, views: db?.data?.views ?? [] }
 
 		for (let tableName of tables) {
 			const table = db.table(tableName)
 
-			info[tableName] = {
+			info.tables[tableName] = {
 				rowCount: table.rowCount,
 				colCount: table.colCount
 			}
