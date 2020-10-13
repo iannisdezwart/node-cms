@@ -272,8 +272,9 @@ const goToTheRightPage = () => {
 	} else if (tab == 'show-database-table') {
 		const dbName = searchParams.get('db-name')
 		const tableName = searchParams.get('table-name')
+		const isView = searchParams.get('is-view') == 'true'
 
-		showTable(dbName, tableName)
+		showTable(dbName, tableName, isView)
 	} else if (tab == 'user-management') {
 		showUserManagement()
 	}
@@ -2283,6 +2284,7 @@ const getTable = async (
 let currentTable: TableRepresentation
 let currentDbName: string
 let currentTableName: string
+let currentTableIsView: boolean
 
 let currentOrderBy = new Map<string, 'ASC' | 'DESC'>()
 let currentBuiltInFilters = new Set<string>()
@@ -2304,12 +2306,14 @@ const showTable = async (
 	setSearchParams({
 		tab: 'show-database-table',
 		'db-name': dbName,
-		'table-name': tableName
+		'table-name': tableName,
+		'is-view': isView.toString()
 	})
 
 	currentTable = await getTable(dbName, tableName, [], isView)
 	currentDbName = dbName
 	currentTableName = tableName
+	currentTableIsView = isView
 
 	currentOrderBy.clear()
 	currentActiveBuiltInFilters.clear()
@@ -2397,7 +2401,9 @@ const updateTable = () => {
 				</td>
 				`
 			}) }
-			<td></td>
+			${ currentTableIsView ? '' : /* html */ `
+			<td class="col-options"></td>
+			` }
 		</thead>
 		<tbody>
 			${ reduceArray(rows, row => /* html */ `
@@ -2405,13 +2411,16 @@ const updateTable = () => {
 				${ reduceArray(cols, col => /* html */ `
 				<td data-datatype="${ col.dataType }" data-col-name="${ col.name }" class="col">${ parseOutputValue(row[col.name], col.dataType) }</td>
 				`) }
+				${ currentTableIsView ? '' : /* html */ `
 				<td class="col-options">
 					<button onclick="editRow('${ currentDbName }', '${ currentTableName }', ${ row.rowNum })" class="small edit">Edit</button>
 					<button onclick="deleteRow('${ currentDbName }', '${ currentTableName }', ${ row.rowNum })" class="small red">Delete</button>
 				</td>
+				` }
 			</tr>
 			`) }
 		</tbody>
+		${ currentTableIsView ? '' : /* html */ `
 		<tfoot>
 			${ reduceArray(cols, col => /* html */ `
 			<td data-datatype="${ col.dataType }" data-col-name="${ col.name }" class="col">
@@ -2422,6 +2431,7 @@ const updateTable = () => {
 				<button onclick="addRow('${ currentDbName }', '${ currentTableName }')" class="small">Add</button>
 			</td>
 		</tfoot>
+		` }
 	</table>
 	`
 
