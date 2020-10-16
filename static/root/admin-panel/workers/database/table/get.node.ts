@@ -1,5 +1,5 @@
 import { queryTable, handleError, queryDatabase } from './../../../../../private-workers/database-query'
-import { req, res } from 'apache-js-workers'
+import { log, req, res } from 'apache-js-workers'
 import { DB_Table_Row_Formatted as Row, Table } from 'node-json-database'
 import { authenticateSuToken } from '../../../../../private-workers/authenticate-su-token'
 
@@ -120,6 +120,7 @@ authenticateSuToken(suToken)
 						// Send 500 error
 
 						res.statusCode = 500
+						log('e', err.stack ?? err)
 						res.send('Internal Server Error')
 					}
 				} else {

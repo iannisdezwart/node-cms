@@ -36,6 +36,7 @@ authenticateSuToken(suToken)
 			// Send 500 error
 
 			res.statusCode = 500
+			log('e', err.stack ?? err)
 			res.send('An internal server error occured while updating the page')
 
 			log('e', err)

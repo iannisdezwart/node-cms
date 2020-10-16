@@ -36,7 +36,7 @@ authenticateSuToken(suToken)
 					modified: dbFileStats.mtime
 				})
 			}
-	
+
 			res.send(dbList)
 		} catch(err) {
 			// Send 500 error
@@ -44,6 +44,7 @@ authenticateSuToken(suToken)
 			log('e', err)
 
 			res.statusCode = 500
+			log('e', err.stack ?? err)
 			res.send('Internal Server Error')
 		}
 	})

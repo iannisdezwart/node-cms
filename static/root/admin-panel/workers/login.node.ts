@@ -12,13 +12,13 @@ const loginData = req.body as { username: string, password: string }
 authenticate(loginData)
 	.then(() => {
 		// Authenticated, send the user a token
-		
+
 		const jwtSecret = fs.readFileSync(__dirname + '/../../../.jwtsecret', 'utf-8')
 
 		const token = jwt.sign({ username: loginData.username }, jwtSecret, {
 			expiresIn: '1d'
 		})
-	
+
 		res.send(token)
 	})
 	.catch(() => {

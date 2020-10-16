@@ -109,7 +109,7 @@ const randomString = (length: number, sets?: RandomCharSetsOptions) => {
 	}
 
 	let chars = ''
-	
+
 	for (let set in sets) {
 		if (sets[set]) {
 			chars += randomCharSets[set]

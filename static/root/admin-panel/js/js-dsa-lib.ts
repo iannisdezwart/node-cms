@@ -40,18 +40,18 @@ class Queue<T> {
 	first: QueueNode<T>
 	last: QueueNode<T>
 	size = 0
-	
+
 	constructor() {}
 
 	push(data: T) {
 		if (this.size == 0) {
 			const newNode = new QueueNode(data)
-			
+
 			this.first = newNode
 			this.last = newNode
 		} else {
 			const newNode = new QueueNode(data)
-			
+
 			this.last.next = newNode
 			this.last = this.last.next
 		}
@@ -65,7 +65,7 @@ class Queue<T> {
 		}
 
 		const { data } = this.first
-		
+
 		this.first = this.first.next
 		this.size--
 
@@ -99,7 +99,7 @@ class Queue<T> {
 class QueueNode<T> {
 	data: T
 	next: QueueNode<T>
-	
+
 	constructor(data: T) {
 		this.data = data
 	}
@@ -117,18 +117,18 @@ class Stack<T> {
 	bottom: StackNode<T>
 	top: StackNode<T>
 	size = 0
-	
+
 	constructor() {}
 
 	push(data: T) {
 		if (this.size == 0) {
 			const newNode = new StackNode(data, null)
-			
+
 			this.bottom = newNode
 			this.top = newNode
 		} else {
 			const newNode = new StackNode(data, this.top)
-			
+
 			this.top.next = newNode
 			this.top = this.top.next
 		}
@@ -142,7 +142,7 @@ class Stack<T> {
 		}
 
 		const { data } = this.top
-		
+
 		this.top = this.top.prev
 		this.size--
 
@@ -187,7 +187,7 @@ class StackNode<T> {
 	data: T
 	prev: StackNode<T>
 	next: StackNode<T>
-	
+
 	constructor(data: T, prev: StackNode<T>) {
 		this.data = data
 		this.prev = prev
@@ -220,7 +220,7 @@ class LinkedList<T> {
 				while (currentNode.next != null) {
 					currentNode = currentNode.next
 				}
-		
+
 				currentNode.next = new LinkedListNode<T>(data)
 			}
 		}
@@ -231,7 +231,7 @@ class LinkedList<T> {
 	insertBeforeHead(data: T) {
 		if (this.head != null) {
 			const newNode = new LinkedListNode<T>(data)
-			
+
 			newNode.next = this.head
 			this.head = newNode
 		} else {
@@ -258,7 +258,7 @@ class LinkedList<T> {
 
 		if (this.head.next != null) {
 			let currentNode = this.head
-	
+
 			while (currentNode.next != null) {
 				if (currentNode.next.data == data) {
 					currentNode.next = currentNode.next.next
@@ -268,7 +268,7 @@ class LinkedList<T> {
 						break
 					}
 				}
-	
+
 				currentNode = currentNode.next
 			}
 		}
@@ -355,7 +355,7 @@ class DoublyLinkedList<T> {
 				while (currentNode.next != null) {
 					currentNode = currentNode.next
 				}
-		
+
 				currentNode.next = new DoublyLinkedListNode<T>(data, currentNode)
 			}
 		}
@@ -366,7 +366,7 @@ class DoublyLinkedList<T> {
 	insertBeforeHead(data: T) {
 		if (this.head != null) {
 			const newNode = new DoublyLinkedListNode<T>(data, null)
-			
+
 			newNode.next = this.head
 			this.head.prev = newNode
 			this.head = newNode
@@ -394,7 +394,7 @@ class DoublyLinkedList<T> {
 
 		if (this.head.next != null) {
 			let currentNode = this.head
-	
+
 			while (currentNode.next != null) {
 				if (currentNode.next.data == data) {
 					currentNode.next = currentNode.next.next
@@ -404,7 +404,7 @@ class DoublyLinkedList<T> {
 						break
 					}
 				}
-	
+
 				currentNode = currentNode.next
 			}
 		}

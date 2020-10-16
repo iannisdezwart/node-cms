@@ -8,13 +8,13 @@ const blurSearchBox = (
 
 const initSearchBoxes = () => {
 	let searchBoxes = $a<HTMLDivElement>('.search')
-	
+
 	for (let sb of searchBoxes) {
-	
+
 		// Dropdown
 
 		// On focus, add the arrow and show the dropdown
-	
+
 		sb.querySelector('input').onfocus = () => {
 			sb.querySelector('ul.dropdown').classList.add('visible')
 			sb.querySelector('.arrow').classList.add('down')
@@ -25,21 +25,21 @@ const initSearchBoxes = () => {
 		sb.querySelector('input').onblur = () => blurSearchBox(sb)
 
 		// Make sure that clicking the arrow does not blur the search box
-	
+
 		let unfocussableElements = sb.$a('.arrow')
-	
+
 		for (let unfocussable of unfocussableElements) {
 			unfocussable.addEventListener('mouseover', () => {
 				sb.querySelector('input').onblur = null
 			})
-	
+
 			unfocussable.addEventListener('mouseleave', () => {
 				sb.querySelector('input').onblur = () => blurSearchBox(sb)
 			})
 		}
 
 		// Show or hide the search box when the arrow is clicked
-	
+
 		sb.querySelector('.arrow').addEventListener('click', () => {
 			if (sb.querySelector('ul.dropdown').classList.contains('visible')) {
 				blurSearchBox(sb)
@@ -59,7 +59,7 @@ const initSearchBoxes = () => {
 				sb.$<HTMLInputElement>('input').value = li.innerText
 			})
 		}
-	
+
 		// Search
 
 		// When user is typing in the input, search for the input and show it in the dropdown
@@ -67,9 +67,9 @@ const initSearchBoxes = () => {
 		if (!sb.classList.contains('no-input-filter')) {
 			sb.querySelector('input').oninput = () => {
 				let value = sb.querySelector('input').value.toLowerCase()
-		
+
 				unselectLi(searchBoxLIs)
-		
+
 				for (let li of searchBoxLIs) {
 					if (!li.innerText.toLowerCase().includes(value)) {
 						li.style.display = 'none'
@@ -80,13 +80,13 @@ const initSearchBoxes = () => {
 			}
 		}
 
-	
+
 		// Handle key input
-	
+
 		let selectedIndex = -1
 
 		// Visually select LI
-	
+
 		const selectLi = (lis: HTMLLIElement[], index: number) => {
 			if (selectedIndex != -1) {
 				lis[selectedIndex].classList.remove('selected')
@@ -94,10 +94,10 @@ const initSearchBoxes = () => {
 
 			selectedIndex = index
 			lis[selectedIndex].classList.add('selected')
-	
+
 			let dropdown = $<HTMLDivElement>('.dropdown')
 			let selectedEl = $<HTMLLIElement>('li.selected')
-	
+
 			if ((dropdown.offsetHeight - selectedEl.offsetHeight) - (selectedEl.offsetTop - dropdown.scrollTop) < 0) {
 				// Scroll down to the element
 
@@ -120,7 +120,7 @@ const initSearchBoxes = () => {
 		}
 
 		// Handle typed input
-	
+
 		sb.querySelector('input').addEventListener('keydown', e => {
 			// On Enter, click LI
 
@@ -146,10 +146,10 @@ const initSearchBoxes = () => {
 			}
 
 			// On ArrowDown, move active index down
-	
+
 			if (e.code == 'ArrowDown') {
 				e.preventDefault()
-	
+
 				if (selectedIndex == -1) {
 					// Select first LI
 

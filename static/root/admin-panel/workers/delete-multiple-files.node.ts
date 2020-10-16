@@ -1,4 +1,4 @@
-import { req, res } from 'apache-js-workers'
+import { log, req, res } from 'apache-js-workers'
 import { resolve as resolvePath } from 'path'
 import * as fs from 'fs'
 import { authenticateSuToken } from './../../../private-workers/authenticate-su-token'
@@ -43,38 +43,39 @@ authenticateSuToken(suToken)
 
 				if (!filePathIsSafe(filePath, __dirname + '/../../')) {
 					// Send 403 error
-		
+
 					res.statusCode = 403
 					res.send('Forbidden')
-					
+
 					console.warn(`POSSIBLE DOT-DOT-SLASH ATTACK! user tried to delete this file: ${ filePath }`)
-		
+
 					return
 				}
-		
+
 				if (fs.existsSync(filePath)) {
 					const stats = fs.statSync(filePath)
-	
+
 					if (stats.isDirectory()) {
 						rimraf(filePath)
-	
+
 						res.send('Sucesssfully deleted the directory')
 					} else {
 						fs.unlinkSync(filePath)
-	
+
 						res.send('Sucesssfully deleted the file')
 					}
 				} else {
 					// Send 500 error
-	
+
 					res.statusCode = 500
 					res.send('File does not exist')
 				}
 			}
 		} catch(err) {
 			// Send 500 error
-			
+
 			res.statusCode = 500
+			log('e', err.stack ?? err)
 			res.send('Internal server error')
 
 			console.error(err)

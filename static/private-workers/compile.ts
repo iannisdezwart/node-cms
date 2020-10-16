@@ -8,13 +8,13 @@ export const compile = () => new Promise((resolve, reject) => {
 	})
 
 	// Store stdout and stderr
-	
+
 	let stdout = ''
 	let stderr = ''
-	
+
 	child.stdout.on('data', data => stdout += data)
 	child.stderr.on('data', data => stderr += data)
-	
+
 	child.on('close', code => {
 		if (code != 0) {
 			reject({ stdout, stderr })

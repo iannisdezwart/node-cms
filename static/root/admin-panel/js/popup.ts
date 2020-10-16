@@ -122,8 +122,8 @@ const popup = (
 
 		buttonEl.innerHTML = button.name
 
-		if (button.classes != undefined) {		
-			for (let className of button.classes) {			
+		if (button.classes != undefined) {
+			for (let className of button.classes) {
 				buttonEl.classList.add(className)
 			}
 		}
@@ -133,7 +133,7 @@ const popup = (
 		if (button.on != undefined) {
 			for (let event in button.on) {
 				const f = button.on[event]
-	
+
 				buttonEl.addEventListener(event, f)
 			}
 		}
@@ -143,9 +143,9 @@ const popup = (
 		if (button.resolvesPopup != false) {
 			buttonEl.addEventListener('click', () => {
 				const inputResults = getInputValues()
-	
+
 				removePopup()
-	
+
 				resolve({
 					buttonName: button.name,
 					inputs: inputResults

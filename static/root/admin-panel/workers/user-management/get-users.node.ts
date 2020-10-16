@@ -27,6 +27,7 @@ authenticateSuToken(suToken)
 			res.send(JSON.stringify(users))
 		} catch(err) {
 			res.statusCode = 500
+			log('e', err.stack ?? err)
 			res.send('Internal Server Error')
 
 			log('e', err)

@@ -29,6 +29,7 @@ authenticateSuToken(suToken)
 			}
 		} catch(err) {
 			res.statusCode = 500
+			log('e', err.stack ?? err)
 			res.send('Internal Server Error')
 
 			console.log(err)

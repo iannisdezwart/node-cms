@@ -12,7 +12,7 @@ export const authenticateSuToken = (
 	}
 
 	// Verify the token
-	
+
 	jwt.verify(suToken, jwtSecret, (err, decoded: any) => {
 		if (!err) {
 			if (decoded.tokenType == 'su-token') {
@@ -21,12 +21,12 @@ export const authenticateSuToken = (
 				resolve()
 			} else {
 				// Non-suToken
-	
+
 				reject()
 			}
 		} else {
 			// Not authenticated
-	
+
 			reject()
 		}
 	})

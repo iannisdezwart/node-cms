@@ -1,4 +1,4 @@
-import { req, res } from 'apache-js-workers'
+import { log, req, res } from 'apache-js-workers'
 import { db } from 'node-json-database'
 import { authenticateSuToken } from './../../../private-workers/authenticate-su-token'
 import { compile }  from './../../../private-workers/compile'
@@ -46,12 +46,11 @@ authenticateSuToken(suToken)
 					throw err
 				})
 		} catch(err) {
-			console.error(`Error while swapping pages: ${ err }`)
-
 			// Send 500 error
 
 			res.statusCode = 500
-			res.send('Forbidden')
+			log('e', err.stack ?? err)
+			res.send('Internal Server Error')
 		}
 	})
 	.catch(() => {

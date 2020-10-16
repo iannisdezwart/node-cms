@@ -16,12 +16,12 @@ export const authenticate = (loginData: { username: string, password: string }) 
 		}
 
 		// Search for the Login Data in the database
-	
+
 		const adminTable = db(__dirname + '/../users.json').table('admins')
 		const searchTable = adminTable.get().where(row => row.username == loginData.username)
 
 		// Check if the Login Data exists in the database
-		
+
 		if (searchTable.length == 1) {
 			const userRecord = searchTable.rows[0]
 

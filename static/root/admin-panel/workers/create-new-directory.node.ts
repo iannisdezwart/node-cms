@@ -1,4 +1,4 @@
-import { req, res } from 'apache-js-workers'
+import { log, req, res } from 'apache-js-workers'
 import { resolve as resolvePath } from 'path'
 import * as fs from 'fs'
 import { authenticateSuToken } from './../../../private-workers/authenticate-su-token'
@@ -13,7 +13,7 @@ const suToken = req.body.suToken as string
 authenticateSuToken(suToken)
 	.then(() => {
 		// Authenticated, create directory
-		
+
 		try {
 			const newDirectoryPathIn = req.body.newDirectoryPath as string
 
@@ -37,8 +37,9 @@ authenticateSuToken(suToken)
 			res.send('Succesfully created new directory')
 		} catch(err) {
 			// Send 500 error
-			
+
 			res.statusCode = 500
+			log('e', err.stack ?? err)
 			res.send('Internal server error')
 
 			console.error(err)

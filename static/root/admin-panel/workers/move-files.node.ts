@@ -1,4 +1,4 @@
-import { req, res } from 'apache-js-workers'
+import { log, req, res } from 'apache-js-workers'
 import { resolve as resolvePath } from 'path'
 import * as fs from 'fs'
 import { authenticateSuToken } from './../../../private-workers/authenticate-su-token'
@@ -50,12 +50,12 @@ authenticateSuToken(suToken)
 
 			if (!filePathIsSafe(destinationDirPath, __dirname + '/../../')) {
 				// Send 403 error
-		
+
 				res.statusCode = 403
 				res.send('Forbidden')
 
 				console.warn(`POSSIBLE DOT-DOT-SLASH ATTACK! user tried to copy to this file: ${ destinationDirPath }`)
-	
+
 				return
 			}
 
@@ -109,7 +109,7 @@ authenticateSuToken(suToken)
 
 						rimraf(sourcePath)
 					})
-				} else {	
+				} else {
 					fs.copyFileSync(sourcePath, destinationFilePath)
 
 					// Delete the source file
@@ -121,8 +121,9 @@ authenticateSuToken(suToken)
 			}
 		} catch(err) {
 			// Send 500 error
-			
+
 			res.statusCode = 500
+			log('e', err.stack ?? err)
 			res.send('Internal server error')
 
 			console.error(err)

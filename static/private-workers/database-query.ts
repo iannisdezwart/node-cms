@@ -14,9 +14,9 @@ export const queryDatabase = (
 	queryCallback: (database: ReturnType<typeof db>) => void
 ) => new Promise<void>((resolve, reject) => {
 	// Get the suToken from the request
-	
+
 	const suToken = req.body.suToken as string
-	
+
 	authenticateSuToken(suToken)
 		.then(() => {
 			// Authenticated, execute query
@@ -24,11 +24,11 @@ export const queryDatabase = (
 			const database = db(__dirname + '/../' + dbName, {
 				safeAndFriendlyErrors: true
 			})
-	
+
 			if (!database.exists) {
 				reject(new QueryError(400, `Database '${ dbName }' was not found`))
 			}
-	
+
 			try {
 				// Run the callback, which should contain the queries
 
@@ -52,9 +52,9 @@ export const queryTable = (
 	queryCallback: (table: ReturnType<ReturnType<typeof db>['table']>) => void
 ) => new Promise<void>((resolve, reject) => {
 	// Get the suToken from the request
-	
+
 	const suToken = req.body.suToken as string
-	
+
 	authenticateSuToken(suToken)
 		.then(() => {
 			// Authenticated, execute query
@@ -62,17 +62,17 @@ export const queryTable = (
 			const database = db(__dirname + '/../' + dbName, {
 				safeAndFriendlyErrors: true
 			})
-	
+
 			if (!database.exists) {
 				reject(new QueryError(400, `Database '${ dbName }' was not found`))
 			}
-	
+
 			const table = database.table(tableName)
-	
+
 			if (!table.exists) {
 				reject(new QueryError(400, `Table '${ tableName }' was not found in database '${ tableName }'`))
 			}
-	
+
 			try {
 				// Run the callback, which should contain the queries
 

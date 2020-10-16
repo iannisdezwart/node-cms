@@ -35,7 +35,7 @@ const getSuToken = async (
 		setPadlock('unlocked')
 
 		// Set the suToken globally
-		
+
 		globalSuToken = res
 		return globalSuToken
 
