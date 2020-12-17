@@ -2491,7 +2491,9 @@ const createInputElFromDataType = (
 		})
 	} else if (dataType == 'DateTime') {
 		inputEl.type = 'datetime-local'
-		inputEl.value = parseDateTimeToInput(new Date(data))
+		inputEl.value = (data == null)
+			? ''
+			: parseDateTimeToInput(new Date(data))
 	} else if (dataType == 'Float') {
 		inputEl.type = 'number'
 		inputEl.value = data
