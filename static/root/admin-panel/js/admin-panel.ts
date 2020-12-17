@@ -166,7 +166,7 @@ interface PageContent {
 
 */
 
-const fetchPages = () => new Promise(async resolve => {
+const fetchPages = () => new Promise<void>(async resolve => {
 	const suToken = await getSuToken()
 
 	request('/admin-panel/workers/get-pages.node.js', {
@@ -960,7 +960,7 @@ const addImg = async (
 const uploadFiles = (
 	fileList: FileList,
 	path = '/'
-) => new Promise<string>(resolve => {
+) => new Promise<void>(resolve => {
 	getSuToken()
 		.then(suToken => {
 			const files: File[] = []
