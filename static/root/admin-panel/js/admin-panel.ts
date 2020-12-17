@@ -2594,7 +2594,9 @@ const parseOutputValue = (
 	} else if (dataType == 'Char') {
 		return value
 	} else if (dataType == 'DateTime') {
-		return parseDateTimeToOutput(new Date(value))
+		return (value == null || value == 0)
+			? ''
+			: parseDateTimeToOutput(new Date(value))
 	} else if (dataType == 'Float') {
 		return value.toString()
 	} else if (dataType == 'Hex') {
