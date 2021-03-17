@@ -148,7 +148,7 @@ interface PageTemplate {
 	[key: string]: ContentType
 }
 
-type ContentType = 'string' | 'text' | 'img[]' | 'img' | 'video' | 'date'
+type ContentType = 'string' | 'text' | 'img[]' | 'img_caption[]' | 'img' | 'video' | 'date'
 
 interface Page {
 	id: number
@@ -689,6 +689,19 @@ const pageTemplateInputToHTML = (
 			`
 		}
 
+		case 'img_caption[]': {
+			const imgsAndCaptions = inputContent as [ string, string ][]
+
+			return /* html */ `
+			<div class="img-array" id="${ inputName }" data-input="${ inputName }">
+				${ reduceArray(imgsAndCaptions, (imgAndCaption, i) =>
+					generateImgAndCaptionArrayInstance(imgAndCaption, (i != 0), (i != imgsAndCaptions.length - 1))
+				)}
+				<div class="img-array-plus" onclick="addImg('${ inputName }', true)"></div>
+			</div>
+			`
+		}
+
 		case 'img': {
 			const img = inputContent as string
 
@@ -744,6 +757,30 @@ const generateImgArrayImg = (
 		` : '' }
 	</div>
 	<img class="img" data-path="${ imgSrc }" src="${ imgSrc }">
+</div>
+`
+
+const generateImgAndCaptionArrayInstance = (
+	imgAndCaption: [ string, string ],
+	hasLeftArrow: boolean,
+	hasRightArrow: boolean
+) => /* html */ `
+<div class="img-array-img img-caption-array-img">
+	<div class="img-array-img-options">
+		<button class="small light" onclick="editImg(this)">Edit</button>
+		<button class="small light red" onclick="deleteImg(this)">Delete</button>
+	</div>
+	<div class="img-array-img-arrows">
+		${ (hasLeftArrow) ? /* html */ `
+		<img class="arrow-left" src="/admin-panel/img/arrow-left.png" alt="arrow-left" onclick="moveImgWithCaption('left', this)">
+		` : '' }
+		${ (hasRightArrow) ? /* html */ `
+		<img class="arrow-right" src="/admin-panel/img/arrow-right.png" alt="arrow-right" onclick="moveImgWithCaption('right', this)">
+		` : '' }
+	</div>
+	<img class="img" data-path="${ imgAndCaption[0] }" src="${ imgAndCaption[0] }">
+	<br>
+	<input class="caption" type="text" value="${ imgAndCaption[1] }" placeholder="caption" />
 </div>
 `
 
@@ -803,6 +840,14 @@ const collectInputs = (template: PageTemplate) => {
 			for (let j = 0; j < imgs.length; j++) {
 				inputValue[j] = imgs[j].getAttribute('data-path')
 			}
+		} else if (inputType == 'img_caption[]') {
+			inputValue = []
+			const imgs = elements[i].querySelectorAll<HTMLImageElement>('.img')
+			const captions = elements[i].querySelectorAll<HTMLInputElement>('.caption')
+
+			for (let j = 0; j < imgs.length; j++) {
+				inputValue[j] = [ imgs[j].getAttribute('data-path'), captions[j].value ]
+			}
 		} else if (inputType == 'img') {
 			inputValue = elements[i]
 				.querySelector<HTMLImageElement>('.img')
@@ -845,10 +890,56 @@ const moveImg = async (
 		? imgArrayImgEl.previousElementSibling.querySelector<HTMLImageElement>('.img')
 		: imgArrayImgEl.nextElementSibling.querySelector<HTMLImageElement>('.img')
 
+
 	// Swap the images
 
 	imgEl2.parentElement.appendChild(imgEl1)
 	imgArrayImgEl.appendChild(imgEl2)
+}
+
+const moveImgWithCaption = async (
+	direction: 'left' | 'right',
+	arrowEl: HTMLImageElement
+) => {
+	const imgArrayImgEl = arrowEl.parentElement.parentElement
+
+	// Swap images visually
+
+	// Get the first image element and save its path
+
+	const imgEl1 = imgArrayImgEl.querySelector<HTMLImageElement>('.img')
+	const imgSource1 = imgEl1.getAttribute('data-path')
+
+	// Get the first caption
+
+	const captionEl1 = imgArrayImgEl.querySelector<HTMLInputElement>('.caption')
+	const captionValue1 = captionEl1.value
+
+	// Get the other image element and save its path
+
+	const imgEl2 = (direction == 'left')
+		? imgArrayImgEl.previousElementSibling.querySelector<HTMLImageElement>('.img')
+		: imgArrayImgEl.nextElementSibling.querySelector<HTMLImageElement>('.img')
+	const imgSource2 = imgEl2.getAttribute('data-path')
+
+	// Get the other caption
+
+	const captionEl2 = (direction == 'left')
+		? imgArrayImgEl.previousElementSibling.querySelector<HTMLInputElement>('.caption')
+		: imgArrayImgEl.nextElementSibling.querySelector<HTMLInputElement>('.caption')
+	const captionValue2 = captionEl2.value
+
+	// Swap the images
+
+	imgEl1.src = imgSource2
+	imgEl1.setAttribute('data-path', imgSource2)
+	imgEl2.src = imgSource1
+	imgEl2.setAttribute('data-path', imgSource1)
+
+	// Swap the captions
+
+	captionEl1.value = captionValue2
+	captionEl2.value = captionValue1
 }
 
 // 3.7.2 Edit Image
@@ -910,7 +1001,8 @@ const deleteImg = async (
 // 3.7.4 Add Image
 
 const addImg = async (
-	inputName: string
+	inputName: string,
+	withCaption = false
 ) => {
 	// Select a new image
 
@@ -931,18 +1023,31 @@ const addImg = async (
 
 	// Add the image before it
 
-	imgArrayPlus.insertAdjacentHTML(
-		'beforebegin',
-		generateImgArrayImg(`/content${ newImgPath }`, (imgArrayPlus.previousElementSibling != null), false)
-	)
+	if (!withCaption) {
+		imgArrayPlus.insertAdjacentHTML(
+			'beforebegin',
+			generateImgArrayImg(`/content${ newImgPath }`, (imgArrayPlus.previousElementSibling != null), false)
+		)
+	} else {
+		imgArrayPlus.insertAdjacentHTML(
+			'beforebegin',
+			generateImgAndCaptionArrayInstance([ `/content${ newImgPath }`, '' ], (imgArrayPlus.previousElementSibling != null), false)
+		)
+	}
 
 	// Add a right arrow to the previous image if it exists
 
 	const prevImgArrayImg = imgArrayPlus.previousElementSibling.previousElementSibling
 
-	if (prevImgArrayImg != null) {
+	if (prevImgArrayImg != null && !withCaption) {
 		prevImgArrayImg.querySelector('.img-array-img-arrows').innerHTML += /* html */ `
 		<img class="arrow-right" src="/admin-panel/img/arrow-right.png" alt="arrow-right" onclick="moveImg('right', this)">
+		`
+	}
+
+	if (prevImgArrayImg != null && withCaption) {
+		prevImgArrayImg.querySelector('.img-array-img-arrows').innerHTML += /* html */ `
+		<img class="arrow-right" src="/admin-panel/img/arrow-right.png" alt="arrow-right" onclick="moveImgWithCaption('right', this)">
 		`
 	}
 }
@@ -3296,9 +3401,29 @@ const importRowsFromCSV = () => {
 			const dbName = currentDbName
 			const tableName = currentTableName
 
-			await request('/admin-panel/workers/database/table/import-from-csv.node.js', {
-				suToken, dbName, tableName
-			}, [ file ])
+			notification(
+				'Importing CSV file...',
+				'This process can take a minute, please wait...',
+				Infinity
+			)
+
+			try {
+				await request(
+					'/admin-panel/workers/database/table/import-from-csv.node.js',
+					{ suToken, dbName, tableName },
+					[ file ]
+				)
+
+				notification(
+					'CSV file imported',
+					'CSV file was successfully imported!',
+				)
+			} catch {
+				notification(
+					'CSV import failed',
+					'Some or all rows might be missing.'
+				)
+			}
 
 			// Refetch the table
 

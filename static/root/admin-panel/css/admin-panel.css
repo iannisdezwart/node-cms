@@ -925,6 +925,7 @@ codeblock {
 	position: relative;
 	overflow: hidden;
 	background-color: #333;
+	text-align: center;
 }
 
 .img-array > .img-array-img > img {
@@ -932,6 +933,10 @@ codeblock {
 	min-width: 200px;
 	max-width: 600px;
 	object-fit: contain;
+}
+
+.img-array > .img-caption-array-img > img {
+	height: calc(100% - 48px);
 }
 
 .img-array-img-options {
