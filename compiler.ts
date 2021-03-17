@@ -5,7 +5,7 @@ import { spawn } from 'child_process'
 import { resolve as resolvePath } from 'path'
 import { dotDotSlashAttack } from './static/private-workers/security'
 
-type PageCompiler = (pageContent: Object, pages: Table) => {
+type PageCompiler = (pageContent: any, pagesOfType: Table, allPages: Table) => {
 	html: string
 	path: string
 }
@@ -101,20 +101,20 @@ export const compile = async (pageCompilers: ObjectOf<PageCompiler>) => {
 
 	for (let pageType of pageTypesTable.rows) {
 		const pageCompiler = pageCompilers[pageType.name]
-		const pages = pagesTable.where(row => row.pageType == pageType.name)
+		const pagesOfType = pagesTable.where(row => row.pageType == pageType.name)
 
 		if (pageType.compilePageType) {
 			// Compile page type individually
 
-			const page = pageCompiler(null, pages)
+			const page = pageCompiler(null, pagesOfType, pagesTable)
 			compilePage(page, null /* Todo: what to do with the PageID? */)
 		}
 
 		// Compile all subpages
 
-		for (let i = 0; i < pages.rows.length; i++) {
-			const page = pageCompiler(pages.rows[i].pageContent, pages)
-			compilePage(page, pages.rows[i].id)
+		for (let i = 0; i < pagesOfType.rows.length; i++) {
+			const page = pageCompiler(pagesOfType.rows[i].pageContent, pagesOfType, pagesTable)
+			compilePage(page, pagesOfType.rows[i].id)
 		}
 	}
 
