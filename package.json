@@ -1,6 +1,6 @@
 {
   "name": "@iannisz/node-cms",
-  "version": "0.0.74",
+  "version": "0.0.75",
   "description": "Node CMS",
   "main": "index.js",
   "scripts": {
