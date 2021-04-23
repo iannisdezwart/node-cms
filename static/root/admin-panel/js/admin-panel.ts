@@ -3277,11 +3277,11 @@ const toCSVValue = (
 	dataType: DataType
 ): string => {
 	if ([ 'Binary', 'Hex', 'DateTime', 'String', 'Char', 'JSON' ].includes(dataType)) {
-		return `"${ value }"`
+		return value == null ? '""' : `"${ value }"`
 	} else if ([ 'Int', 'Float', 'Bit' ].includes(dataType)) {
-		return value.toString()
+		return value == null ? '' : value.toString()
 	} else if ([ 'Boolean' ].includes(dataType)) {
-		return value ? '"true"' : '"false"'
+		return value == null ? '""' : value ? '"true"' : '"false"'
 	} else {
 		throw new Error(`Datatype '${ dataType }' not handled`)
 	}
