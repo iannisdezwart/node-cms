@@ -16,7 +16,8 @@
 		4.6 Popup
 		4.7 Code
 		4.8 Image Array
-		4.9 Progress Bar
+		4.9 Element Groups
+		4.10 Progress Bar
 */
 
 /* ===================
@@ -1010,8 +1011,23 @@ codeblock {
 	border-radius: 50%;
 }
 
-/* 
-	4.9 Progress Bar
+/*
+	4.9 Element Groups
+*/
+
+.element-group {
+	border: 2px solid var(--accent);
+	padding: 1em;
+}
+
+.element-group-item {
+	border: 2px solid var(--accent);
+	padding: 1em;
+	margin: 1em 0;
+}
+
+/*
+	4.10 Progress Bar
 */
 
 .progress-bar {

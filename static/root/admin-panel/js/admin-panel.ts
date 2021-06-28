@@ -30,6 +30,10 @@
 			3.7.2 Edit Image
 			3.7.3 Delete Image
 			3.7.4 Add Image
+		3.8 Element Group Functions
+			3.8.1 Move Group
+			3.8.2 Delete Group
+			3.8.3 Add Group
 
 	4. File Manager
 		4.1 Upload Files
@@ -107,7 +111,29 @@ declare namespace tinymce {
 }
 
 declare namespace tinyMCE {
+	interface Editor {
+		editorContainer: HTMLElement
+		getContent: () => string
+		remove: () => void
+	}
+
 	export function get(any: any): any
+	export const editors: Editor[]
+}
+
+const saveTinyMCEState = () => {
+	for (const editor of tinyMCE.editors) {
+		const textArea = editor.editorContainer.previousElementSibling as HTMLTextAreaElement
+		textArea.innerText = editor.getContent()
+	}
+}
+
+const reloadTinyMCE = () => {
+	for (const editor of tinyMCE.editors) {
+		editor.remove()
+	}
+
+	initTinyMCE()
 }
 
 const initTinyMCE = () => {
@@ -148,7 +174,12 @@ interface PageTemplate {
 	[key: string]: ContentType
 }
 
-type ContentType = 'string' | 'text' | 'img[]' | 'img_caption[]' | 'img' | 'video' | 'date'
+interface GroupItem {
+	name: string
+	type: ContentType | GroupItem[]
+}
+
+type ContentType = 'string' | 'text' | 'img[]' | 'img_caption[]' | 'img' | 'video' | 'date' | GroupItem[]
 
 interface Page {
 	id: number
@@ -652,35 +683,79 @@ const deletePage = async (id: number) => {
 
 */
 
+const globalInputTypes: GroupItem[][] = []
+
 const pageTemplateInputToHTML = (
 	inputType: ContentType,
 	inputName: string,
-	inputContent: any
+	inputContent: any,
+	nested = false
 ) => {
 	switch (inputType) {
-		case 'text': {
-			const value = (inputContent as string).replace(/"/g, '&quot;')
+		default: {
+			if (!Array.isArray(inputType)) {
+				return /* html */ `
+				<p>Error: unknown type "${ (inputType as any).toString() }"</p>
+				`
+			}
+
+			const inputTypeIndex = globalInputTypes.length
+			globalInputTypes.push(inputType)
 
 			return /* html */ `
-			<textarea id="${ inputName }" data-input="${ inputName }">
+			<div class="element-group" root="${ !nested }" data-input="${ inputName }">
+				${ reduceArray(inputContent as any, (el, i) => /* html */ `
+				<div class="element-group-item">
+					<div class="content">
+						${ reduceArray(inputType, group => /* html */ `
+						<h3>${ group.name }:</h3>
+						${ pageTemplateInputToHTML(group.type, group.name, el[group.name], true) }
+						`) }
+					</div>
+					<br>
+					<button class="small red" onclick="deleteGroup(this)">Delete</button>
+
+					${ i != 0 ? /* html */ `
+					<button class="small move-group-button up" onclick="moveGroup(this, 'up')">Move up</button>
+					` : '' }
+
+					${ i != inputContent.length - 1 ? /* html */ `
+					<button class="small move-group-button down" onclick="moveGroup(this, 'down')">Move down</button>
+					` : '' }
+				</div>
+				`) }
+				<button class="small" onclick="addGroup(this, ${ inputTypeIndex })">Add</button>
+			</div>
+			`
+		}
+
+		case 'text': {
+			const value = inputContent
+				? (inputContent as string).replace(/"/g, '&quot;')
+				: ''
+
+			return /* html */ `
+			<textarea root="${ !nested }" data-input="${ inputName }">
 				${ value }
 			</textarea>
 			`
 		}
 
 		case 'string': {
-			const value = (inputContent as string).replace(/"/g, '&quot;')
+			const value = inputContent
+				? (inputContent as string).replace(/"/g, '&quot;')
+				: ''
 
 			return /* html */ `
-			<input id="${ inputName }" data-input="${ inputName }" type="text" value="${ value }" />
+			<input root="${ !nested }" data-input="${ inputName }" type="text" value="${ value }" />
 			`
 		}
 
 		case 'img[]': {
-			const imgs = inputContent as string[]
+			const imgs = inputContent ? inputContent as string[] : []
 
 			return /* html */ `
-			<div class="img-array" id="${ inputName }" data-input="${ inputName }">
+			<div class="img-array" root="${ !nested }" data-input="${ inputName }">
 				${ reduceArray(imgs, (img, i) =>
 					generateImgArrayImg(img, (i != 0), (i != imgs.length - 1))
 				)}
@@ -690,10 +765,10 @@ const pageTemplateInputToHTML = (
 		}
 
 		case 'img_caption[]': {
-			const imgsAndCaptions = inputContent as [ string, string ][]
+			const imgsAndCaptions = inputContent ? inputContent as [ string, string ][] : []
 
 			return /* html */ `
-			<div class="img-array" id="${ inputName }" data-input="${ inputName }">
+			<div class="img-array" root="${ !nested }" data-input="${ inputName }">
 				${ reduceArray(imgsAndCaptions, (imgAndCaption, i) =>
 					generateImgAndCaptionArrayInstance(imgAndCaption, (i != 0), (i != imgsAndCaptions.length - 1))
 				)}
@@ -703,20 +778,20 @@ const pageTemplateInputToHTML = (
 		}
 
 		case 'img': {
-			const img = inputContent as string
+			const img = inputContent ? inputContent as string : ''
 
 			return /* html */ `
-			<div class="img-array" id="${ inputName }" data-input="${ inputName }">
+			<div class="img-array" root="${ !nested }" data-input="${ inputName }">
 				${ generateImgArrayImg(img, false, false) }
 			</div>
 			`
 		}
 
 		case 'video': {
-			const videoPath = inputContent as string
+			const videoPath = inputContent ? inputContent as string : ''
 
 			return /* html */ `
-			<video src="${ videoPath }" data-input="${ inputName }" data-path=${ videoPath } height="200" autoplay muted controls></video>
+			<video src="${ videoPath }" root="${ !nested }" data-input="${ inputName }" data-path=${ videoPath } height="200" autoplay muted controls></video>
 			<button class="small" onclick="editVideoPath(this)">Edit</button>
 			`
 		}
@@ -730,7 +805,7 @@ const pageTemplateInputToHTML = (
 			const dateString = `${ yyyy }-${ mm }-${ dd }`
 
 			return /* html */ `
-			<input id="${ inputName }" data-input="${ inputName }" type="date" value="${ dateString }">
+			<input root="${ !nested }" data-input="${ inputName }" type="date" value="${ dateString }">
 			`
 		}
 	}
@@ -816,10 +891,90 @@ const editVideoPath = async (
 
 */
 
+const isChildOf = (child: HTMLElement, parent: HTMLElement) => {
+	let node = child
+
+	while (node.parentElement != null) {
+		node = node.parentElement
+		if (node == parent) return true
+	}
+
+	return false
+}
+
+const collectInput = (input: HTMLElement, inputType: ContentType) => {
+	switch (inputType) {
+		default: {
+			const itemEls = input.querySelectorAll<HTMLDivElement>('.element-group-item')
+			const out = []
+
+			for (let i = 0; i < itemEls.length; i++) {
+				const itemEl = itemEls[i].querySelector<HTMLDivElement>('.content')
+				const item = {}
+
+				for (const groupItem of inputType) {
+					const input = ([].slice.call(itemEl.children) as HTMLElement[]).filter(
+						input => input.getAttribute('data-input') == groupItem.name)[0]
+
+					item[groupItem.name] = collectInput(input, groupItem.type)
+				}
+
+				out.push(item)
+			}
+
+			return out
+		}
+
+		case 'text': {
+			return tinyMCE.editors.filter(
+				editor => isChildOf(editor.editorContainer, input.parentElement))[0].getContent()
+		}
+
+		case 'string': {
+			return (input as HTMLInputElement).value.trim()
+		}
+
+		case 'img[]': {
+			const out = []
+			const imgs = input.querySelectorAll<HTMLImageElement>('.img')
+
+			for (let i = 0; i < imgs.length; i++) {
+				out[i] = imgs[i].getAttribute('data-path')
+			}
+
+			return out
+		}
+
+		case 'img_caption[]': {
+			const out = []
+			const imgs = input.querySelectorAll<HTMLImageElement>('.img')
+			const captions = input.querySelectorAll<HTMLInputElement>('.caption')
+
+			for (let j = 0; j < imgs.length; j++) {
+				out[j] = [ imgs[j].getAttribute('data-path'), captions[j].value ]
+			}
+
+			return out
+		}
+
+		case 'img': {
+			return input.querySelector<HTMLImageElement>('.img').getAttribute('data-path')
+		}
+
+		case 'video': {
+			return input.getAttribute('data-path')
+		}
+
+		case 'date': {
+			return new Date((input as HTMLInputElement).value).getTime()
+		}
+	}
+}
+
 const collectInputs = (template: PageTemplate) => {
 	// Get all input elements
 
-	const elements = document.querySelectorAll<HTMLInputElement>('[data-input]')
+	const elements = document.querySelectorAll<HTMLInputElement>('[root="true"][data-input]')
 	const pageContent: PageContent = {}
 
 	// Parse inputs
@@ -827,38 +982,7 @@ const collectInputs = (template: PageTemplate) => {
 	for (let i = 0; i < elements.length; i++) {
 		const inputKey = elements[i].getAttribute('data-input')
 		const inputType = template[inputKey]
-		let inputValue: any
-
-		if (inputType == 'text') {
-			inputValue = tinyMCE.get(inputKey).getContent()
-		} else if (inputType == 'string') {
-			inputValue = elements[i].value.trim()
-		} else if (inputType == 'img[]') {
-			inputValue = []
-			const imgs = elements[i].querySelectorAll<HTMLImageElement>('.img')
-
-			for (let j = 0; j < imgs.length; j++) {
-				inputValue[j] = imgs[j].getAttribute('data-path')
-			}
-		} else if (inputType == 'img_caption[]') {
-			inputValue = []
-			const imgs = elements[i].querySelectorAll<HTMLImageElement>('.img')
-			const captions = elements[i].querySelectorAll<HTMLInputElement>('.caption')
-
-			for (let j = 0; j < imgs.length; j++) {
-				inputValue[j] = [ imgs[j].getAttribute('data-path'), captions[j].value ]
-			}
-		} else if (inputType == 'img') {
-			inputValue = elements[i]
-				.querySelector<HTMLImageElement>('.img')
-				.getAttribute('data-path')
-		} else if (inputType == 'video') {
-			inputValue = elements[i].getAttribute('data-path')
-		} else if (inputType == 'date') {
-			inputValue = new Date(elements[i].value).getTime()
-		}
-
-		pageContent[inputKey] = inputValue
+		pageContent[inputKey] = collectInput(elements[i], inputType)
 	}
 
 	return pageContent
@@ -1050,6 +1174,100 @@ const addImg = async (
 		<img class="arrow-right" src="/admin-panel/img/arrow-right.png" alt="arrow-right" onclick="moveImgWithCaption('right', this)">
 		`
 	}
+}
+
+/*
+
+	3.8 Element Group Functions
+
+*/
+
+// 3.8.1 Move Group
+
+const moveGroup = (
+	buttonEl: HTMLButtonElement,
+	direction: 'up' | 'down'
+) => {
+	// For some reason we need to do this twice to get it to work
+
+	saveTinyMCEState()
+	saveTinyMCEState()
+
+	const thisItem = buttonEl.parentElement.querySelector<HTMLDivElement>('.content')
+	const thisItemContainer = buttonEl.parentElement
+
+	if (direction == 'up') {
+		const previousItem = buttonEl.parentElement.previousElementSibling.querySelector<HTMLDivElement>('.content')
+		const previousItemContainer = buttonEl.parentElement.previousElementSibling
+
+		thisItemContainer.insertAdjacentElement('afterbegin', previousItem)
+		previousItemContainer.insertAdjacentElement('afterbegin', thisItem)
+	} else {
+		const nextItem = buttonEl.parentElement.nextElementSibling.querySelector<HTMLDivElement>('.content')
+		const nextItemContainer = buttonEl.parentElement.nextElementSibling
+
+		thisItemContainer.insertAdjacentElement('afterbegin', nextItem)
+		nextItemContainer.insertAdjacentElement('afterbegin', thisItem)
+	}
+
+	// For some reason we need to reload it twice to get it to work
+
+	reloadTinyMCE()
+	reloadTinyMCE()
+}
+
+// 3.8.2 Delete Group
+
+const deleteGroup = (
+	buttonEl: HTMLButtonElement
+) => {
+	const previousItem = buttonEl.parentElement.previousElementSibling
+	const nextItem = buttonEl.parentElement.nextElementSibling
+
+	if (previousItem == null) {
+		if (nextItem != null) {
+			nextItem.querySelector('.move-group-button.up').remove()
+		}
+	}
+
+	if (nextItem == null) {
+		if (previousItem != null) {
+			previousItem.querySelector('.move-group-button.down').remove()
+		}
+	}
+
+	buttonEl.parentElement.remove()
+}
+
+// 3.8.3 Add Group
+
+const addGroup = (
+	buttonEl: HTMLButtonElement,
+	inputTypeIndex: number
+) => {
+	const inputType = globalInputTypes[inputTypeIndex]
+
+	if (buttonEl.previousElementSibling != null) {
+		buttonEl.previousElementSibling.insertAdjacentHTML('beforeend', /* html */ `
+		<button class="small move-group-button down" onclick="moveGroup(this, 'down')">Move down</button>
+		`)
+	}
+
+	buttonEl.insertAdjacentHTML('beforebegin', /* html */ `
+	<div class="element-group-item">
+		<div class="content">
+			${ reduceArray(inputType, group => /* html */ `
+			<h3>${ group.name }:</h3>
+			${ pageTemplateInputToHTML(group.type, group.name, null, true) }
+			`) }
+		</div>
+		<br>
+		<button class="small red" onclick="deleteGroup(this)">Delete</button>
+		<button class="small move-group-button up" onclick="moveGroup(this, 'up')">Move up</button>
+	</div>
+	`)
+
+	initTinyMCE()
 }
 
 /* ===================
