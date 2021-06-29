@@ -735,9 +735,11 @@ const pageTemplateInputToHTML = (
 				: ''
 
 			return /* html */ `
-			<textarea root="${ !nested }" data-input="${ inputName }">
-				${ value }
-			</textarea>
+			<div class="tinymce-container" root="${ !nested }" data-input="${ inputName }">
+				<textarea>
+					${ value }
+				</textarea>
+			</div>
 			`
 		}
 
@@ -913,10 +915,10 @@ const collectInput = (input: HTMLElement, inputType: ContentType) => {
 				const item = {}
 
 				for (const groupItem of inputType) {
-					const input = ([].slice.call(itemEl.children) as HTMLElement[]).filter(
-						input => input.getAttribute('data-input') == groupItem.name)[0]
+					const childInput = ([].slice.call(itemEl.children) as HTMLElement[]).filter(
+						potChildInput => potChildInput.getAttribute('data-input') == groupItem.name)[0]
 
-					item[groupItem.name] = collectInput(input, groupItem.type)
+					item[groupItem.name] = collectInput(childInput, groupItem.type)
 				}
 
 				out.push(item)
@@ -927,7 +929,7 @@ const collectInput = (input: HTMLElement, inputType: ContentType) => {
 
 		case 'text': {
 			return tinyMCE.editors.filter(
-				editor => isChildOf(editor.editorContainer, input.parentElement))[0].getContent()
+				editor => isChildOf(editor.editorContainer, input))[0].getContent()
 		}
 
 		case 'string': {
