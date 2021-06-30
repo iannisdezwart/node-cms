@@ -1488,7 +1488,7 @@ const filePicker: FilePickerOverload = (
 
 					const extension = (file.isDirectory)
 						? 'dir'
-						: name.slice(name.lastIndexOf('.') + 1)
+						: getExtension(name)
 
 					// Create the child LI
 
