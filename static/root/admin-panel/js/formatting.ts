@@ -190,7 +190,7 @@ const getExtension = (filePath: string) => {
 		return ''
 	}
 
-	return filePath.substring(dotIndex + 1)
+	return filePath.substring(dotIndex + 1).toLowerCase()
 }
 
 // Image extensions
