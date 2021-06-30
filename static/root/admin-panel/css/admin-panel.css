@@ -1026,6 +1026,11 @@ codeblock {
 	margin: 1em 0;
 }
 
+.video[data-input] {
+	max-width: 100%;
+	max-height: 200px;
+}
+
 /*
 	4.10 Progress Bar
 */
