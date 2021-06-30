@@ -66,6 +66,10 @@ export const compile = async (pageCompilers: ObjectOf<PageCompiler>) => {
 		page: CompiledPage,
 		pageID: number
 	) => {
+		// Skip if page is null
+
+		if (page == null) return
+
 		// Create directory, if needed
 
 		const directory = getDirectory('./root' + page.path)
