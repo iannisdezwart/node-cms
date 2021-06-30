@@ -10,7 +10,7 @@
   "author": "Iannis de Zwart",
   "license": "ISC",
   "dependencies": {
-    "@iannisz/date-time-formatter": "^0.0.4",
+    "@iannisz/date-time-formatter": "^0.0.5",
     "@types/bcrypt": "^3.0.0",
     "@types/js-cookie": "^2.2.6",
     "@types/jsonwebtoken": "^8.5.0",
