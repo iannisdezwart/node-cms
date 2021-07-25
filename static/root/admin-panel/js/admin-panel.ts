@@ -179,7 +179,7 @@ interface GroupItem {
 	type: ContentType | GroupItem[]
 }
 
-type ContentType = 'string' | 'text' | 'img[]' | 'img_caption[]' | 'img' | 'video' | 'date' | GroupItem[]
+type ContentType = 'string' | 'text' | 'img[]' | 'img_caption[]' | 'img' | 'svg' | 'video' | 'date' | GroupItem[]
 
 interface Page {
 	id: number
@@ -789,6 +789,16 @@ const pageTemplateInputToHTML = (
 			`
 		}
 
+		case 'svg': {
+			const img = inputContent ? inputContent as string : ''
+
+			return /* html */ `
+			<div class="img-array" root="${ !nested }" data-input="${ inputName }" data-extensions="svg">
+				${ generateImgArrayImg(img, false, false) }
+			</div>
+			`
+		}
+
 		case 'video': {
 			const videoPath = inputContent ? inputContent as string : ''
 
@@ -963,6 +973,10 @@ const collectInput = (input: HTMLElement, inputType: ContentType) => {
 			return input.querySelector<HTMLImageElement>('.img').getAttribute('data-path')
 		}
 
+		case 'svg': {
+			return input.querySelector<HTMLImageElement>('.img').getAttribute('data-path')
+		}
+
 		case 'video': {
 			return input.getAttribute('data-path')
 		}
@@ -1073,6 +1087,11 @@ const moveImgWithCaption = async (
 const editImg = async (
 	buttonEl: HTMLButtonElement
 ) => {
+	// Get the possible extensions
+
+	const extensionsList = buttonEl.parentElement.parentElement.parentElement.getAttribute('data-extensions')
+	const extensions = extensionsList == null ? imageExtensions : new Set(extensionsList.split(','))
+
 	// Select a new image
 
 	const newImgPath = await filePicker({
@@ -1080,7 +1099,7 @@ const editImg = async (
 		title: 'Edit image',
 		body: 'Select a new image',
 		buttonText: 'Select',
-		extensions: imageExtensions
+		extensions
 	}, false)
 		.catch(() => {
 			throw new Error(`User cancelled`)
