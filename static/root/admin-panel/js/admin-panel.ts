@@ -1453,6 +1453,7 @@ const filePicker: FilePickerOverload = (
 
 	${ (options.body != undefined) ? /* html */ `
 	<p class="popup-body">${ options.body }</p>
+	<p>Allowed extensions: ${ Array.from(options.extensions).join(', ') }</p>
 	` : '' }
 
 	<div class="file-list-container">
