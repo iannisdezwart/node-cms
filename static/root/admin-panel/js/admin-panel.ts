@@ -803,8 +803,10 @@ const pageTemplateInputToHTML = (
 			const videoPath = inputContent ? inputContent as string : ''
 
 			return /* html */ `
-			<video src="${ videoPath }" root="${ !nested }" data-input="${ inputName }" data-path="${ videoPath.replace(/\"/g, '&quot;') }" height="200" autoplay muted controls></video>
-			<button class="small" onclick="editVideoPath(this)">Edit</button>
+			<div class="video-input">
+				<video src="${ videoPath }" root="${ !nested }" data-input="${ inputName }" data-path="${ videoPath.replace(/\"/g, '&quot;') }" height="200" autoplay muted controls></video>
+				<button class="small" onclick="editVideoPath(this)">Edit</button>
+			</div>
 			`
 		}
 

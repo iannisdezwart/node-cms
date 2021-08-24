@@ -1031,6 +1031,10 @@ codeblock {
 	max-height: 200px;
 }
 
+.video-input button {
+	display: block;
+}
+
 /*
 	4.10 Progress Bar
 */
