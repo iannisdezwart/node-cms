@@ -607,7 +607,7 @@ input:focus {
 	color: #fa5555;
 }
 
-input[type="text"], input[type="password"] {
+input[type="text"], input[type="password"], input[type="number"] {
 	box-sizing: border-box;
 	border: 2px solid var(--accent);
 	border-radius: 5px;

@@ -179,7 +179,7 @@ interface GroupItem {
 	type: ContentType | GroupItem[]
 }
 
-type ContentType = 'string' | 'text' | 'img[]' | 'img_caption[]' | 'img' | 'svg' | 'video' | 'date' | GroupItem[]
+type ContentType = 'string' | 'text' | 'img[]' | 'img_caption[]' | 'img' | 'svg' | 'video' | 'date' | 'number' | GroupItem[]
 
 interface Page {
 	id: number
@@ -691,6 +691,8 @@ const pageTemplateInputToHTML = (
 	inputContent: any,
 	nested = false
 ) => {
+	console.log(inputType, inputName, inputContent, nested)
+
 	switch (inputType) {
 		default: {
 			if (!Array.isArray(inputType)) {
@@ -820,6 +822,14 @@ const pageTemplateInputToHTML = (
 
 			return /* html */ `
 			<input root="${ !nested }" data-input="${ inputName }" type="date" value="${ dateString }">
+			`
+		}
+
+		case 'number': {
+			const number = inputContent ? inputContent as string : '0'
+
+			return /* html */ `
+			<input root="${ !nested }" data-input="${ inputName }" type="number" value="${ number }">
 			`
 		}
 	}
@@ -985,6 +995,10 @@ const collectInput = (input: HTMLElement, inputType: ContentType) => {
 
 		case 'date': {
 			return new Date((input as HTMLInputElement).value).getTime()
+		}
+
+		case 'number': {
+			return (input as HTMLInputElement).value
 		}
 	}
 }
