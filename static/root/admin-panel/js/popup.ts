@@ -45,7 +45,7 @@ const popup = (
 		const inputResults = new Map<string, string>()
 
 		for (let input of inputs) {
-			const { value } = $<HTMLInputElement>(`input[data-name="${ input.name }"]`)
+			const { value } = popupEl.querySelector<HTMLInputElement>(`input[data-name="${ input.name }"]`)
 			inputResults.set(input.name, value)
 		}
 
