@@ -2,8 +2,8 @@ node_modules/
 
 # Test files
 
-private-workers/
-root/
+/private-workers/
+/root/
 .jwtsecret
 databases.json
 pages.json
