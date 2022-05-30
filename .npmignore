@@ -1,1 +1,10 @@
 node_modules/
+
+# Test files
+
+private-workers/
+root/
+.jwtsecret
+databases.json
+pages.json
+users.json

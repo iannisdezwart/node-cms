@@ -18,7 +18,7 @@
     "@types/node": "^14.6.2",
     "@types/socket.io-client": "^1.4.33",
     "apache-js-workers": "0.0.17",
-    "bcrypt": "^5.0.0",
+    "bcrypt": "^5.0.1",
     "chalk": "^4.1.0",
     "csv-parser": "^2.3.3",
     "jsonwebtoken": "^8.5.1",

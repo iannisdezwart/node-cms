@@ -1,2 +1,11 @@
 node_modules/
 *.js
+
+# Test files
+
+private-workers/
+root/
+.jwtsecret
+databases.json
+pages.json
+users.json
