@@ -1887,7 +1887,7 @@ const showFiles = (path = '/') => {
 
 									const extension = (file.isDirectory)
 										? 'dir'
-										: name.slice(name.lastIndexOf('.') + 1)
+										: getExtension(name)
 
 									;(window as any).toggleDropdown = (
 										el: HTMLDivElement,
