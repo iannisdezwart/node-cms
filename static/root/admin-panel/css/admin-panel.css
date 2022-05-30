@@ -837,9 +837,12 @@ div.input:first-child {
 	z-index: 999;
 	top: 0;
 	left: 50%;
+	max-height: 100%;
+	overflow-y: auto;
 	transform: translate(-50%, -100%);
 	background-color: #444;
 	padding: 3em;
+	box-sizing: border-box;
 	border-radius: 5px;
 	box-shadow: 5px 5px 25px rgba(0, 0, 0, 0.2);
 	animation: slide-in 300ms ease forwards;
