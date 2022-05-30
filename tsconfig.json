@@ -7,5 +7,10 @@
 			"esnext"
 		],
 		"downlevelIteration": true,
-	}
+	},
+	"exclude": [
+		"node_modules",
+		"private-workers",
+		"root"
+	]
 }
