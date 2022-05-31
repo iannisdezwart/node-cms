@@ -89,6 +89,7 @@ window.onload = async () => {
 	const username = Cookies.get('username')
 
 	goToTheRightPage()
+	initPadlock()
 
 	if (username == undefined) {
 		// Login

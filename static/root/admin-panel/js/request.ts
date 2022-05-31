@@ -71,7 +71,7 @@ const handleRequestError = (err: { status: number, response: string }) => {
 		// This should only happen on a session timeout
 		// Clear the suToken
 
-		globalSuToken = undefined
+		localStorage.removeItem('su-token')
 
 		setPadlock('locked')
 
@@ -84,14 +84,4 @@ const handleRequestError = (err: { status: number, response: string }) => {
 				.replace(/\n/g, '<br>')
 		}</codeblock>`, null)
 	}
-}
-
-const stringToUint8Array = (str: string) => {
-	const arr = new Uint8Array(str.length)
-
-	for (let i = 0; i < str.length; i++) {
-		arr[i] = str.charCodeAt(i)
-	}
-
-	return arr
 }

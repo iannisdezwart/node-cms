@@ -1,7 +1,3 @@
-// Save superuser token in memory
-
-let globalSuToken: string
-
 const getSuToken = async (
 	loginData?: {
 		username: string
@@ -10,8 +6,21 @@ const getSuToken = async (
 ): Promise<string> => {
 	// Send the existing suToken if it exists
 
-	if (globalSuToken != undefined) {
-		return globalSuToken
+	if (localStorage.getItem('su-token') != undefined) {
+		const body = parseJwt(localStorage.getItem('su-token'))
+		const exp = body.exp as number
+
+		if (exp > Date.now() / 1000) {
+			// Open the padlock icon
+
+			setPadlock('unlocked')
+
+			return localStorage.getItem('su-token')
+		}
+
+		setPadlock('locked')
+
+		localStorage.removeItem('su-token')
 	}
 
 	if (loginData == undefined) {
@@ -34,10 +43,10 @@ const getSuToken = async (
 
 		setPadlock('unlocked')
 
-		// Set the suToken globally
+		// Set the suToken
 
-		globalSuToken = res
-		return globalSuToken
+		localStorage.setItem('su-token', res)
+		return res
 
 	} catch(res) {
 
@@ -83,8 +92,8 @@ const requestLoginData = async (incorrect = false) => {
 }
 
 const togglePadlock = async () => {
-	if (globalSuToken != undefined) {
-		globalSuToken = undefined
+	if (localStorage.getItem('su-token') != undefined) {
+		localStorage.removeItem('su-token')
 
 		setPadlock('locked')
 	} else {
@@ -158,4 +167,24 @@ const logout = () => {
 	Cookies.remove('username')
 	Cookies.remove('token')
 	window.location.reload()
+}
+
+const parseJwt = (token: string) => {
+	const base64Url = token.split('.')[1]
+	const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
+	const jsonPayload = decodeURIComponent(atob(base64).split('').map(c =>
+		'%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''))
+
+	return JSON.parse(jsonPayload)
+}
+
+const initPadlock = () => {
+	const body = parseJwt(localStorage.getItem('su-token'))
+	const exp = body.exp as number
+
+	if (exp > Date.now() / 1000) {
+		setPadlock('unlocked')
+	} else {
+		setPadlock('locked')
+	}
 }
