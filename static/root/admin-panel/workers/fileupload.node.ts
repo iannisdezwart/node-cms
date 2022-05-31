@@ -3,6 +3,7 @@ import { resolve as resolvePath } from 'path'
 import * as fs from 'fs'
 import { authenticateSuToken } from './../../../private-workers/authenticate-su-token'
 import { filePathIsSafe } from './../../../private-workers/security'
+import { createThumbnails } from '../../../private-workers/image-thumbnails'
 
 // Get the suToken from the request
 
@@ -59,6 +60,8 @@ authenticateSuToken(suToken)
 			}
 
 			res.send('Files uploaded!')
+
+			createThumbnails()
 		} catch(err) {
 			// Send 500 error if anything goes wrong and throw the error
 

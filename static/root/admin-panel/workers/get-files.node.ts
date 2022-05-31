@@ -3,6 +3,7 @@ import { resolve as resolvePath } from 'path'
 import * as fs from 'fs'
 import { authenticateSuToken } from './../../../private-workers/authenticate-su-token'
 import { filePathIsSafe } from './../../../private-workers/security'
+import * as crypto from 'crypto'
 
 interface FileInfo {
 	name: string
@@ -11,6 +12,7 @@ interface FileInfo {
 	filesInside: number
 	size: number
 	modified: Date
+	hash: string
 }
 
 // Get the suToken from the request
@@ -44,14 +46,18 @@ authenticateSuToken(suToken)
 
 		for (let fileName of fileNames) {
 			const stats = fs.statSync(path + '/' + fileName)
+			const hash = crypto.createHash('md5')
+				.update(resolvePath(reqPath + '/' + fileName))
+				.digest('hex')
 
 			files.push({
 				name: fileName,
-				path: resolvePath(reqPath) + '/' + fileName,
+				path: resolvePath(reqPath + '/' + fileName),
 				isDirectory: stats.isDirectory(),
 				filesInside: stats.isDirectory() ? fs.readdirSync(path + '/' + fileName).length : 0,
 				size: stats.isDirectory() ? 0 : stats.size,
-				modified: stats.mtime
+				modified: stats.mtime,
+				hash
 			})
 		}
 

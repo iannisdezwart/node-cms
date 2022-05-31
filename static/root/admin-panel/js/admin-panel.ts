@@ -1420,6 +1420,7 @@ interface FileInfo {
 	filesInside: number
 	size: number
 	modified: string
+	hash: string
 }
 
 /*
@@ -1497,6 +1498,7 @@ const filePicker: FilePickerOverload = (
 	const createULFromFiles = (path: string) => new Promise<HTMLUListElement>(resolve => {
 		getFiles(path)
 			.then(files => {
+				console.log(files)
 				// Filter only directories if needed
 
 				if (options.type == 'directory' || options.type == 'new-file') {
@@ -1528,6 +1530,10 @@ const filePicker: FilePickerOverload = (
 
 					// Create the child LI
 
+					const fileIconFile = imageExtensions.has(extension)
+						? `/thumbnails/${ file.hash }.png`
+						: `/admin-panel/img/file-icons/${ extension }.png`
+
 					fileListEl.innerHTML += /* html */ `
 					<li class="file-list-item" onclick="selectLI(this)" onmouseover="hoverLI(this)" onmouseleave="hoverLI(this, false)" data-path="${
 						(file.isDirectory) ? path + file.name + '/' : path + file.name
@@ -1535,7 +1541,7 @@ const filePicker: FilePickerOverload = (
 						${
 						(file.isDirectory) ? /* html */ `<span class="plus-button" data-expanded="false" onclick="expandDirectory(this)"></span>`: ''
 						}
-						<img class="file-manager-file-icon" src="/admin-panel/img/file-icons/${ extension }.png" alt="${ extension }" onerror="
+						<img class="file-manager-file-icon" src="${ fileIconFile }" alt="${ extension }" onerror="
 							this.src = '/admin-panel/img/file-icons/unknown.png';
 							this.onerror = null;
 						">
@@ -1844,6 +1850,7 @@ const showFiles = (path = '/') => {
 
 	getFiles(path)
 		.then(files => {
+			console.log(files)
 			files.sort(file => file.isDirectory ? -1 : 1)
 
 			$('.main').innerHTML = /* html */ `
@@ -2111,6 +2118,10 @@ const showFiles = (path = '/') => {
 											})
 									}
 
+									const fileIconFile = imageExtensions.has(extension)
+										? `/thumbnails/${ file.hash }.png`
+										: `/admin-panel/img/file-icons/${ extension }.png`
+
 									return /* html */ `
 									<tr class="file-row">
 										<td class="col-checkbox">
@@ -2118,7 +2129,7 @@ const showFiles = (path = '/') => {
 										</td>
 
 										<td class="col-icon">
-											<img class="file-manager-file-icon" src="/admin-panel/img/file-icons/${ extension }.png" alt="${ extension }" onerror="
+											<img class="file-manager-file-icon" src="${ fileIconFile }" alt="${ extension }" onerror="
 												this.src = '${ `/admin-panel/img/file-icons/unknown.png` }'; this.onerror = null
 											">
 										</td>

@@ -4,6 +4,7 @@ import * as fs from 'fs'
 import { authenticateSuToken } from './../../../private-workers/authenticate-su-token'
 import * as ncp from 'ncp'
 import { filePathIsSafe } from './../../../private-workers/security'
+import { createThumbnails } from '../../../private-workers/image-thumbnails'
 
 // Get the suToken from the request
 
@@ -89,6 +90,8 @@ authenticateSuToken(suToken)
 				}
 
 				res.send('Successfully copied files')
+
+				createThumbnails()
 			}
 		} catch(err) {
 			// Send 500 error

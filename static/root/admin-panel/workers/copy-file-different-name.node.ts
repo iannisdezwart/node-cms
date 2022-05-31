@@ -4,6 +4,7 @@ import * as fs from 'fs'
 import { authenticateSuToken } from './../../../private-workers/authenticate-su-token'
 import * as qcd from 'queued-copy-dir'
 import { filePathIsSafe } from './../../../private-workers/security'
+import { createThumbnails } from '../../../private-workers/image-thumbnails'
 
 // Get the suToken from the request
 
@@ -62,6 +63,8 @@ authenticateSuToken(suToken)
 			}
 
 			res.send('Successfully copied file')
+
+			createThumbnails()
 		} catch(err) {
 			// Send 500 error
 

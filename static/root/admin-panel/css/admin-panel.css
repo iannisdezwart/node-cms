@@ -337,6 +337,12 @@ tbody .col-name {
 	cursor: pointer;
 }
 
+/* Centre align the file icon */
+
+tbody .col-icon {
+	text-align: center;
+}
+
 /* Fit-content columns */
 
 tbody .col-checkbox,
@@ -371,6 +377,8 @@ table.database-table td:hover img.order-direction {
 
 img.file-manager-file-icon {
 	height: 32px;
+	width: 32px;
+	object-fit: contain;
 	vertical-align: middle;
 	pointer-events: none;
 }

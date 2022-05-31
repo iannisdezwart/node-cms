@@ -2,7 +2,7 @@ import { db } from 'node-json-database'
 import * as bcrypt from 'bcrypt'
 
 export const authenticate = (loginData: { username: string, password: string }) => {
-	return new Promise((resolve, reject) => {
+	return new Promise<void>((resolve, reject) => {
 		// Handle null data
 
 		if (loginData == undefined) {

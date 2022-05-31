@@ -12,6 +12,7 @@
   "dependencies": {
     "@iannisz/date-time-formatter": "^0.0.5",
     "@types/bcrypt": "^3.0.0",
+    "@types/gm": "^1.18.12",
     "@types/js-cookie": "^2.2.6",
     "@types/jsonwebtoken": "^8.5.0",
     "@types/ncp": "^2.0.4",
@@ -21,6 +22,7 @@
     "bcrypt": "^5.0.1",
     "chalk": "^4.1.0",
     "csv-parser": "^2.3.3",
+    "gm": "^1.23.1",
     "jsonwebtoken": "^8.5.1",
     "ncp": "^2.0.0",
     "node-json-database": "0.0.34",

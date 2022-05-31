@@ -3,6 +3,7 @@ import { resolve as resolvePath } from 'path'
 import * as fs from 'fs'
 import { authenticateSuToken } from './../../../private-workers/authenticate-su-token'
 import { filePathIsSafe } from './../../../private-workers/security'
+import { createThumbnails } from '../../../private-workers/image-thumbnails'
 
 // Recursive rimraf
 
@@ -64,6 +65,8 @@ authenticateSuToken(suToken)
 
 						res.send('Sucesssfully deleted the file')
 					}
+
+					createThumbnails()
 				} else {
 					// Send 500 error
 
