@@ -1498,7 +1498,6 @@ const filePicker: FilePickerOverload = (
 	const createULFromFiles = (path: string) => new Promise<HTMLUListElement>(resolve => {
 		getFiles(path)
 			.then(files => {
-				console.log(files)
 				// Filter only directories if needed
 
 				if (options.type == 'directory' || options.type == 'new-file') {
@@ -1850,7 +1849,6 @@ const showFiles = (path = '/') => {
 
 	getFiles(path)
 		.then(files => {
-			console.log(files)
 			files.sort(file => file.isDirectory ? -1 : 1)
 
 			$('.main').innerHTML = /* html */ `

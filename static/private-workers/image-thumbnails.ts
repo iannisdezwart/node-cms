@@ -20,8 +20,6 @@ const createThumbnail = (
 		return
 	}
 
-	console.log(`Creating thumbnail for ${ imagePath }`)
-
 	imageMagick(__dirname + '/../root/content/' + imagePath)
 		.resize(64, 64, '>')
 		.quality(80)
