@@ -16,7 +16,7 @@
 
 	3. Page Manager
 		3.1 Show Pages
-			3.1.1 Move Page Up/Down
+			3.1.1 Swap Pages
 		3.2 Edit Page
 			3.2.1 Save Page
 		3.3 Add Page
@@ -396,12 +396,15 @@ const showLoader = () => {
 
 */
 
+let pageSwaps: [ number, number ][]
+
 const showPages = () => {
 	showLoader()
 
 	fetchPages()
 		.then(() => {
 			const { pages, pageTypes } = pagesDB
+			pageSwaps = []
 
 			$('.main').innerHTML = /* html */ `
 			<h1>Pages</h1>
@@ -438,8 +441,8 @@ const showPages = () => {
 						}
 						${
 						reduceArray(pagesOfCurrentType, (page, i) => /* html */ `
-						<tr class="page-row ${ !pageType.canAdd ? 'thick-border' : '' }">
-							<td>
+						<tr data-pageid="${ page.id }" class="page-row ${ !pageType.canAdd ? 'thick-border' : '' }">
+							<td class="col-page-name">
 								${ pageType.canAdd ? `${ '&nbsp;'.repeat(pageType.name.length) } > ${ page.pageContent.title }` : captitalise(pageType.name) }
 							</td>
 							<td class="col-options">
@@ -450,12 +453,12 @@ const showPages = () => {
 							</td>
 							<td>
 								${ (i != 0) ? /* html */ `
-								<img class="clickable-icon" src="/admin-panel/img/arrow-up.png" alt="up" title="move up" style="margin-right: .5em" onclick="movePage('UP', '${ pageType.name }', ${ i })">
+								<img class="clickable-icon" src="/admin-panel/img/arrow-up.png" alt="up" title="move up" style="margin-right: .5em" onclick="swapPages(${ page.id }, ${ pagesOfCurrentType[i - 1].id })">
 								` : '' }
 							</td>
 							<td>
 								${ (i != pagesOfCurrentType.length - 1) ? /* html */ `
-								<img class="clickable-icon" src="/admin-panel/img/arrow-down.png" alt="down" title="move down" onclick="movePage('DOWN', '${ pageType.name }', ${ i })">
+								<img class="clickable-icon" src="/admin-panel/img/arrow-down.png" alt="down" title="move down" onclick="swapPages(${ page.id }, ${ pagesOfCurrentType[i + 1].id })">
 								` : '' }
 							</td>
 						</tr>
@@ -467,24 +470,33 @@ const showPages = () => {
 					</tbody>
 				</table>
 			</div>
+			<div id="save-page-order-container"></div>
 			`
 
-			// 3.1.1 Move Page Up/Down
+			// 3.1.1 Swap Pages
 
-			;(window as any).movePage = async (
-				direction: 'UP' | 'DOWN',
-				pageTypeName: string,
-				index: number
+			;(window as any).swapPages = async (
+				page1Id: number,
+				page2Id: number
 			) => {
-				const pagesOfCurrentType = pages.filter(
-					_page => _page.pageType == pageTypeName
-				)
+				pageSwaps.push([ page1Id, page2Id ])
 
-				const page1 = pagesOfCurrentType[index]
-				const page2 = (direction == 'UP')
-					? pagesOfCurrentType[index - 1]
-					: pagesOfCurrentType[index + 1]
+				// Swap pages visually
 
+				const page1Row = $(`[data-pageid="${ page1Id }"] .col-page-name`)
+				const page2Row = $(`[data-pageid="${ page2Id }"] .col-page-name`)
+				const page1RowHTML = page1Row.innerHTML
+				page1Row.innerHTML = page2Row.innerHTML
+				page2Row.innerHTML = page1RowHTML
+
+				// Show save button
+
+				$('#save-page-order-container').innerHTML = /* html */ `
+				<button id="save-page-order" onclick="updatePageOrder()">Save Changes</button>
+				`
+			}
+
+			;(window as any).updatePageOrder = async () => {
 				const suToken = await getSuToken()
 
 				if (suToken == undefined) {
@@ -494,11 +506,16 @@ const showPages = () => {
 				}
 
 				await request('/admin-panel/workers/swap-pages.node.js', {
-					suToken, page1, page2
+					suToken, pageSwaps
 				})
-					.catch(handleRequestError)
-
-				showPages()
+					.then(() => {
+						$('#save-page-order-container').innerHTML = ''
+						notification('Pages updated', 'Successfully updated the order of pages')
+					})
+					.catch(err => {
+						handleRequestError(err)
+						showPages()
+					})
 			}
 
 			setSearchParams({

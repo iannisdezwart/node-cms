@@ -14,33 +14,37 @@ authenticateSuToken(suToken)
 		// Authenticated, try to swap the pages
 
 		try {
-			const page1 = req.body.page1 as Page
-			const page2 = req.body.page2 as Page
+			const pageSwaps = req.body.pageSwaps as [ number, number ][]
 
 			const pagesDB = db(__dirname + '/../../../pages.json')
 			const pagesTable = pagesDB.table('pages')
 
-			// Get the page records from the database
+			for (const pageSwap of pageSwaps) {
+				const page1Id = pageSwap[0]
+				const page2Id = pageSwap[1]
 
-			const page1Record = pagesTable.get().where(row => row.id == page1.id).rows[0]
-			const page2Record = pagesTable.get().where(row => row.id == page2.id).rows[0]
+				// Get the page records from the database
 
-			// Swap the IDs
+				const page1Record = pagesTable.get().where(row => row.id == page1Id).rows[0]
+				const page2Record = pagesTable.get().where(row => row.id == page2Id).rows[0]
 
-			const page1ID = page1Record.id
-			page1Record.id = page2Record.id
-			page2Record.id = page1ID
+				// Swap the IDs
 
-			// Update the page records
+				const page1ID = page1Record.id
+				page1Record.id = page2Record.id
+				page2Record.id = page1ID
 
-			pagesTable.update(page2Record, row => row.id == page1.id)
-			pagesTable.update(page1Record, row => row.id == page2.id)
+				// Update the page records
+
+				pagesTable.update(page2Record, row => row.id == page1Id)
+				pagesTable.update(page1Record, row => row.id == page2Id)
+			}
 
 			// Compile the website
 
 			compile()
 				.then(() => {
-					res.send('Succesfully swapped page order!')
+					res.send('Succesfully updated page order!')
 				})
 				.catch(err => {
 					throw err
