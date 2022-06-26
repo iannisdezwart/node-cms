@@ -179,6 +179,12 @@ const parseJwt = (token: string) => {
 }
 
 const initPadlock = () => {
+	if (localStorage.getItem('su-token') == null)
+	{
+		setPadlock('locked')
+		return
+	}
+
 	const body = parseJwt(localStorage.getItem('su-token'))
 	const exp = body.exp as number
 
