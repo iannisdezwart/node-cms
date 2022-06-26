@@ -656,6 +656,25 @@ img.checkbox {
 	height: 14px;
 }
 
+input[type="checkbox"] {
+	width: 20px;
+	height: 20px;
+	position: relative;
+}
+
+input[type="checkbox"]::after {
+	content: 'Off';
+	position: absolute;
+	top: 50%;
+	right: -24px;
+	transform: translateY(-50%);
+	color: #fff;
+}
+
+input[type="checkbox"]:checked::after {
+	content: 'On';
+}
+
 /* Searchbox */
 
 .search {

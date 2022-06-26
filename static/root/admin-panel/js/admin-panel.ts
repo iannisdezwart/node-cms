@@ -1,4 +1,4 @@
-/* 
+/*
 
 	===== Info about this file =====
 
@@ -180,7 +180,8 @@ interface GroupItem {
 	type: ContentType | GroupItem[]
 }
 
-type ContentType = 'string' | 'text' | 'img[]' | 'img_caption[]' | 'img' | 'svg' | 'video' | 'date' | 'number' | GroupItem[]
+type ContentType = 'string' | 'text' | 'img[]' | 'img_caption[]' | 'img'
+	| 'svg' | 'video' | 'date' | 'number' | 'bool' | GroupItem[]
 
 interface Page {
 	id: number
@@ -850,6 +851,14 @@ const pageTemplateInputToHTML = (
 			<input root="${ !nested }" data-input="${ inputName }" type="number" value="${ number }">
 			`
 		}
+
+		case 'bool': {
+			const bool = inputContent ? inputContent as boolean : false
+
+			return /* html */ `
+			<input root="${ !nested }" data-input="${ inputName }" type="checkbox" ${ bool ? 'checked' : '' }>
+			`
+		}
 	}
 }
 
@@ -1017,6 +1026,10 @@ const collectInput = (input: HTMLElement, inputType: ContentType) => {
 
 		case 'number': {
 			return (input as HTMLInputElement).value
+		}
+
+		case 'bool': {
+			return (input as HTMLInputElement).checked
 		}
 	}
 }
