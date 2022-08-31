@@ -856,7 +856,7 @@ const pageTemplateInputToHTML = (
 			const bool = inputContent ? inputContent as boolean : false
 
 			return /* html */ `
-			<input root="${ !nested }" data-input="${ inputName }" type="checkbox" ${ bool ? 'checked' : '' }>
+			<input class="on-off-checkbox" root="${ !nested }" data-input="${ inputName }" type="checkbox" ${ bool ? 'checked' : '' }>
 			`
 		}
 	}

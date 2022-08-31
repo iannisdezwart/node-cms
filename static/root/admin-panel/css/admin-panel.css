@@ -656,13 +656,13 @@ img.checkbox {
 	height: 14px;
 }
 
-input[type="checkbox"] {
+.on-off-checkbox {
 	width: 20px;
 	height: 20px;
 	position: relative;
 }
 
-input[type="checkbox"]::after {
+.on-off-checkbox::after {
 	content: 'Off';
 	position: absolute;
 	top: 50%;
@@ -671,7 +671,7 @@ input[type="checkbox"]::after {
 	color: #fff;
 }
 
-input[type="checkbox"]:checked::after {
+.on-off-checkbox:checked::after {
 	content: 'On';
 }
 
