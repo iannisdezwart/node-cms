@@ -49,6 +49,7 @@ body {
 	height: calc(100vh - 50px);
 	height: -webkit-fill-available;
 	background-color: var(--background);
+	font-size: 16px;
 }
 
 ::-webkit-scrollbar {
