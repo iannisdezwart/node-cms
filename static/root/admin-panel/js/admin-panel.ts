@@ -1196,15 +1196,15 @@ const addImg = async (
 	inputName: string,
 	withCaption = false
 ) => {
-	// Select a new image
+	// Select new images
 
-	const newImgPath = await filePicker({
+	const newImgPaths = await filePicker({
 		type: 'file',
 		title: 'Add image',
 		body: 'Select a new image',
 		buttonText: 'Select',
 		extensions: imageExtensions
-	}, false)
+	}, true)
 		.catch(() => {
 			throw new Error(`User cancelled`)
 		})
@@ -1213,17 +1213,21 @@ const addImg = async (
 
 	const imgArrayPlus = $(`[data-input="${ inputName }"`).querySelector<HTMLDivElement>('.img-array-plus')
 
-	// Add the image before it
+	// Add the images before it
 
 	if (!withCaption) {
 		imgArrayPlus.insertAdjacentHTML(
 			'beforebegin',
-			generateImgArrayImg(`/content${ newImgPath }`, (imgArrayPlus.previousElementSibling != null), false)
+			newImgPaths.map(newImgPath =>
+				generateImgArrayImg(`/content${ newImgPath }`, (imgArrayPlus.previousElementSibling != null), false))
+					.join('')
 		)
 	} else {
 		imgArrayPlus.insertAdjacentHTML(
 			'beforebegin',
-			generateImgAndCaptionArrayInstance([ `/content${ newImgPath }`, '' ], (imgArrayPlus.previousElementSibling != null), false)
+			newImgPaths.map(newImgPath =>
+				generateImgAndCaptionArrayInstance([ `/content${ newImgPath }`, '' ], (imgArrayPlus.previousElementSibling != null), false))
+					.join('')
 		)
 	}
 
