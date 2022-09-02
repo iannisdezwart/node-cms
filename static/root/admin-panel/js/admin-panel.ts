@@ -1386,7 +1386,11 @@ const uploadFiles = (
 					progressBar.remove()
 					resolve()
 				})
-				.catch(handleRequestError)
+				.catch((err) =>
+				{
+					progressBar.remove()
+					handleRequestError(err)
+				})
 		})
 })
 
