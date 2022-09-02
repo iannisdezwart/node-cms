@@ -141,7 +141,6 @@ const createAdminPanelHtmlPage = () =>
 	const html = compiler({
 		version: 'v' + require(__dirname + '/package.json').version,
 	})
-	console.log(html)
 
 	fs.writeFileSync('root/admin-panel/index.html', html)
 }
