@@ -12,6 +12,7 @@
 	1. Imports and functions
 		1.1 Recursive rimraf
 		1.2 Random String
+		1.3 Create admin panel HTML page
 
 	2. Creation of directory tree
 
@@ -33,6 +34,7 @@ import * as qcd from 'queued-copy-dir'
 
 import { db } from 'node-json-database'
 import * as bcrypt from 'bcrypt'
+import { AdminPanelPageCompiler, AdminPanelPageProps } from './static/root/admin-panel/admin-panel-page'
 
 // Go to the project root
 
@@ -127,6 +129,23 @@ const randomString = (length: number, sets?: RandomCharSetsOptions) => {
 
 const randomIntBetween = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1) + min)
 
+/*
+	1.3 Create admin panel HTML page
+*/
+
+const createAdminPanelHtmlPage = () =>
+{
+	const adminPanelPagePath = resolvePath('./root/admin-panel/admin-panel-page.js')
+	const compiler = require(adminPanelPagePath).default as AdminPanelPageCompiler
+
+	const html = compiler({
+		version: 'v' + require(__dirname + '/package.json').version,
+	})
+	console.log(html)
+
+	fs.writeFileSync('root/admin-panel/index.html', html)
+}
+
 /* ===================
 	2. Creation of directory tree
 =================== */
@@ -144,6 +163,8 @@ if (fs.existsSync('root/admin-panel')) {
 }
 
 qcd.sync(__dirname + '/static/root/admin-panel', 'root/admin-panel')
+
+createAdminPanelHtmlPage()
 
 // Create ./root/content directory
 

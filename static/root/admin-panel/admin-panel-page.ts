@@ -1,3 +1,10 @@
+export interface AdminPanelPageProps {
+	version: string
+}
+
+export type AdminPanelPageCompiler = (props: AdminPanelPageProps) => string
+
+export default ((props: AdminPanelPageProps) => /* html */ `
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
 	<head>
@@ -21,7 +28,7 @@
 			<div class="header">
 				<ul>
 					<li class="back-button-desktop"><img class="back-button" src="/admin-panel/img/back.png" alt="back" title="back" onclick="goBackInHistory()"></li>
-					<li><a class="logo" href="/admin-panel/">NodeCMS</a></li>
+					<li><a class="logo" href="/admin-panel/">NodeCMS</a> <span id="version-number">${ props.version }</span></li>
 				</ul>
 				<ul>
 					<li id="greeting"></li>
@@ -46,4 +53,4 @@
 			<div class="main"></div>
 		</div>
 	</body>
-</html>
+</html>`) as AdminPanelPageCompiler
