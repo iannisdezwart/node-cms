@@ -387,6 +387,35 @@ const showLoader = () => {
 	`
 }
 
+const pollCompilationLog = (initRequestRes: string) => new Promise<void>((resolve, reject) => {
+	const { logFileId } = JSON.parse(initRequestRes)
+	const popupBodyProvide = logPopup('Compiling...')
+
+	let readOffset = 0
+
+	const pollForCompilation = async () => {
+		const suToken = await getSuToken()
+
+		request('/admin-panel/workers/poll-compilation-log.node.js', {
+			logFileId, suToken, readOffset
+		})
+			.then(res => {
+				readOffset += new TextEncoder().encode(res).byteLength
+				popupBodyProvide(res) // Appends log to popup
+
+				if (res.endsWith('Compilation finished successfully')) {
+					popupBodyProvide(null) // Closes the popup
+					resolve()
+				} else {
+					setTimeout(pollForCompilation, 500)
+				}
+			})
+			.catch(reject)
+	}
+
+	pollForCompilation()
+})
+
 /* ===================
 	3. Page Manager
 =================== */
@@ -506,9 +535,9 @@ const showPages = () => {
 					throw new Error(`User cancelled`)
 				}
 
-				await request('/admin-panel/workers/swap-pages.node.js', {
+				pollCompilationLog(await request('/admin-panel/workers/swap-pages.node.js', {
 					suToken, pageSwaps
-				})
+				}))
 					.then(() => {
 						$('#save-page-order-container').innerHTML = ''
 						notification('Pages updated', 'Successfully updated the order of pages')
@@ -569,9 +598,9 @@ const editPage = async (id: number) => {
 			throw new Error(`User cancelled`)
 		}
 
-		await request('/admin-panel/workers/update-page.node.js', {
+		await pollCompilationLog(await request('/admin-panel/workers/update-page.node.js', {
 			suToken, pageContent, pageId
-		})
+		}))
 			.catch(err => {
 				handleRequestError(err)
 				throw err
@@ -625,21 +654,19 @@ const addPage = async (pageType: string) => {
 	<button id="add-page" onclick="handleSubmit('${ pageType }')">Add Page</button>
 	`
 
-	;(window as any).handleSubmit = () => {
+	;(window as any).handleSubmit = async () => {
 		const pageContent = collectInputs(template)
+		const suToken = await getSuToken()
 
-		getSuToken()
-			.then(suToken => {
-				request('/admin-panel/workers/add-page.node.js', {
-					suToken, pageType, pageContent
-				})
-					.then(() => {
-						notification('Added page', `Successfully added page "${ pageContent.title }"!`)
+		pollCompilationLog(await request('/admin-panel/workers/add-page.node.js', {
+			suToken, pageType, pageContent
+		}))
+			.then(() => {
+				notification('Added page', `Successfully added page "${ pageContent.title }"!`)
 
-						showPages()
-					})
-					.catch(handleRequestError)
+				showPages()
 			})
+			.catch(handleRequestError)
 	}
 
 	initTinyMCE()
@@ -679,10 +706,10 @@ const deletePage = async (id: number) => {
 
 	const suToken = await getSuToken()
 
-	request('/admin-panel/workers/delete-page.node.js', {
+	pollCompilationLog(await request('/admin-panel/workers/delete-page.node.js', {
 		suToken,
 		pageId: page.id
-	})
+	}))
 		.then(() => {
 			notification('Deleted page', `Successfully deleted page "${ pageTitle }"!`)
 

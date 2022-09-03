@@ -42,13 +42,9 @@ authenticateSuToken(suToken)
 
 			// Compile the website
 
-			compile()
-				.then(() => {
-					res.send('Succesfully updated page order!')
-				})
-				.catch(err => {
-					throw err
-				})
+			const logFileId = compile()
+			log('i', 'Compiling website, log file ID: ' + logFileId)
+			res.send(JSON.stringify({ logFileId }))
 		} catch(err) {
 			// Send 500 error
 

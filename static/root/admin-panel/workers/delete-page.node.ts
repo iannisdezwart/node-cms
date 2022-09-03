@@ -25,21 +25,15 @@ authenticateSuToken(suToken)
 
 			// Compile the website
 
-			compile()
-				.then(() => {
-					res.send('Succesfully stored page!')
-				})
-				.catch(err => {
-					throw err
-				})
+			const logFileId = compile()
+			log('i', 'Compiling website, log file ID: ' + logFileId)
+			res.send(JSON.stringify({ logFileId }))
 		} catch(err) {
 			// Send 500 error
 
 			res.statusCode = 500
 			log('e', err.stack ?? err)
 			res.send('An internal server error occured while updating the page')
-
-			log('e', err)
 		}
 	})
 	.catch(err => {

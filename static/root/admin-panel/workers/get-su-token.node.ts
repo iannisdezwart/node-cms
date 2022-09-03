@@ -20,7 +20,7 @@ authenticate(loginData)
 			tokenType: 'su-token',
 			aud: 'node-cms-admin-panel'
 		}, jwtSecret, {
-			expiresIn: '1h'
+			expiresIn: '1d'
 		})
 
 		res.send(suToken)

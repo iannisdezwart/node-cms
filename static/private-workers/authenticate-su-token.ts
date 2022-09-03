@@ -15,7 +15,7 @@ export const authenticateSuToken = (
 
 	jwt.verify(suToken, jwtSecret, (err, decoded: any) => {
 		if (!err) {
-			if (decoded.tokenType == 'su-token') {
+			if (decoded.aud == 'node-cms-admin-panel' && decoded.tokenType == 'su-token') {
 				// Authenticated
 
 				resolve()

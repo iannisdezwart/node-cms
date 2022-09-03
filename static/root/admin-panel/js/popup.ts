@@ -20,6 +20,45 @@ interface PopupResult {
 	inputs: Map<string, string>
 }
 
+const logPopup = (
+	title: string
+) => {
+	const popupEl = document.createElement('div')
+
+	popupEl.classList.add('popup')
+
+	popupEl.innerHTML = /* html */ `
+		<h1 class="popup-title">${ title }</h1>
+		<pre class="popup-log-body"></pre>
+	`
+
+	// Add popup to the page
+
+	document.body.appendChild(popupEl)
+
+	return (bodyChunk?: string) => {
+		// Close popup when body is empty
+
+		if (bodyChunk == null) {
+			popupEl.classList.add('closed')
+			setTimeout(() => {
+				popupEl.remove()
+			}, 300)
+
+			return
+		}
+
+		// Provide the body chunk to the popup
+
+		const popupLogBody = popupEl.querySelector('.popup-log-body') as HTMLPreElement
+		popupLogBody.innerHTML += bodyChunk
+
+		// Scroll to the bottom
+
+		popupLogBody.scrollTop = popupLogBody.scrollHeight
+	}
+}
+
 const popup = (
 	title: string,
 	body: string,
