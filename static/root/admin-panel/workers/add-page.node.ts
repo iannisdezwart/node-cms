@@ -1,4 +1,5 @@
 import { log, req, res } from 'apache-js-workers'
+import { randomBytes } from 'crypto'
 import { db } from 'node-json-database'
 import { authenticateSuToken } from './../../../private-workers/authenticate-su-token'
 import { compile }  from './../../../private-workers/compile'
@@ -22,7 +23,7 @@ authenticateSuToken(suToken)
 
 			// Add the page to the database
 
-			pagesTable.insert([ { pageType, pageContent } ])
+			pagesTable.insert([ { pageType, pageContent, uuid: randomBytes(32).toString('hex') } ])
 
 			// Compile the website
 

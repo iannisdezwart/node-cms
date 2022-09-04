@@ -34,7 +34,8 @@ import * as qcd from 'queued-copy-dir'
 
 import { db } from 'node-json-database'
 import * as bcrypt from 'bcrypt'
-import { AdminPanelPageCompiler, AdminPanelPageProps } from './static/root/admin-panel/admin-panel-page'
+import { AdminPanelPageCompiler } from './static/root/admin-panel/admin-panel-page'
+import { randomBytes } from 'crypto'
 
 // Go to the project root
 
@@ -133,8 +134,7 @@ const randomIntBetween = (min: number, max: number) => Math.floor(Math.random() 
 	1.3 Create admin panel HTML page
 */
 
-const createAdminPanelHtmlPage = () =>
-{
+const createAdminPanelHtmlPage = () => {
 	const adminPanelPagePath = resolvePath('./root/admin-panel/admin-panel-page.js')
 	const compiler = require(adminPanelPagePath).default as AdminPanelPageCompiler
 
@@ -321,8 +321,36 @@ if (!pagesDB.table('pages').exists) {
 			constraints: [
 				'notNull'
 			]
+		},
+		{
+			name: 'uuid',
+			dataType: 'String',
+			constraints: [
+				'unique',
+				'notNull'
+			]
 		}
 	])
+}
+
+// Pages table uuid migration
+
+const pagesTable = pagesDB.table('pages')
+
+if (pagesTable.get().cols.find(col => col.name == 'uuid') == null) {
+	pagesTable.columns.add([{
+		name: 'uuid',
+		dataType: 'String',
+		constraints: [
+			'unique',
+			'notNull'
+		]
+	}])
+
+	pagesTable.get().rows.forEach(row => {
+		row.uuid = randomBytes(32).toString('hex')
+		pagesTable.update(row, r => r.id == row.id)
+	})
 }
 
 // Create compiled_pages table if it does not exist
@@ -334,11 +362,43 @@ if (!pagesDB.table('compiled_pages').exists) {
 
 	table.columns.add([
 		{
-			name: 'id',
-			dataType: 'Int'
+			name: 'path',
+			dataType: 'String'
 		},
 		{
-			name: 'path',
+			name: 'uuid',
+			dataType: 'String'
+		},
+		{
+			name: 'hash',
+			dataType: 'String'
+		}
+	])
+}
+
+// Compiled pages uuid migration
+
+const compiledPagesTable = pagesDB.table('compiled_pages')
+
+if (
+	compiledPagesTable.get().cols.find(col => col.name == 'uuid') == null
+	|| compiledPagesTable.get().cols.find(col => col.name == 'hash') == null
+) {
+	compiledPagesTable.deleteWhere(() => true)
+
+	compiledPagesTable.columns.drop([ 'id' ])
+
+	compiledPagesTable.columns.add([
+		{
+			name: 'uuid',
+			dataType: 'String'
+		},
+		{
+			name: 'hash',
+			dataType: 'String'
+		},
+		{
+			name: 'pageType',
 			dataType: 'String'
 		}
 	])

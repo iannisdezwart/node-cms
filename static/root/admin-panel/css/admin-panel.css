@@ -927,7 +927,7 @@ div.input:first-child {
 
 .popup-log-body {
 	height: 300px;
-	width: min(70vw, 500px);
+	width: min(65vw, 700px);
 	overflow-y: auto;
 	font-family: monospace;
 	padding: .25em;

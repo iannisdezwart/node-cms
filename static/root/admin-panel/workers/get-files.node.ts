@@ -3,7 +3,7 @@ import { resolve as resolvePath } from 'path'
 import * as fs from 'fs'
 import { authenticateSuToken } from './../../../private-workers/authenticate-su-token'
 import { filePathIsSafe } from './../../../private-workers/security'
-import * as crypto from 'crypto'
+import { createHash } from 'crypto'
 
 interface FileInfo {
 	name: string
@@ -46,7 +46,7 @@ authenticateSuToken(suToken)
 
 		for (let fileName of fileNames) {
 			const stats = fs.statSync(path + '/' + fileName)
-			const hash = crypto.createHash('md5')
+			const hash = createHash('md5')
 				.update(resolvePath(reqPath + '/' + fileName))
 				.digest('hex')
 

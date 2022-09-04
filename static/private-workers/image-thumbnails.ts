@@ -1,6 +1,6 @@
+import { createHash } from 'crypto'
 import * as fs from 'fs'
 import * as graphicsMagick from 'gm'
-import * as crypto from 'crypto'
 
 const imageMagick = graphicsMagick.subClass({ imageMagick: true })
 
@@ -14,7 +14,7 @@ const isImage = (path: string) => {
 const createThumbnail = (
 	imagePath: string
 ) => {
-	const hash = crypto.createHash('md5').update(imagePath).digest('hex')
+	const hash = createHash('md5').update(imagePath).digest('hex')
 
 	if (fs.existsSync(`${ __dirname }/../root/thumbnails/${ hash }.png`)) {
 		return

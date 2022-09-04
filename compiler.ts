@@ -4,6 +4,7 @@ import { db, Table } from 'node-json-database'
 import { spawn } from 'child_process'
 import { resolve as resolvePath } from 'path'
 import { dotDotSlashAttack } from './static/private-workers/security'
+import { createHash } from 'crypto'
 
 type CompiledPage = {
 	html: string
@@ -20,7 +21,10 @@ interface ObjectOf<T> {
 	[key: string]: T
 }
 
-export const compile = async (pageCompilers: ObjectOf<PageCompiler>) => {
+export const compile = async (
+	pageCompilers: ObjectOf<PageCompiler>,
+	dependencyGraph?: ObjectOf<string[]>,
+) => {
 	// Store start time
 
 	const start = Date.now()
@@ -54,9 +58,9 @@ export const compile = async (pageCompilers: ObjectOf<PageCompiler>) => {
 	// We will remove all compiled pages that we don't need anymore later on
 
 	const pagesToRemove = new Set<string>()
-	const compiledPages = pagesDB.table('compiled_pages').get().rows
+	const compiledPages = pagesDB.table('compiled_pages')
 
-	for (let compiledPage of compiledPages) {
+	for (let compiledPage of compiledPages.get().rows) {
 		pagesToRemove.add(compiledPage.path)
 	}
 
@@ -64,12 +68,8 @@ export const compile = async (pageCompilers: ObjectOf<PageCompiler>) => {
 
 	const compilePage = (
 		page: CompiledPage,
-		pageID: number
+		dbPage: DB_Table_Row_Formatted
 	) => {
-		// Skip if page is null
-
-		if (page == null) return
-
 		// Create directory, if needed
 
 		const directory = getDirectory('./root' + page.path)
@@ -97,34 +97,86 @@ export const compile = async (pageCompilers: ObjectOf<PageCompiler>) => {
 		// Store the page path in the database
 
 		const compiledPages = pagesDB.table('compiled_pages')
-		const alreadyCompiledPages = compiledPages
-			.get()
-			.where(row => row.path == page.path)
-			.rows
+		compiledPages.deleteWhere(row => row.path == page.path)
 
-		// Only store if the path does not exist yet
-
-		if (alreadyCompiledPages.length == 0) {
-			compiledPages.insert([{ id: pageID, path: page.path }])
-		}
+		const hash = createHash('md5').update(JSON.stringify(dbPage)).digest('hex')
+		compiledPages.insert([{ uuid: dbPage.uuid, path: page.path, hash, pageType: dbPage.pageType }])
 	}
 
-	for (let pageType of pageTypesTable.rows) {
-		const pageCompiler = pageCompilers[pageType.name]
-		const pagesOfType = pagesTable.where(row => row.pageType == pageType.name)
+	const dependentPageTypesToCompile = new Set<String>()
+	const pageTypesThatHaveBeenCompiled = new Set<String>()
 
-		if (pageType.compilePageType) {
-			// Compile page type individually
+	while (true) {
+		let anyPageWasCompiled = false
 
-			const page = await pageCompiler(null, pagesOfType, pagesTable)
-			compilePage(page, null /* Todo: what to do with the PageID? */)
+		for (let pageType of pageTypesTable.rows) {
+			if (pageTypesThatHaveBeenCompiled.has(pageType.name)) {
+				continue
+			}
+
+			const pageCompiler = pageCompilers[pageType.name]
+			const pagesOfType = pagesTable.where(row => row.pageType == pageType.name)
+
+			let anyPageOfThisTypeWasCompiled = false
+
+			// Compile all subpages
+
+			for (let i = 0; i < pagesOfType.rows.length; i++) {
+				const hash = createHash('md5').update(JSON.stringify(pagesOfType.rows[i])).digest('hex')
+				const compiledPage = compiledPages.get().where(row => row.uuid == pagesOfType.rows[i].uuid).rows[0]
+				const thisPageChanged = compiledPage?.hash != hash
+
+				if (
+					!dependentPageTypesToCompile.has(pageType.name)
+					&& ( dependencyGraph != null && !thisPageChanged )
+				) {
+					if (compiledPage != null) {
+						pagesToRemove.delete(compiledPage.path)
+					}
+					continue
+				}
+
+				const page = await pageCompiler(pagesOfType.rows[i].pageContent, pagesOfType, pagesTable)
+
+				if (page != null) {
+					compilePage(page, pagesOfType.rows[i])
+					anyPageOfThisTypeWasCompiled = true
+					anyPageWasCompiled = true
+				}
+			}
+
+			if (pageType.compilePageType) {
+				if (dependentPageTypesToCompile.has(pageType.name) || dependencyGraph == null || anyPageOfThisTypeWasCompiled) {
+					// Compile page type individually
+
+					const page = await pageCompiler(null, pagesOfType, pagesTable)
+
+					if (page != null) {
+						compilePage(page, { pageType: pageType.name })
+						anyPageOfThisTypeWasCompiled = true
+						anyPageWasCompiled = true
+					}
+				} else {
+					const compiledPage = compiledPages.get().where(row => row.pageType == pageType.name && row.uuid == null).rows[0]
+					if (compiledPage != null) {
+						pagesToRemove.delete(compiledPage.path)
+					}
+				}
+			}
+
+			if (anyPageOfThisTypeWasCompiled || pagesOfType.rows.length == 0 && !pageType.compilePageType) {
+				pageTypesThatHaveBeenCompiled.add(pageType.name)
+			}
+
+			if (anyPageOfThisTypeWasCompiled && dependencyGraph?.[pageType.name] != null) {
+				for (let dependentPageType of dependencyGraph[pageType.name]) {
+					dependentPageTypesToCompile.add(dependentPageType)
+				}
+			}
 		}
 
-		// Compile all subpages
-
-		for (let i = 0; i < pagesOfType.rows.length; i++) {
-			const page = await pageCompiler(pagesOfType.rows[i].pageContent, pagesOfType, pagesTable)
-			compilePage(page, pagesOfType.rows[i].id)
+		if (!anyPageWasCompiled) {
+			break
 		}
 	}
 
