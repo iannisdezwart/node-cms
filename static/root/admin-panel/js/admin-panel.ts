@@ -851,8 +851,8 @@ const pageTemplateInputToHTML = (
 			const videoPath = inputContent ? inputContent as string : ''
 
 			return /* html */ `
-			<div class="video-input">
-				<video src="${ videoPath }" root="${ !nested }" data-input="${ inputName }" data-path="${ videoPath.replace(/\"/g, '&quot;') }" height="200" autoplay muted controls></video>
+			<div class="video-input" root="${ !nested }" data-input="${ inputName }">
+				<video src="${ videoPath }" data-path="${ videoPath.replace(/\"/g, '&quot;') }" height="200" autoplay muted controls></video>
 				<button class="small" onclick="editVideoPath(this)">Edit</button>
 			</div>
 			`
@@ -1044,7 +1044,7 @@ const collectInput = (input: HTMLElement, inputType: ContentType) => {
 		}
 
 		case 'video': {
-			return input.getAttribute('data-path')
+			return input.querySelector<HTMLVideoElement>('video').getAttribute('data-path')
 		}
 
 		case 'date': {
