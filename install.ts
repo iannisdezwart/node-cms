@@ -404,6 +404,22 @@ if (
 	])
 }
 
+// Pages table make uuid not unique migration
+
+if (pagesTable.get().cols.find(col => col.name == 'uuid')?.constraints.includes('unique')) {
+	pagesTable.columns.drop([ 'uuid' ])
+
+	pagesTable.columns.add([
+		{
+			name: 'uuid',
+			dataType: 'String',
+			constraints: [
+				'notNull'
+			]
+		}
+	])
+}
+
 /* ===================
 	4. Create JWT secret key
 =================== */
