@@ -118,19 +118,18 @@ declare namespace tinyMCE {
 		remove: () => void
 	}
 
-	export function get(any: any): any
-	export const editors: Editor[]
+	export function get(): Editor[]
 }
 
 const saveTinyMCEState = () => {
-	for (const editor of tinyMCE.editors) {
+	for (const editor of tinyMCE.get()) {
 		const textArea = editor.editorContainer.previousElementSibling as HTMLTextAreaElement
 		textArea.innerText = editor.getContent()
 	}
 }
 
 const reloadTinyMCE = () => {
-	for (const editor of tinyMCE.editors) {
+	for (const editor of tinyMCE.get()) {
 		editor.remove()
 	}
 
@@ -1004,7 +1003,7 @@ const collectInput = (input: HTMLElement, inputType: ContentType) => {
 		}
 
 		case 'text': {
-			return tinyMCE.editors.filter(
+			return tinyMCE.get().filter(
 				editor => isChildOf(editor.editorContainer, input))[0].getContent()
 		}
 
