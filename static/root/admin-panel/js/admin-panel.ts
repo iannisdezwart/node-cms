@@ -139,9 +139,7 @@ const reloadTinyMCE = () => {
 const initTinyMCE = () => {
 	tinymce.init({
 		selector: 'textarea',
-		plugins: [
-			'advlist autolink link image lists charmap print preview hr anchor pagebreak spellchecker searchreplace wordcount visualblocks visualchars code fullscreen insertdatetime media nonbreaking table emoticons template paste help'
-		],
+		plugins: 'advlist autolink link image lists charmap print preview hr anchor pagebreak spellchecker searchreplace wordcount visualblocks visualchars code fullscreen insertdatetime media nonbreaking table emoticons template paste help',
 		toolbar: 'undo redo | styleselect | fontsizeselect | bold italic underline forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image emoticons | print preview fullpage | help',
 		menubar: 'edit insert format table help',
 		skin: "snow",
