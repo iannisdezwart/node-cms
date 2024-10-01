@@ -1,10 +1,10 @@
-import * as fs from 'fs'
 import * as chalk from 'chalk'
-import { db, Table } from 'node-json-database'
 import { spawn } from 'child_process'
+import { createHash } from 'crypto'
+import * as fs from 'fs'
+import { db, Table } from 'node-json-database'
 import { resolve as resolvePath } from 'path'
 import { dotDotSlashAttack } from './static/private-workers/security'
-import { createHash } from 'crypto'
 
 type CompiledPage = {
 	html: string
